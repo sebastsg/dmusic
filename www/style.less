@@ -1,0 +1,438 @@
+* {
+    font-family: monospace;
+    margin: 0;
+    padding: 0;
+    color: #c0c0c0;
+}
+
+::-webkit-scrollbar {
+    width: 12px;
+}
+ 
+::-webkit-scrollbar-track {
+	border: 1px solid #151515;
+}
+ 
+::-webkit-scrollbar-thumb {
+	background: #151515;
+}
+
+html, body {
+    background: black;
+	margin: 0px auto;
+	height: 100%;
+}
+
+a {
+	text-decoration: none;
+	font-size: 16px;
+	color: #808080;
+    &:hover,
+    &.active {
+        color: #aad2ff;
+    }
+}
+
+h1, h2, h3, h4, h5, h6, p, span {
+    cursor: default;
+}
+
+h1 {
+    font-size: 26px;
+}
+
+h2 {
+    font-size: 20px;
+}
+
+hr {
+    margin: 16px 0;
+    border-color: #505050;
+}
+
+input, button, textarea {
+    background: #0c0c0c;
+    color: #c0c0c0;
+    border: 1px solid #202020;
+    font-size: 16px;
+    padding: 8px;
+    outline: none;
+    &:hover {
+        border: 1px solid #303030;
+    }
+    &:focus {
+        border: 1px solid #505050;
+    }
+}
+
+input[type=text], input[type=number], input[type=url], input[type=file], input[type=search] {
+    min-width: 192px;
+    &.short {
+        min-width: 48px;
+        max-width: 48px;
+    }
+    &.long {
+        min-width: 480px;
+        max-width: 480px;
+    }
+}
+
+input[type=checkbox], input[type=radio] {
+    min-width: 20px;
+    width: 20px;
+    height: 20px;
+    -webkit-filter: invert(0.935) hue-rotate(150deg);
+}
+
+button {
+    cursor: pointer;
+    min-width: 40px;
+    min-height: 40px;
+    &:hover {
+        background: #191c1c;
+        border: 1px solid #303030;
+        color: #aad2ff;
+    }
+    &:disabled {
+        background: #808080;
+        border: 1px solid #505050;
+        color: #c0c0c0;
+        cursor: default;
+    }
+}
+
+select {
+    background: #0c0c0c;
+    color: #505050;
+    border: 1px solid #202020;
+    font-size: 16px;
+    padding: 4px;
+    outline: none;
+}
+
+header {
+	cursor: default;
+	width: 100vw;
+	height: 54px;
+    background: #191c1c;
+
+    div {
+        display: inline-block;
+        width: 320px;
+        height: 54px;
+        audio {
+            filter: invert(0.935) hue-rotate(150deg);
+            width: 320px;
+        }
+    }
+
+    nav {
+        display: inline-block;
+        height: 54px;
+        vertical-align: top;
+        width: calc(~"100vw" - unit(360, px));
+        a {
+            display: inline-block;
+            padding: 12px;
+            margin-top: 6px;
+            &:last-child {
+                float: right;
+            }
+        }
+    }
+}
+
+#playlist {
+	position: fixed;
+	left: 0px;
+    width: 320px;
+	height: calc(~"100vh" - unit(54, px));
+	overflow-x: hidden;
+    overflow-y: scroll;
+    background: #0c0c0c;
+
+    ul {
+        li {
+            position: relative;
+            cursor: pointer;
+            background: #0c0c0c;
+            color: #808080;
+            line-height: 1em;
+            padding: 2px;
+            i {
+                position: absolute;
+                right: 0;
+                color: #808080;
+            }
+            &:hover,
+            &.active {
+                background: #1f2022;
+                color: #aad2ff;
+                i {
+                    color: #c0c0c0;
+                }
+            }
+        }
+    }
+}
+
+main {
+	width: 100vw;
+	height: calc(~"100vh" - unit(54, px));
+	overflow-x: hidden;
+	overflow-y: scroll;
+    background-image: url('/img/bg.jpg');
+    background-repeat: no-repeat;
+	background-position: right;
+	background-size: contain;
+    section {
+    	width: 1152px;
+        min-height: calc(~"100vh" - unit(72, px));
+        margin-left: 320px;
+        padding: 16px;
+        background: rgba(0, 0, 0, 0.8);
+    }
+}
+
+.group-thumb {
+	position: relative;
+	float: left;
+	background-size: cover;
+	top: 0px;
+	left: 0px;
+	width: 380px;
+    height: 190px;
+    line-height: 1.3em;
+    font-size: 18px;
+    div {
+        position: absolute;
+        width: 380px;
+        height: 190px;
+        background: rgba(0, 0, 0, 0.5);
+        span {
+            display: inline-block;
+            margin: 16px;
+            padding: 8px;
+            color: rgba(255, 255, 255, 0.75);
+        }
+    }
+    &:hover {
+        div {
+            background: rgba(0, 0, 0, 0.25);
+            span {
+                background: rgba(0, 0, 0, 0.25);
+                color: #aad2ff;
+            }
+        }
+    }
+}
+
+.tag-links {
+    padding: 0 8px 16px 8px;
+    span {
+        padding-right: 4px;
+        a {
+            font-style: italic;
+            font-size: 12px;
+        }
+    }
+}
+
+.album {
+	height: 320px;
+    margin-top: 8px;
+    img {
+        float: left;
+        width: 320px;
+        height: 320px;
+    }
+    div {
+        white-space: nowrap;
+        float: left;
+        width: 512px;
+        height: 320px;
+        margin-left: 8px;
+        > a {
+            font-size: 12px;
+            &:first-child {
+                color: #c0c0c0;
+            }
+        }
+        > span {
+            padding: 0 8px;
+        }
+        p {
+            font-size: 12px;
+            font-style: italic;
+        }
+        ol {
+            list-style: none;
+            display: table-cell;
+            padding: 0 8px;
+            height: 320px;
+            min-width: 288px;
+            cursor: default;
+            white-space: nowrap;
+            vertical-align: top;
+            li {
+                // See comment below.
+                //clear: left;
+                a {
+                    // This float will make it so whitespace does not break the tracklist,
+                    // but it causes some other styling problems with the width of the tracklist.
+                    // The temporary fix is to remove the whitespace between the two <a> tags in track.html.
+                    //float: left;
+                    font-size: 14px;
+                    line-height: 1.3em;
+                    &:first-child {
+                        font-style: italic;
+                        color: #505050;
+                        &:hover {
+                            color: #aad2ff;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+.uploads {
+    list-style: none;
+    padding: 8px;
+    li {
+        background: #1f2022;
+        a {
+            display: block;
+            padding: 8px;
+            width: 100%;
+        }
+        &:nth-child(odd) {
+            background: #191c1c;
+        }
+    }
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 8px;
+    border: 1px solid #303030;
+    tr {
+        td, th {
+            padding: 12px 16px;
+            font-size: 14px;
+        }
+        th {
+            background: #151515;
+            text-align: left;
+        }
+        td {
+            background: #1f2022;
+            img {
+                max-width: 256px;
+            }
+        }
+        &:nth-child(odd) {
+            td {
+                background: #191c1c;
+            }
+        }
+    }
+}
+
+table.prepare-album-details {
+    tr {
+        &:first-child {
+            td {
+                input {
+                    width: 720px;
+                }
+            }
+        }
+    }
+}
+
+table.prepare-disc {
+    tr {
+        td {
+            &:first-child {
+                padding: 0;
+                input {
+                    min-width: auto;
+                    width: 48px;
+                }
+            }
+            &:nth-child(2) {
+                input {
+                    width: 480px;
+                }
+            }
+            &:nth-child(3) {
+                font-size: 12px;
+            }
+        }
+    }
+}
+
+table.attachments {
+    tr {
+        td {
+            &:first-child {
+                width: 32px;
+            }
+        }
+    }
+}
+
+.attach-form {
+    tr {
+        th {
+            &:nth-child(3) {
+                input {
+                    width: 640px;
+                }
+            }
+        }
+    }
+}
+
+.submit-prepare-wrapper {
+    margin: 48px;
+    padding: 32px;
+    text-align: center;
+}
+
+.short-column {
+    max-width: 48px;
+}
+
+.search-wrapper {
+    position: relative;
+    input[type=search] {
+        position: relative;
+        width: 480px;
+        + ul {
+            list-style-type: none;
+            position: absolute;
+            width: 478px;
+            border: 1px solid #303030;
+            display: none;
+            li {
+                background: #151515;
+                color: #c0c0c0;
+                padding: 6px 12px;
+                &:hover {
+                    background: #1f2022;
+                    color: #aad2ff;
+                    cursor: pointer;
+                }
+            }
+        }
+    }
+}
+
+.playlist-list {
+    list-style: none;
+}
+

@@ -1,0 +1,19 @@
+<tr>
+    <td>
+        <input type="checkbox" name="keep" checked>
+        <input type="hidden" name="path" value="{{ path }}">
+    </td>
+    <td>
+        <select name="target">
+            {{ targets }}
+        </select>
+    </td>
+    <td>
+        <a href="{{ link }}" class="external-link" target="_blank">{{ name }}</a>
+    </td>
+    <td>
+        <a href="{{ link }}" class="external-link" target="_blank">
+            <img src="{{ preview }}">
+        </a>
+    </td>
+</tr>
