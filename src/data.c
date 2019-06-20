@@ -216,15 +216,15 @@ void load_prepare(struct prepare_data* prepare, const char* prefix) {
 	guess_album_name(prepare->album_name, prepare->filename);
 	sprintf(prepare->released_at, "%i-01-01", guess_album_year(prepare->filename)); // TODO: full date
 	strcpy(prepare->folder, path);
-	strcpy(prepare->search.name, "groups");
-	strcpy(prepare->search.type, "groups");
+	strcpy(prepare->group_search.name, "groups");
+	strcpy(prepare->group_search.type, "groups");
 
-	guess_group_name(prepare->search.value, prepare->search.text, prepare->filename);
+	guess_group_name(prepare->group_search.value, prepare->group_search.text, prepare->filename);
 
 	// Remove the group name in the album name:
-	char* group_name_in_album = strstr(prepare->album_name, prepare->search.text);
+	char* group_name_in_album = strstr(prepare->album_name, prepare->group_search.text);
 	if (group_name_in_album) {
-		int group_name_length = strlen(prepare->search.text);
+		int group_name_length = strlen(prepare->group_search.text);
 		replace_substring(prepare->album_name, group_name_in_album, prepare->album_name + group_name_length, sizeof(prepare->album_name), "");
 		trim_ends(prepare->album_name, " \t");
 	}

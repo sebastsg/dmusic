@@ -89,7 +89,7 @@ struct prepare_data {
 	char folder[512]; // with timestamp prefix
 	char album_name[256]; // guessed album name
 	char released_at[64];
-	struct search_data search;
+	struct search_data group_search;
 	struct prepare_attachment_data attachments[50];
 	struct prepare_disc_data discs[4];
 	int num_attachments;

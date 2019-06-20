@@ -13,7 +13,7 @@ begin
     select "person"."id",
            concat("first_name", ' ', "last_name")
       from "person"
-     where concat("first_name", ' ', "last_name") like in_name
+     where lower(concat("first_name", ' ', "last_name")) like lower(in_name)
      limit in_limit;
 end;
 $$;

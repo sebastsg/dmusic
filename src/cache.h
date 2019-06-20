@@ -27,6 +27,9 @@ struct memory_cached_data {
 	char* prepare_attachment_template;
 	char* prepare_disc_template;
 	char* prepare_track_template;
+	char* add_group_template;
+	char* search_template;
+	char* search_result_template;
 };
 
 void load_memory_cache();

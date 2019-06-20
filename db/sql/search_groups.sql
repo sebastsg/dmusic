@@ -13,7 +13,7 @@ begin
     select "group"."id",
            "group"."name"
       from "group"
-     where "group"."name" like in_name
+     where lower("group"."name") like lower(in_name)
      limit in_limit;
 end;
 $$;

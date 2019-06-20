@@ -43,6 +43,9 @@ static void load_all_templates() {
 	load_template(&memory_cache.prepare_attachment_template, "prepare_attachment");
 	load_template(&memory_cache.prepare_disc_template, "prepare_disc");
 	load_template(&memory_cache.prepare_track_template, "prepare_track");
+	load_template(&memory_cache.add_group_template, "add_group");
+	load_template(&memory_cache.search_template, "search");
+	load_template(&memory_cache.search_result_template, "search_result");
 }
 
 void load_memory_cache() {

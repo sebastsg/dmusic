@@ -13,7 +13,7 @@ begin
     select "country"."code",
            "country"."name"
       from "country"
-     where "country"."name" like in_name
+     where lower("country"."name") like lower(in_name)
      limit in_limit;
 end;
 $$;

@@ -74,6 +74,28 @@ static void set_parameter_int(struct render_buffer* buffer, const char* key, uin
 	set_parameter(buffer, key, value_string);
 }
 
+static void render_search(struct render_buffer* buffer, const char* key, struct search_data* search) {
+	set_parameter(buffer, key, mem_cache()->search_template);
+	set_parameter(buffer, "name", search->name);
+	set_parameter(buffer, "value", search->value);
+	set_parameter(buffer, "type", search->type);
+	set_parameter(buffer, "text", search->text);
+}
+
+static void render_search_results(struct render_buffer* buffer, struct search_result_data* results, int num_results) {
+	struct render_buffer result_buffer;
+	init_render_buffer(&result_buffer, 2048);
+	for (int i = 0; i < num_results; i++) {
+		strcat(result_buffer.data, "{{ result }}");
+		set_parameter(&result_buffer, "result", mem_cache()->search_result_template);
+		set_parameter(&result_buffer, "value", results[i].value);
+		set_parameter(&result_buffer, "text", results[i].text);
+	}
+	strcpy(buffer->data, "{{ results }}");
+	set_parameter(buffer, "results", result_buffer.data);
+	free(result_buffer.data);
+}
+
 static void render_select_option(struct render_buffer* buffer, const char* key, const char* value, const char* text, bool selected) {
 	set_parameter(buffer, key, mem_cache()->select_option_template);
 	set_parameter(buffer, "value", value);
@@ -288,7 +310,7 @@ static void render_prepare(struct render_buffer* buffer, struct prepare_data* pr
 	set_parameter(buffer, "filename", prepare->filename);
 	set_parameter(buffer, "name", prepare->album_name);
 	set_parameter(buffer, "released_at", prepare->released_at);
-	set_parameter(buffer, "group_search", "");
+	render_search(buffer, "group_search", &prepare->group_search);
 	struct render_buffer select_buffer;
 	init_render_buffer(&select_buffer, 2048);
 	for (int i = 0; i < mem_cache()->audio_formats.count; i++) {
@@ -326,6 +348,22 @@ static void render_prepare(struct render_buffer* buffer, struct prepare_data* pr
 	}
 	set_parameter(buffer, "discs", discs_buffer.data);
 	free(discs_buffer.data);
+	free(select_buffer.data);
+}
+
+static void render_add_group(struct render_buffer* buffer, struct add_group_data* add_group) {
+	strcpy(buffer->data, "{{ add_group }}");
+	set_parameter(buffer, "add_group", mem_cache()->add_group_template);
+	render_search(buffer, "country_search", &add_group->country);
+	render_search(buffer, "person_search", &add_group->person);
+	struct render_buffer select_buffer;
+	init_render_buffer(&select_buffer, 2048);
+	for (int i = 0; i < mem_cache()->roles.count; i++) {
+		struct select_option* role = &mem_cache()->roles.options[i];
+		strcat(select_buffer.data, "{{ option }}");
+		render_select_option(&select_buffer, "option", role->code, role->name, 0);
+	}
+	set_parameter(buffer, "roles", select_buffer.data);
 	free(select_buffer.data);
 }
 
@@ -414,11 +452,11 @@ char* render(char** args, int count) {
 		}
 		const char* type = args[0];
 		const char* query = args[1];
-		/*auto results = load_search_results(type, query);
-		for (auto& result : results) {
-			result.render();
-			html += result.html;
-		}*/
+		struct search_result_data* results = NULL;
+		int num_results = 0;
+		load_search_results(&results, &num_results, type, query);
+		render_search_results(&buffer, results, num_results);
+		free(results);
 	} else if (!strcmp(page, "upload")) {
 		struct upload_data upload;
 		load_upload(&upload);
@@ -453,9 +491,9 @@ char* render(char** args, int count) {
 		playlists.render();
 		html = playlists.html;*/
 	} else if (!strcmp(page, "add_group")) {
-		/*AddGroup add{ load_add_group() };
-		add.render();
-		html += add.html;*/
+		struct add_group_data add_group;
+		load_add_group(&add_group);
+		render_add_group(&buffer, &add_group);
 	} else {
 		fprintf(stderr, "Cannot render unknown page: %s\n", page);
 	}
@@ -479,27 +517,9 @@ void SessionTrack::render() {
 	set("name", name);
 	set("duration", duration);
 }
-void Search::render() {
-	init("search");
-	set("name", name);
-	set("type", type);
-	set("value", value);
-	set("text", text);
-}
-void SearchResult::render() {
-	init("search_result");
-	set("value", value);
-	set("text", text);
-}
 void PlaylistItem::render() {
 	init("playlist_item");
 	set("id", id);
 	set("name", name);
-}
-void AddGroup::render() {
-	init("add_group");
-	set("country_search", country);
-	set("person_search", person);
-	Set("roles", roles, (int)roles.size());
 }
 */
