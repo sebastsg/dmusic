@@ -27,7 +27,7 @@ void create_directories() {
 	for (int i = 0; i < 5; i++) {
 		printf("Creating directory: %s\n", directories[i]);
 		if (mkdir(directories[i], S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-			printf("Failed to create directory. Error: %s\n", strerror(errno));
+			fprintf(stderr, "Failed to create directory. Error: %s\n", strerror(errno));
 		}
 	}
 	// todo: only configure the actual location, and have hardcoded symlink name

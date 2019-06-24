@@ -2,7 +2,6 @@
 
 #define _XOPEN_SOURCE 500
 
-#include <stdint.h>
 #include <stddef.h>
 
 char* render(char** argv, int argc);
@@ -22,15 +21,15 @@ struct tag_data {
 };
 
 struct track_data {
-	uint64_t album_release_id;
-	uint64_t disc_num;
-	uint64_t num;
+	int album_release_id;
+	int disc_num;
+	int num;
 	char name[128];
 };
 
 struct album_data {
-	uint64_t id;
-	uint64_t album_release_id;
+	int id;
+	int album_release_id;
 	char released_at[16];
 	char name[128];
 	char image[128];
@@ -110,15 +109,15 @@ struct upload_data {
 };
 
 struct session_track_data {
-	uint64_t album_release_id;
-	uint64_t disc_num;
-	uint64_t track_num;
+	int album_release_id;
+	int disc_num;
+	int track_num;
 	char name[128];
 	char duration[16];
 };
 
 struct playlist_item_data {
-	uint64_t id;
+	int id;
 	char name[128];
 };
 
@@ -133,7 +132,7 @@ struct add_group_data {
 };
 
 struct group_thumb_data {
-	uint64_t id;
+	int id;
 	char name[128];
 	char image[128];
 };

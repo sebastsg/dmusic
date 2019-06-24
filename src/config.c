@@ -2,7 +2,6 @@
 #include "format.h"
 #include "files.h"
 
-#include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,12 +124,17 @@ char* cache_path(char* dest, size_t size, const char* path) {
 	return dest;
 }
 
-char* group_path(char* dest, size_t size, uint64_t id) {
-	sprintf(dest, "%s/%" PRIu64, get_property("path.groups"), id);
+char* group_path(char* dest, size_t size, int group_id) {
+	sprintf(dest, "%s/%i", get_property("path.groups"), group_id);
 	return dest;
 }
 
-char* album_path(char* dest, size_t size, uint64_t id) {
-	sprintf(dest, "%s/%" PRIu64, get_property("path.albums"), id);
+char* album_path(char* dest, size_t size, int album_release_id) {
+	sprintf(dest, "%s/%i", get_property("path.albums"), album_release_id);
+	return dest;
+}
+
+char* album_disc_path(char* dest, size_t size, int album_release_id, int disc_num) {
+	sprintf(dest, "%s/%i/%i", get_property("path.albums"), album_release_id, disc_num);
 	return dest;
 }

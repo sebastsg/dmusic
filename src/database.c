@@ -6,7 +6,6 @@
 
 #include <postgresql/libpq-fe.h>
 
-#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -86,7 +85,7 @@ void execute_sql_file(const char* name, bool split) {
 
 long long insert_row(const char* table, bool has_serial_id, int argc, const char** argv) {
 	char query[2048];
-	sprintf(query, "insert into %s values (", table);
+	sprintf(query, "insert into \"%s\" values ( ", table);
 	if (has_serial_id) {
 		strcat(query, "default,");
 	}
@@ -106,6 +105,20 @@ long long insert_row(const char* table, bool has_serial_id, int argc, const char
 	}
 	PQclear(result);
 	return id;
+}
+
+int create_session_track(const char* user, int album_release_id, int disc_num, int track_num) {
+	char album[32];
+	char disc[32];
+	char track[32];
+	sprintf(album, "%i", album_release_id);
+	sprintf(disc, "%i", disc_num);
+	sprintf(track, "%i", track_num);
+	const char* params[] = { user, album, disc, track };
+	PGresult* result = call_procedure("select * from create_session_track", params, 4);
+	int num = (PQntuples(result) > 0) ? atoi(PQgetvalue(result, 0, 0)) : 0;
+	PQclear(result);
+	return num;
 }
 
 void load_options(struct select_options* options, const char* type) {
@@ -151,20 +164,22 @@ void load_search_results(struct search_result_data** search_results, int* count,
 	PQclear(result);
 }
 
-void load_group_name(char* dest, uint64_t id) {
+void load_group_name(char* dest, int id) {
 	char id_str[32];
-	sprintf(id_str, "%" PRIu64, id);
+	sprintf(id_str, "%i", id);
 	const char* params[] = { id_str };
 	PGresult* result = execute_sql("select name from \"group\" where \"id\" = $1", params, 1);
 	if (PQntuples(result) > 0) {
 		strcpy(dest, PQgetvalue(result, 0, 0));
+	} else {
+		dest[0] = '\0';
 	}
 	PQclear(result);
 }
 
-void load_group_tags(struct tag_data** tags, int* num_tags, uint64_t id) {
+void load_group_tags(struct tag_data** tags, int* num_tags, int id) {
 	char id_str[32];
-	sprintf(id_str, "%" PRIu64, id);
+	sprintf(id_str, "%i", id);
 	const char* params[] = { id_str };
 	PGresult* result = call_procedure("select * from get_group_tags", params, 1);
 	*num_tags = PQntuples(result);
@@ -177,9 +192,9 @@ void load_group_tags(struct tag_data** tags, int* num_tags, uint64_t id) {
 	PQclear(result);
 }
 
-void load_group_tracks(struct track_data** tracks, int* num_tracks, uint64_t group_id) {
+void load_group_tracks(struct track_data** tracks, int* num_tracks, int group_id) {
 	char id_str[32];
-	sprintf(id_str, "%" PRIu64, group_id);
+	sprintf(id_str, "%i", group_id);
 	const char* params[] = { id_str };
 	PGresult* result = call_procedure("select * from get_group_tracks", params, 1);
 	*num_tracks = PQntuples(result);
@@ -190,17 +205,17 @@ void load_group_tracks(struct track_data** tracks, int* num_tracks, uint64_t gro
 	}
 	for (int i = 0; i < *num_tracks; i++) {
 		struct track_data* track = &(*tracks)[i];
-		track->album_release_id = atoll(PQgetvalue(result, i, 0));
-		track->disc_num = atoll(PQgetvalue(result, i, 1));
-		track->num = atoll(PQgetvalue(result, i, 2));
+		track->album_release_id = atoi(PQgetvalue(result, i, 0));
+		track->disc_num = atoi(PQgetvalue(result, i, 1));
+		track->num = atoi(PQgetvalue(result, i, 2));
 		strcpy(track->name, PQgetvalue(result, i, 4));
 	}
 	PQclear(result);
 }
 
-void load_group_albums(struct album_data** albums, int* num_albums, uint64_t group_id) {
+void load_group_albums(struct album_data** albums, int* num_albums, int group_id) {
 	char id_str[32];
-	sprintf(id_str, "%" PRIu64, group_id);
+	sprintf(id_str, "%i", group_id);
 	const char* params[] = { id_str };
 	PGresult* result = call_procedure("select * from get_group_albums", params, 1);
 	*num_albums = PQntuples(result);
@@ -211,18 +226,19 @@ void load_group_albums(struct album_data** albums, int* num_albums, uint64_t gro
 	}
 	for (int i = 0; i < *num_albums; i++) {
 		struct album_data* album = &(*albums)[i];
-		album->id = atoll(PQgetvalue(result, i, 0));
-		album->album_release_id = atoll(PQgetvalue(result, i, 4));
-		format_time(album->released_at, 16, "%Y", (time_t)atoll(PQgetvalue(result, i, 7)));
+		album->id = atoi(PQgetvalue(result, i, 0));
+		album->album_release_id = atoi(PQgetvalue(result, i, 4));
+		format_time(album->released_at, 16, "%Y", (time_t)atoi(PQgetvalue(result, i, 7)));
 		strcpy(album->name, PQgetvalue(result, i, 1));
 		strcpy(album->album_type_code, PQgetvalue(result, i, 2));
-		uint64_t cover_num = (PQgetisnull(result, i, 3) ? 0 : atoll(PQgetvalue(result, i, 3)));
+		int cover_num = (PQgetisnull(result, i, 3) ? 0 : atoi(PQgetvalue(result, i, 3)));
 		if (cover_num != 0) {
 			album_path(album->image, sizeof(album->image), album->album_release_id);
 			strcat(album->image, "/");
 			char cover_num_str[32];
-			sprintf(cover_num_str, "%" PRIu64, cover_num);
+			sprintf(cover_num_str, "%i", cover_num);
 			strcat(album->image, cover_num_str);
+			strcat(album->image, ".");
 			strcat(album->image, find_file_extension(album->image));
 			strcpy(album->image, album->image + strlen(get_property("path.www")));
 		}
@@ -230,7 +246,7 @@ void load_group_albums(struct album_data** albums, int* num_albums, uint64_t gro
 	PQclear(result);
 }
 
-void load_group(struct group_data* group, uint64_t id) {
+void load_group(struct group_data* group, int id) {
 	load_group_name(group->name, id);
 	load_group_tags(&group->tags, &group->num_tags, id);
 	load_group_albums(&group->albums, &group->num_albums, id);
@@ -241,6 +257,10 @@ void load_session_tracks(struct session_track_data** tracks, int* num_tracks, co
 	const char* params[] = { user };
 	PGresult* result = call_procedure("select * from get_session_tracks", params, 1);
 	*num_tracks = PQntuples(result);
+	if (*num_tracks == 0) {
+		PQclear(result);
+		return;
+	}
 	*tracks = (struct session_track_data*)malloc(*num_tracks * sizeof(struct session_track_data));
 	if (!*tracks) {
 		PQclear(result);
@@ -248,9 +268,9 @@ void load_session_tracks(struct session_track_data** tracks, int* num_tracks, co
 	}
 	for (int i = 0; i < *num_tracks; i++) {
 		struct session_track_data* track = &(*tracks)[i];
-		track->album_release_id = atoll(PQgetvalue(result, i, 0));
-		track->disc_num = atoll(PQgetvalue(result, i, 1));
-		track->track_num = atoll(PQgetvalue(result, i, 2));
+		track->album_release_id = atoi(PQgetvalue(result, i, 0));
+		track->disc_num = atoi(PQgetvalue(result, i, 1));
+		track->track_num = atoi(PQgetvalue(result, i, 2));
 		strcpy(track->name, PQgetvalue(result, i, 3));
 		int seconds = atoi(PQgetvalue(result, i, 4));
 		int minutes = seconds / 60;
@@ -271,7 +291,7 @@ void load_playlist_list(struct playlist_list_data* list, const char* user) {
 	}
 	for (int i = 0; i < list->num_playlists; i++) {
 		struct playlist_item_data* playlist = &list->playlists[i];
-		playlist->id = atoll(PQgetvalue(result, i, 0));
+		playlist->id = atoi(PQgetvalue(result, i, 0));
 		strcpy(playlist->name, PQgetvalue(result, i, 1));
 	}
 	PQclear(result);
@@ -287,13 +307,13 @@ void load_group_thumbs(struct group_thumb_data** thumbs, int* num_thumbs) {
 	}
 	for (int i = 0; i < *num_thumbs; i++) {
 		struct group_thumb_data* thumb = &(*thumbs)[i];
-		thumb->id = atoll(PQgetvalue(result, i, 0));
+		thumb->id = atoi(PQgetvalue(result, i, 0));
 		strcpy(thumb->name, PQgetvalue(result, i, 1));
 		char group_i_path[256];
 		group_path(group_i_path, 256, thumb->id);
 		strcat(group_i_path, "/1");
 		const char* extension = find_file_extension(group_i_path);
-		sprintf(thumb->image, "/data/groups/%" PRIu64 "/1%s", thumb->id, extension);
+		sprintf(thumb->image, "/data/groups/%i/1%s", thumb->id, extension);
 	}
 	PQclear(result);
 }

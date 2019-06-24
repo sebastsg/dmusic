@@ -122,8 +122,8 @@ bool is_extension_audio(const char* extension) {
 
 const char* find_file_extension(const char* path) {
 	char buffer[256];
-	const size_t extensions = NUM_ARRAY_ELEMENTS(image_extensions, char*);
-	for (size_t i = 0; i < extensions; i++) {
+	const int extensions = NUM_ARRAY_ELEMENTS(image_extensions, char*);
+	for (int i = 0; i < extensions; i++) {
 		strcpy(buffer, path);
 		strcat(buffer, image_extensions[i]);
 		if (file_exists(buffer)) {

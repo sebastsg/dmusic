@@ -3,7 +3,6 @@
 #include "config.h"
 #include "files.h"
 
-#include <stdint.h>
 #include <stdio.h>
 
 static struct memory_cached_data memory_cache;

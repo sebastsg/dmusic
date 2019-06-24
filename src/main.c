@@ -4,6 +4,7 @@
 #include "cache.h"
 #include "install.h"
 #include "database.h"
+#include "transcode.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -42,51 +43,21 @@ void cmd_create(char** args, int count) {
 		char* table = args[0];
 		args++;
 		count--;
-		bool has_serial_id = (strcmp(args[0], "true"));
+		bool has_serial_id = !strcmp(args[0], "true");
 		args++;
 		count--;
-		printf("%i", (int)insert_row(table, has_serial_id, count, (const char**)args));
+		if (!strcmp(table, "session_track")) {
+			printf("%i", create_session_track(args[0], atoi(args[1]), atoi(args[2]), atoi(args[3])));
+		} else {
+			printf("%i", (int)insert_row(table, has_serial_id, count, (const char**)args));
+		}
 	}
 }
 
 void cmd_transcode(char** args, int count) {
-	if (count < 2) {
-		fprintf(stderr, "Invalid arguments");
-		return;
+	if (count >= 2) {
+		transcode_album_release(atoi(args[0]), args[1]);
 	}
-	uint64_t album_release_id = atoi(args[0]);
-	if (album_release_id == 0) {
-		fprintf(stderr, "First argument must be an album release id.");
-		return;
-	}
-	/*std::string format = args[1];
-	if (format != "mp3-320") {
-		fprintf(stderr, "Can only transcode to 320 for now.");
-		return;
-	}
-	char buffer[512];
-	auto files = std::filesystem::recursive_directory_iterator(album_path(buffer, 512, album_release_id));
-	for (auto& file : files) {
-		if (std::filesystem::is_directory(file)) {
-			continue;
-		}
-		auto path = file.path();
-		if (path.extension() != ".flac") {
-			continue;
-		}
-		std::string in = path.string();
-		std::string out_dir = path.parent_path().string() + "/../" + format;
-		std::filesystem::create_directory(out_dir);
-		std::string out = out_dir + "/" + path.stem().string() + ".mp3";
-		// -S     = silent mode
-		// -q 0   = "best" quality, slower transcoding - not using for now... but worth keeping in mind
-		// -b 320 = cbr 320kbps
-		// note: check out -x for when static audio is produced
-		char command[1024];
-		sprintf(command, "lame -S -b 320 \"%s\" \"%s\"", in.c_str(), out.c_str());
-		printf("Command: %s\n", command);
-		system(command);
-	}*/
 }
 
 int main(int argc, char** argv) {

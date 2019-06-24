@@ -39,9 +39,7 @@ function addToPlaylist(album, disc, track) {
             disc: disc,
             track: track
         },
-        success: response => {
-            $('#playlist ul').append(response);
-        }
+        success: response => $('#playlist ul').append(response)
     });
 }
 
@@ -95,9 +93,7 @@ $(document).on('submit', '.upload-form', function (event) {
             }
             return xhr;
         },
-        success: response => {
-            $self.append(response);
-        }
+        success: response => $self.append(response)
     });
 });
 

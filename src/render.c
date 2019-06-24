@@ -5,7 +5,6 @@
 #include "database.h"
 #include "cache.h"
 
-#include <inttypes.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -68,9 +67,9 @@ static void set_parameter(struct render_buffer* buffer, const char* key, const c
 	}
 }
 
-static void set_parameter_int(struct render_buffer* buffer, const char* key, uint64_t value) {
+static void set_parameter_int(struct render_buffer* buffer, const char* key, int value) {
 	char value_string[32];
-	sprintf(value_string, "%" PRIu64, value);
+	sprintf(value_string, "%i", value);
 	set_parameter(buffer, key, value_string);
 }
 
@@ -112,6 +111,17 @@ static void render_session_track(struct render_buffer* buffer, const char* key, 
 	set_parameter(buffer, "duration", track->duration);
 }
 
+/*void PlaylistList::render() {
+	init("playlists");
+	Set("playlists", playlists, (int)playlists.size());
+}
+void PlaylistItem::render() {
+	init("playlist_item");
+	set("id", id);
+	set("name", name);
+}
+*/
+
 static void render_session_tracks(struct render_buffer* buffer, const char* key, struct session_track_data* tracks, int num_tracks) {
 	struct render_buffer item_buffer;
 	init_render_buffer(&item_buffer, 512);
@@ -123,7 +133,7 @@ static void render_session_tracks(struct render_buffer* buffer, const char* key,
 	free(item_buffer.data);
 }
 
-static void render_group_thumb(struct render_buffer* buffer, const char* key, uint64_t id, const char* name, const char* image) {
+static void render_group_thumb(struct render_buffer* buffer, const char* key, int id, const char* name, const char* image) {
 	set_parameter(buffer, key, mem_cache()->group_thumb_template);
 	set_parameter_int(buffer, "id", id);
 	set_parameter(buffer, "image", image);
@@ -161,14 +171,15 @@ static void render_track(struct render_buffer* buffer, const char* key, struct t
 	set_parameter_int(buffer, "queue_album_id", track->album_release_id);
 	set_parameter_int(buffer, "queue_disc_num", track->disc_num);
 	set_parameter_int(buffer, "queue_track_num", track->num);
-	set_parameter_int(buffer, "num_str", track->num); // todo: prefix with &nbsp; if num < 10
+	set_parameter(buffer, "space_prefix", track->num < 10 ? "&nbsp;" : "");
+	set_parameter_int(buffer, "num_str", track->num);
 	set_parameter_int(buffer, "play_album_id", track->album_release_id);
 	set_parameter_int(buffer, "play_disc_num", track->disc_num);
 	set_parameter_int(buffer, "play_track_num", track->num);
 	set_parameter(buffer, "name", track->name);
 }
 
-static void render_disc(struct render_buffer* buffer, const char* key, uint64_t album_release_id, int disc_num, struct track_data* tracks, int num_tracks, int* track_offset, bool* last_track) {
+static void render_disc(struct render_buffer* buffer, const char* key, int album_release_id, int disc_num, struct track_data* tracks, int num_tracks, int* track_offset, bool* last_track) {
 	struct render_buffer tracks_buffer;
 	init_render_buffer(&tracks_buffer, 2048);
 	while (*track_offset < num_tracks) {
@@ -214,16 +225,22 @@ static void render_albums(struct render_buffer* buffer, const char* key, const c
 	struct render_buffer item_buffer;
 	init_render_buffer(&item_buffer, 2048);
 	int track_offset = 0;
+	int count = 0;
 	for (int i = 0; i < num_albums; i++) {
 		if (strcmp(type, albums[i].album_type_code)) {
 			continue;
 		}
 		strcat(item_buffer.data, "{{ album }}");
 		render_album(&item_buffer, "album", &albums[i], tracks, num_tracks, &track_offset);
+		count++;
 	}
-	set_parameter(buffer, key, mem_cache()->albums_template);
-	set_parameter(buffer, "title", name);
-	set_parameter(buffer, "albums", item_buffer.data);
+	if (count > 0) {
+		set_parameter(buffer, key, mem_cache()->albums_template);
+		set_parameter(buffer, "title", name);
+		set_parameter(buffer, "albums", item_buffer.data);
+	} else {
+		set_parameter(buffer, key, "");
+	}
 	free(item_buffer.data);
 }
 
@@ -234,12 +251,13 @@ static void render_group(struct render_buffer* buffer, struct group_data* group)
 	render_tags(buffer, "tags", group->tags, group->num_tags);
 	struct render_buffer album_list_buffer;
 	init_render_buffer(&album_list_buffer, 2048);
-	for (int i = 0; i < mem_cache()->album_release_types.count; i++) {
-		struct select_option* option = &mem_cache()->album_release_types.options[i];
+	for (int i = 0; i < mem_cache()->album_types.count; i++) {
+		struct select_option* option = &mem_cache()->album_types.options[i];
 		strcat(album_list_buffer.data, "{{ albums }}");
 		render_albums(&album_list_buffer, "albums", option->code, option->name, group->albums, group->num_albums, group->tracks, group->num_tracks);
 	}
 	set_parameter(buffer, "albums", album_list_buffer.data);
+	free(album_list_buffer.data);
 }
 
 static void render_upload(struct render_buffer* buffer, struct upload_data* upload) {
@@ -435,20 +453,26 @@ char* render(char** args, int count) {
 		int num_thumbs = 0;
 		load_group_thumbs(&thumbs, &num_thumbs);
 		render_group_thumb_list(&buffer, thumbs, num_thumbs);
+		free(thumbs);
 	} else if (!strcmp(page, "group")) {
 		if (count == 0) {
-			return NULL;
+			return buffer.data;
 		}
-		uint64_t id = atoi(args[0]);
+		int id = atoi(args[0]);
 		if (id == 0) {
-			return NULL;
+			return buffer.data;
 		}
 		struct group_data group;
 		load_group(&group, id);
-		render_group(&buffer, &group);
+		if (strlen(group.name) > 0) {
+			render_group(&buffer, &group);
+		}
+		free(group.tags);
+		free(group.albums);
+		free(group.tracks);
 	} else if (!strcmp(page, "search")) {
 		if (count <= 1) {
-			return NULL;
+			return buffer.data;
 		}
 		const char* type = args[0];
 		const char* query = args[1];
@@ -464,11 +488,11 @@ char* render(char** args, int count) {
 		free(upload.uploads);
 	} else if (!strcmp(page, "prepare")) {
 		if (count == 0) {
-			return NULL;
+			return buffer.data;
 		}
 		struct prepare_data* prepare = (struct prepare_data*)malloc(sizeof(struct prepare_data));
 		if (!prepare) {
-			return NULL;
+			return buffer.data;
 		}
 		load_prepare(prepare, args[0]);
 		render_prepare(&buffer, prepare);
@@ -478,14 +502,17 @@ char* render(char** args, int count) {
 		free(prepare);
 	} else if (!strcmp(page, "session_track")) {
 		if (count < 1) {
-			return NULL;
+			return buffer.data;
 		}
-		/*auto tracks = load_session_tracks(args[0]);
-		if (tracks.size() == 0) {
-			return NULL;
+		char* user = args[0];
+		struct session_track_data* tracks = NULL;
+		int num_tracks = 0;
+		load_session_tracks(&tracks, &num_tracks, user);
+		if (num_tracks > 0) {
+			strcpy(buffer.data, "{{ track }}");
+			render_session_track(&buffer, "track", &tracks[num_tracks - 1]);
+			free(tracks);
 		}
-		tracks.back().render();
-		html = tracks.back().html;*/
 	} else if (!strcmp(page, "playlists")) {
 		/*PlaylistList playlists{ load_playlist_list("dib") };
 		playlists.render();
@@ -497,29 +524,8 @@ char* render(char** args, int count) {
 	} else {
 		fprintf(stderr, "Cannot render unknown page: %s\n", page);
 	}
-
 	if (cache) {
 		//write_file(cached, html.data(), html.size());
 	}
-
 	return buffer.data;
 }
-
-/*void PlaylistList::render() {
-	init("playlists");
-	Set("playlists", playlists, (int)playlists.size());
-}
-void SessionTrack::render() {
-	init("playlist_track");
-	set("album", album_release_id);
-	set("disc", disc_num);
-	set("track", track_num);
-	set("name", name);
-	set("duration", duration);
-}
-void PlaylistItem::render() {
-	init("playlist_item");
-	set("id", id);
-	set("name", name);
-}
-*/

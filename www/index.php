@@ -58,7 +58,8 @@ function get_extension_for_content($content) {
 function require_fields($fields, $array) {
     foreach ($fields as $field) {
         if (!isset($array[$field])) {
-            echo "Missing field: $field";
+            echo "Missing field: $field\n";
+            var_dump($array);
             exit;
         }
     }
@@ -221,19 +222,19 @@ function prepare($args) {
         return;
     }
     // Add album
-    $album_id = (int)cli('create', ['true', 'album', $name, $type]);
+    $album_id = (int)cli('create', ['album', 'true', $name, $type]);
     if ($album_id === 0) {
         return;
     }
     // Add release
-    $album_release_id = (int)cli('create', ['true', 'album_release', $album_id, $release_type, $catalog, $released_at]);
+    $album_release_id = (int)cli('create', ['album_release', 'true', $album_id, $release_type, $catalog, $released_at]);
     if ($album_release_id === 0) {
         return;
     }
     // Add album release groups
     $priority = 1;
     foreach ($groups as $group_id) {
-        cli('create', ['false', 'album_release_group', $album_release_id, $group_id, $priority]);
+        cli('create', ['album_release_group', 'false', $album_release_id, $group_id, $priority]);
         $priority++;
     }
     // Get general path info and make album directory
@@ -270,7 +271,7 @@ function prepare($args) {
         }
         $type = $attachment['target'];
         $description = '';
-        cli('create', ['false', 'album_attachment', $album_release_id, $num, $type, $description]);
+        cli('create', ['album_attachment', 'false', $album_release_id, $num, $type, $description]);
         $extension = pathinfo($attachment['path'], PATHINFO_EXTENSION);
         $source = $uploads_directory . $attachment['path'];
         $destination = "$albums_directory/$album_release_id/$num.$extension";
@@ -297,7 +298,7 @@ function add_group($args) {
         return;
     }
     // Group
-    $group_id = (int)cli('create', ['true', 'group', $country, $name, $website, $description]);
+    $group_id = (int)cli('create', ['group', 'true', $country, $name, $website, $description]);
     if ($group_id === 0) {
         echo 'Failed to create group.';
         return;
@@ -308,7 +309,7 @@ function add_group($args) {
     $priority = 1;
     foreach ($tags as $tag) {
         echo "Tag: $tag with priority $priority<br>";
-        echo cli('create', ['false', 'group_tag', $group_id, $tag, $priority]);
+        echo cli('create', ['group_tag', 'false', $group_id, $tag, $priority]);
         $priority++;
     }
     // People
@@ -317,7 +318,7 @@ function add_group($args) {
         $role = $people['role'][$index];
         $started_at = '';
         $ended_at = '';
-        cli('create', ['false', 'group_member', $group_id, $person_id, $role, $started_at, $ended_at]);
+        cli('create', ['group_member', 'false', $group_id, $person_id, $role, $started_at, $ended_at]);
     }
     // Images
     $images = [];
@@ -367,7 +368,7 @@ function add_group($args) {
             echo 'Failed to save image to ' . $destination;
             continue;
         }
-        cli('create', ['false', 'group_image', $group_id, $num, $description]);
+        cli('create', ['group_image', 'false', $group_id, $num, $description]);
     }
 }
 
@@ -380,8 +381,8 @@ function add_session_track($args) {
     $album = (int)$_POST['album'];
     $disc = (int)$_POST['disc'];
     $track = (int)$_POST['track'];
-    cli('create', ['false', 'session_track', $user, $album, $disc, $track]);
-    echo cli('render', ['session_track', $user]);
+    $num = (int)cli('create', ['session_track', 'false', $user, $album, $disc, $track]);
+    echo cli('render', ['session_track', $user, $num]);
 }
 
 function transcode($args) {
