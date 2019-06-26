@@ -195,10 +195,10 @@ function prepare($args) {
     $catalog = $_POST['catalog'];
     $format = $_POST['format'];
     $type = $_POST['type'];
-    $attachments = $_POST['attachments'];
+    $attachments = json_decode($_POST['attachments'], true);
     $folder = $_POST['folder'];
-    $discs = $_POST['discs'];
-    $groups = $_POST['groups'];
+    $discs = json_decode($_POST['discs'], true);
+    $groups = json_decode($_POST['groups'], true);
     $release_type = $_POST['release_type'];
     if (!is_array($attachments) || !is_array($discs) || !is_array($groups)) {
         return;
