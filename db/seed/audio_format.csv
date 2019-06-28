@@ -1,5 +1,9 @@
-flac;FLAC
-flac-web;WEB FLAC
+flac-16;FLAC 16-bit
+flac-24;FLAC 24-bit
+flac-cd-16;FLAC CD 16-bit
+flac-web-16;FLAC WEB 16-bit
+flac-cd-24;FLAC CD 24-bit
+flac-web-24;FLAC WEB 24-bit
 mp3-320;MP3 320
 mp3-256;MP3 256
 mp3-192;MP3 192
