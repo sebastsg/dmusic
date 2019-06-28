@@ -142,8 +142,11 @@ function upload($args) {
 
 // TODO: Make this whitelist based on database.
 function is_allowed_format($format) {
-    $formats = ['aac-256', 'flac', 'mp3-128', 'mp3-192', 'mp3-256', 'mp3-320', 'mp3-v0', 'mp3-v1', 'mp3-v2', 'flac-web'];
-    return in_array($format, $formats);
+    return in_array($format, [
+        'aac-256', 
+        'flac-16', 'flac-24', 'flac-cd-16', 'flac-cd-24', 'flac-web-16', 'flac-web-24', 'mp3-128', 
+        'mp3-192', 'mp3-256', 'mp3-320', 'mp3-v0', 'mp3-v1', 'mp3-v2'
+    ]);
 }
 
 function attach($args) {
@@ -226,11 +229,13 @@ function prepare($args) {
     if ($album_id === 0) {
         return;
     }
+    echo "Created album $album_id<br>";
     // Add release
     $album_release_id = (int)cli('create', ['album_release', 'true', $album_id, $release_type, $catalog, $released_at]);
     if ($album_release_id === 0) {
         return;
     }
+    echo "Created album release $album_release_id<br>";
     // Add album release groups
     $priority = 1;
     foreach ($groups as $group_id) {
@@ -248,6 +253,7 @@ function prepare($args) {
         mkdir($disc_folder);
         mkdir("$disc_folder/$format");
         cli('create', ['disc', 'false', $album_release_id, $disc_num, $disc['name']]);
+        echo "Created disc $disc_num<br>";
         // Add and move tracks
         foreach ($disc['tracks'] as $track) {
             $track_num = (int)$track['num'];
@@ -255,12 +261,13 @@ function prepare($args) {
             $source = $uploads_directory . $track['path'];
             $destination = "$disc_folder/$format/$track_num.$extension";
             if (file_exists($destination)) {
-                echo "Skipping file copy. File exists: $destination";
+                echo "Skipping file copy. File exists: $destination<br>";
                 continue;
             }
             copy($source, $destination);
             $seconds = (int)cli_program('soxi', '-D', [$destination]);
             cli('create', ['track', 'false', $album_release_id, $disc_num, $track_num, $seconds, $track['name']]);
+            echo "Created track $track_num ($seconds sec)<br>";
         }
     }
     // Add and move attachments

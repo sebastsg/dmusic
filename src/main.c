@@ -65,13 +65,21 @@ int main(int argc, char** argv) {
 		fprintf(stderr, "No command specified.\n");
 		return -1;
 	}
-	load_config();
-	connect_database();
-	load_memory_cache();
-
 	char* cmd = argv[1];
 	char** args = argv + 2;
 	int count = argc - 2;
+
+	load_config();
+	connect_database();
+	
+	if (!strcmp(cmd, "install")) {
+		create_directories();
+		install_database();
+		disconnect_database();
+		return 0;
+	}
+	
+	load_memory_cache();
 
 	if (!strcmp(cmd, "render")) {
 		cmd_render(args, count);
@@ -81,9 +89,6 @@ int main(int argc, char** argv) {
 		cmd_create(args, count);
 	} else if (!strcmp(cmd, "transcode")) {
 		cmd_transcode(args, count);
-	} else if (!strcmp(cmd, "install")) {
-		create_directories();
-		install_database();
 	} else if (!strcmp(cmd, "seed")) {
 		seed_database();
 	} else {

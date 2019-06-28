@@ -88,20 +88,20 @@ function playTrack(album, disc, track) {
 }
 
 function onAddGroupForm(target) {
-    target.setAttribute('disabled', true);
+    target.querySelector('button[type=submit]').setAttribute('disabled', true);
     let data = new FormData();
-    let tags = document.querySelector('input[name=tag]').value.split(',');
+    let tags = target.querySelector('input[name=tag]').value.split(',');
     for (let tag of tags) {
         data.append('tags[]', tag.trim());
     }
     appendFormData(data, ['name', 'country', 'website', 'description']);
-    for (let person of document.querySelectorAll('.group-people tr')) {
+    for (let person of target.querySelectorAll('.group-people tr')) {
         appendFormDataArray(data, person, 'people', ['id', 'role']);
     }
-    for (let image of document.querySelectorAll('.group-images tr')) {
+    for (let image of target.querySelectorAll('.group-images tr')) {
         let fileInput = image.querySelector('input[name=file]');
         if (fileInput === null) {
-            return;
+            continue;
         }
         let name = 'imageurl';
         let file = fileInput.value;
@@ -156,17 +156,16 @@ function onPrepareForm(target) {
             }
             if (disc === null) {
                 disc = {
-                    num: track.querySelector('input[name=num]').value,
-                    name: track.querySelector('input[name=name]').value,
+                    num: prepareDisc.querySelector('input[name=num]').value,
+                    name: prepareDisc.querySelector('input[name=name]').value,
                     tracks: []
                 };
-            } else {
-                disc.tracks.push({
-                    num: track.querySelector('input[name=num]').value,
-                    name: track.querySelector('input[name=name]').value,
-                    path: track.querySelector('input[name=path]').value
-                });
             }
+            disc.tracks.push({
+                num: track.querySelector('input[name=num]').value,
+                name: track.querySelector('input[name=name]').value,
+                path: track.querySelector('input[name=path]').value
+            });
         }
         discs.push(disc);
     }
