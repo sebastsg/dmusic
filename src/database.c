@@ -123,7 +123,7 @@ int create_session_track(const char* user, int album_release_id, int disc_num, i
 
 void load_options(struct select_options* options, const char* type) {
 	char query[128];
-	sprintf(query, "select * from %s", type);
+	sprintf(query, "select * from %s order by \"name\"", type);
 	PGresult* result = execute_sql(query, NULL, 0);
 	options->count = PQntuples(result);
 	options->options = (struct select_option*)malloc(options->count * sizeof(struct select_option));

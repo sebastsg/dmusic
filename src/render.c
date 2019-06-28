@@ -323,6 +323,9 @@ static void render_prepare_attachments(struct render_buffer* buffer, const char*
 }
 
 static void render_prepare(struct render_buffer* buffer, struct prepare_data* prepare) {
+	if (prepare->num_discs < 1 || prepare->discs[0].num_tracks < 1) {
+		return;
+	}
 	strcpy(buffer->data, "{{ prepare }}");
 	set_parameter(buffer, "prepare", mem_cache()->prepare_template);
 	set_parameter(buffer, "filename", prepare->filename);
@@ -331,8 +334,18 @@ static void render_prepare(struct render_buffer* buffer, struct prepare_data* pr
 	render_search(buffer, "group_search", &prepare->group_search);
 	struct render_buffer select_buffer;
 	init_render_buffer(&select_buffer, 2048);
+	const char* extension = prepare->discs[0].tracks[0].extension;
 	for (int i = 0; i < mem_cache()->audio_formats.count; i++) {
 		struct select_option* format = &mem_cache()->audio_formats.options[i];
+		if (strstr(format->name, "FLAC") && strcmp(extension, "flac")) {
+			continue;
+		}
+		if (strstr(format->name, "MP3") && strcmp(extension, "mp3")) {
+			continue;
+		}
+		if (strstr(format->name, "AAC") && strcmp(extension, "m4a")) {
+			continue;
+		}
 		strcat(select_buffer.data, "{{ option }}");
 		bool selected = !strcmp(prepare->audio_format, format->code);
 		render_select_option(&select_buffer, "option", format->code, format->name, selected);
