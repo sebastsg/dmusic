@@ -24,10 +24,10 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 		}
 	}
 	char src_path[1024];
-	sprintf(src_path, "%s/flac", root_path);
+	sprintf(src_path, "%s/flac-cd-16", root_path);
 	DIR* dir = opendir(src_path);
 	if (!dir) {
-		strcat(src_path, "-web");
+		sprintf(src_path, "%s/flac-web-16", root_path);
 		dir = opendir(src_path);
 		if (!dir) {
 			fprintf(stderr, "Failed to read directory: %s\n", src_path);

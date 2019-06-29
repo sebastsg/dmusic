@@ -101,6 +101,9 @@ static void seed_table(const char* table) {
 		end = strchr(row, '\n');
 		params[fields - 1] = row;
 		if (end) {
+			if (*(end - 1) == '\r') {
+				*(end - 1) = '\0';
+			}
 			*end = '\0';
 			row = end + 1;
 		}
