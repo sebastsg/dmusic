@@ -274,19 +274,22 @@ function prepare($args) {
     $num = 1;
     foreach ($attachments as $attachment) {
         if (!$attachment['keep']) {
+            echo 'Skipping attachment ' . $attachment['path'] . '<br>';
             continue;
         }
         $type = $attachment['target'];
         $description = '';
         cli('create', ['album_attachment', 'false', $album_release_id, $num, $type, $description]);
+        echo "Created attachment $num ... ";
         $extension = pathinfo($attachment['path'], PATHINFO_EXTENSION);
         $source = $uploads_directory . $attachment['path'];
         $destination = "$albums_directory/$album_release_id/$num.$extension";
         if (file_exists($destination)) {
-            echo "Skipping file copy. File exists: $destination";
+            echo "Skipping file copy. File exists: $destination<br>";
             continue;
         }
         copy($source, $destination);
+        echo "Copied to $destination<br>";
         $num++;
     }
 }
@@ -315,8 +318,8 @@ function add_group($args) {
     // Tags
     $priority = 1;
     foreach ($tags as $tag) {
-        echo "Tag: $tag with priority $priority<br>";
         echo cli('create', ['group_tag', 'false', $group_id, $tag, $priority]);
+        echo "Created group tag \"$tag\" with priority $priority<br>";
         $priority++;
     }
     // People

@@ -140,7 +140,7 @@ function onPrepareForm(target) {
     let attachments = [];
     for (let attachment of document.querySelectorAll('.attachments tr:not(:first-child)')) {
         attachments.push({
-            keep: attachment.querySelector('input[name=keep]').getAttribute('checked'),
+            keep: attachment.querySelector('input[name=keep]').getAttribute('checked') !== null,
             target: attachment.querySelector('select[name=target]').value,
             path: attachment.querySelector('input[name=path]').value
         });

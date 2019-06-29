@@ -241,6 +241,8 @@ void load_group_albums(struct album_data** albums, int* num_albums, int group_id
 			strcat(album->image, ".");
 			strcat(album->image, find_file_extension(album->image));
 			strcpy(album->image, album->image + strlen(get_property("path.www")));
+		} else {
+			strcpy(album->image, "/img/missing.png");
 		}
 	}
 	PQclear(result);

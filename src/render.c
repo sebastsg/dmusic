@@ -301,6 +301,16 @@ static void render_prepare_attachments(struct render_buffer* buffer, const char*
 	for (int i = 0; i < num_attachments; i++) {
 		strcat(attachments_buffer.data, "{{ attachment }}");
 		set_parameter(&attachments_buffer, "attachment", mem_cache()->prepare_attachment_template);
+		const char* extension = strrchr(attachments[i].name, '.');
+		const char* blacklist[] = { ".sfv", ".m3u", ".nfo" };
+		bool checked = true;
+		for (int j = 0; extension && j < 3; j++) {
+			if (!strcmp(extension, blacklist[j])) {
+				checked = false;
+				break;
+			}
+		}
+		set_parameter(&attachments_buffer, "checked", checked ? "checked" : "");
 		set_parameter(&attachments_buffer, "path", attachments[i].path);
 		
 		struct render_buffer select_buffer;
