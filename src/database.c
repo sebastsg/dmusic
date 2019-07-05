@@ -5,10 +5,15 @@
 #include "format.h"
 
 #include <postgresql/libpq-fe.h>
+#include <openssl/sha.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#define DMUSIC_HASH_STRING_SIZE (SHA256_DIGEST_LENGTH * 2 + 1)
+#define DMUSIC_SALT_SIZE        32
+#define DMUSIC_SALT_STRING_SIZE (DMUSIC_SALT_SIZE * 2 + 1)
 
 static PGconn* session = NULL;
 
@@ -83,7 +88,7 @@ void execute_sql_file(const char* name, bool split) {
 	free(sql);
 }
 
-long long insert_row(const char* table, bool has_serial_id, int argc, const char** argv) {
+int insert_row(const char* table, bool has_serial_id, int argc, const char** argv) {
 	char query[2048];
 	sprintf(query, "insert into \"%s\" values ( ", table);
 	if (has_serial_id) {
@@ -99,7 +104,7 @@ long long insert_row(const char* table, bool has_serial_id, int argc, const char
 		strcat(query, " returning id");
 	}
 	PGresult* result = execute_sql(query, argv, argc);
-	long long id = 0;
+	int id = 0;
 	if (PQntuples(result) > 0) {
 		id = atoi(PQgetvalue(result, 0, 0));
 	}
@@ -318,4 +323,68 @@ void load_group_thumbs(struct group_thumb_data** thumbs, int* num_thumbs) {
 		sprintf(thumb->image, "/data/groups/%i/1%s", thumb->id, extension);
 	}
 	PQclear(result);
+}
+
+static void make_random_salt(char* salt) {
+	*salt = '\0';
+	for (int i = 0; i < DMUSIC_SALT_SIZE;) {
+		unsigned char value = (unsigned char)(rand() % 256);
+		i += sprintf(salt + i, "%02X", value);
+	}
+}
+
+static void make_sha256_hash(const char* password, const char* salt, char* dest) {
+	unsigned char binary_hash[SHA256_DIGEST_LENGTH];
+	SHA256_CTX sha256;
+	SHA256_Init(&sha256);
+	SHA256_Update(&sha256, password, strlen(password));
+	if (salt) {
+		SHA256_Update(&sha256, salt, strlen(salt));
+	}
+	SHA256_Final(binary_hash, &sha256);
+	for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+		dest += sprintf(dest, "%02X", binary_hash[i]);
+	}
+}
+
+bool register_user(const char* name, const char* password) {
+	if (strlen(name) < 1 || strlen(password) < 8) {
+		return false;
+	}
+	const char* params[] = { name };
+	PGresult* result = execute_sql("select \"name\" from \"user\" where \"name\" = $1", params, 1);
+	bool exists = PQntuples(result) > 0;
+	PQclear(result);
+	if (exists) {
+		return false;
+	}
+	char hash[DMUSIC_HASH_STRING_SIZE];
+	char salt[DMUSIC_SALT_STRING_SIZE];
+	make_random_salt(salt);
+	make_sha256_hash(password, salt, hash);
+	const char* args[] = { name, hash, salt };
+	insert_row("user", false, 3, args);
+	return true;
+}
+
+bool login_user(const char* name, const char* password) {
+	if (strlen(name) < 1 || strlen(password) < 8) {
+		return false;
+	}
+	const char* params[] = { name, "" };
+	PGresult* result = execute_sql("select \"salt\" from \"user\" where \"name\" = $1", params, 1);
+	char salt[DMUSIC_SALT_STRING_SIZE];
+	if (PQntuples(result) == 0) {
+		PQclear(result);
+		return false;
+	}
+	strcpy(salt, PQgetvalue(result, 0, 0));
+	PQclear(result);
+	char hash[DMUSIC_HASH_STRING_SIZE];
+	make_sha256_hash(password, salt, hash);
+	params[1] = hash;
+	result = execute_sql("select \"name\" from \"user\" where \"name\" = $1 and \"password_hash\" = $2", params, 2);
+	bool exists = PQntuples(result) > 0;
+	PQclear(result);
+	return exists;
 }

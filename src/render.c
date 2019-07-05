@@ -85,8 +85,7 @@ static void render_search_results(struct render_buffer* buffer, struct search_re
 	struct render_buffer result_buffer;
 	init_render_buffer(&result_buffer, 2048);
 	for (int i = 0; i < num_results; i++) {
-		strcat(result_buffer.data, "{{ result }}");
-		set_parameter(&result_buffer, "result", mem_cache()->search_result_template);
+		strcat(result_buffer.data, mem_cache()->search_result_template);
 		set_parameter(&result_buffer, "value", results[i].value);
 		set_parameter(&result_buffer, "text", results[i].text);
 	}
@@ -110,17 +109,6 @@ static void render_session_track(struct render_buffer* buffer, const char* key, 
 	set_parameter(buffer, "name", track->name);
 	set_parameter(buffer, "duration", track->duration);
 }
-
-/*void PlaylistList::render() {
-	init("playlists");
-	Set("playlists", playlists, (int)playlists.size());
-}
-void PlaylistItem::render() {
-	init("playlist_item");
-	set("id", id);
-	set("name", name);
-}
-*/
 
 static void render_session_tracks(struct render_buffer* buffer, const char* key, struct session_track_data* tracks, int num_tracks) {
 	struct render_buffer item_buffer;
@@ -147,8 +135,7 @@ static void render_group_thumb_list(struct render_buffer* buffer, struct group_t
 		strcat(item_buffer.data, "{{ thumb }}");
 		render_group_thumb(&item_buffer, "thumb", thumbs[i].id, thumbs[i].name, thumbs[i].image);
 	}
-	strcpy(buffer->data, "{{ groups }}");
-	set_parameter(buffer, "groups", mem_cache()->group_thumb_list_template);
+	strcpy(buffer->data, mem_cache()->group_thumb_list_template);
 	set_parameter(buffer, "thumbs", item_buffer.data);
 	free(item_buffer.data);
 }
@@ -266,8 +253,7 @@ static void render_upload(struct render_buffer* buffer, struct upload_data* uplo
 	struct render_buffer uploads_buffer;
 	init_render_buffer(&uploads_buffer, 2048);
 	for (int i = 0; i < upload->num_uploads; i++) {
-		strcat(uploads_buffer.data, "{{ album }}");
-		set_parameter(&uploads_buffer, "album", mem_cache()->uploaded_album_template);
+		strcat(uploads_buffer.data, mem_cache()->uploaded_album_template);
 		set_parameter(&uploads_buffer, "prefix", upload->uploads[i].prefix);
 		set_parameter(&uploads_buffer, "name", upload->uploads[i].name);
 	}
@@ -283,8 +269,7 @@ static void render_prepare_disc(struct render_buffer* buffer, const char* key, s
 	init_render_buffer(&tracks_buffer, 4096);
 	for (int i = 0; i < disc->num_tracks; i++) {
 		// todo: fix potential security issue where a path has {{ fixed }} etc...
-		strcat(tracks_buffer.data, "{{ track }}");
-		set_parameter(&tracks_buffer, "track", mem_cache()->prepare_track_template);
+		strcat(tracks_buffer.data, mem_cache()->prepare_track_template);
 		set_parameter_int(&tracks_buffer, "num", disc->tracks[i].num);
 		set_parameter(&tracks_buffer, "path", disc->tracks[i].path);
 		set_parameter(&tracks_buffer, "fixed", disc->tracks[i].fixed);
@@ -299,8 +284,7 @@ static void render_prepare_attachments(struct render_buffer* buffer, const char*
 	struct render_buffer attachments_buffer;
 	init_render_buffer(&attachments_buffer, 4096);
 	for (int i = 0; i < num_attachments; i++) {
-		strcat(attachments_buffer.data, "{{ attachment }}");
-		set_parameter(&attachments_buffer, "attachment", mem_cache()->prepare_attachment_template);
+		strcat(attachments_buffer.data, mem_cache()->prepare_attachment_template);
 		const char* extension = strrchr(attachments[i].name, '.');
 		const char* blacklist[] = { ".sfv", ".m3u", ".nfo" };
 		bool checked = true;
@@ -336,8 +320,7 @@ static void render_prepare(struct render_buffer* buffer, struct prepare_data* pr
 	if (prepare->num_discs < 1 || prepare->discs[0].num_tracks < 1) {
 		return;
 	}
-	strcpy(buffer->data, "{{ prepare }}");
-	set_parameter(buffer, "prepare", mem_cache()->prepare_template);
+	strcpy(buffer->data, mem_cache()->prepare_template);
 	set_parameter(buffer, "filename", prepare->filename);
 	set_parameter(buffer, "name", prepare->album_name);
 	set_parameter(buffer, "released_at", prepare->released_at);
@@ -408,6 +391,10 @@ static void render_add_group(struct render_buffer* buffer, struct add_group_data
 	free(select_buffer.data);
 }
 
+static void render_profile(struct render_buffer* buffer) {
+	strcpy(buffer->data, mem_cache()->profile_template);
+}
+
 static void render_main(struct render_buffer* buffer, int argc, char** argv) {
 	char user[64];
 	user[0] = '\0';
@@ -427,6 +414,16 @@ static void render_main(struct render_buffer* buffer, int argc, char** argv) {
 	set_parameter(buffer, "content", content);
 	free(content);
 	free(tracks);
+}
+
+static void render_register(struct render_buffer* buffer) {
+	strcpy(buffer->data, "{{ main }}");
+	set_parameter(buffer, "main", mem_cache()->register_template);
+}
+
+static void render_login(struct render_buffer* buffer) {
+	strcpy(buffer->data, "{{ main }}");
+	set_parameter(buffer, "main", mem_cache()->login_template);
 }
 
 char* render(char** args, int count) {
@@ -544,6 +541,12 @@ char* render(char** args, int count) {
 		struct add_group_data add_group;
 		load_add_group(&add_group);
 		render_add_group(&buffer, &add_group);
+	} else if (!strcmp(page, "profile")) {
+		render_profile(&buffer);
+	} else if (!strcmp(page, "register")) {
+		render_register(&buffer);
+	} else if (!strcmp(page, "login")) {
+		render_login(&buffer);
 	} else {
 		fprintf(stderr, "Cannot render unknown page: %s\n", page);
 	}

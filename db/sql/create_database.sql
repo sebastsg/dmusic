@@ -265,11 +265,12 @@ create table "track_hash" (
 );
 
 create table "user" (
-    "name"          varchar(32)  not null primary key,
-    "password_hash" varchar(256) not null,
-    "stream_method" varchar(32)  not null,
-    "is_admin"      int          not null,
-    "created_at"    timestamp    not null
+    "name"          varchar(32) not null primary key,
+    "password_hash" varchar(96) not null,
+    "salt"          varchar(96) not null,
+    "stream_method" varchar(32) not null default 'stream',
+    "is_admin"      int         not null default 0,
+    "created_at"    timestamp   not null default current_timestamp
 );
 
 create table "playlist" (

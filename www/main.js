@@ -118,15 +118,18 @@ function onAddGroupForm(target) {
 
 function onClickA(target) {
     if (target.parentNode.tagName === 'NAV') {
+        event.preventDefault();
         onNavClick(target);
     }
     if (target.classList.contains('queue-track')) {
+        event.preventDefault();
         let parts = target.getAttribute('href').split('/');
         const album = parts[2];
         const disc = parts[3];
         const track = parts[4];
         addToPlaylist(album, disc, track);
-    } else {
+    } else if (!target.classList.contains('external-link')) {
+        event.preventDefault();
         onInternalLinkClick(target);
     }
 }
@@ -208,6 +211,20 @@ function onClickDeleteRow(target) {
     }
 }
 
+function onClickLoginSubmit(target) {
+    ajaxPost('/form/login', {
+        name: document.getElementById('name').value,
+        password: document.getElementById('password').value
+    }, response => location.href = '/');
+}
+
+function onClickRegisterSubmit(target) {
+    ajaxPost('/form/register', {
+        name: document.getElementById('name').value,
+        password: document.getElementById('password').value
+    }, response => location.href = '/');
+}
+
 function onClickButton(target) {
     if (target.classList.contains('submit-prepare')) {
         onPrepareForm(target);
@@ -215,6 +232,10 @@ function onClickButton(target) {
         onClickAppendRow(target);
     } else if (target.classList.contains('delete-row')) {
         onClickDeleteRow(target);
+    } else if (target.classList.contains('login-submit')) {
+        onClickLoginSubmit(target);
+    } else if (target.classList.contains('register-submit')) {
+        onClickRegisterSubmit(target);
     }
 }
 
@@ -229,7 +250,6 @@ function onClickLi(target) {
 document.addEventListener('click', function (event) {
     let target = event.target;
     if (target.tagName === 'A') {
-        event.preventDefault();
         onClickA(target);
     } else if (target.tagName === 'LI') {
         onClickLi(target);

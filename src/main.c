@@ -49,7 +49,7 @@ void cmd_create(char** args, int count) {
 		if (!strcmp(table, "session_track")) {
 			printf("%i", create_session_track(args[0], atoi(args[1]), atoi(args[2]), atoi(args[3])));
 		} else {
-			printf("%i", (int)insert_row(table, has_serial_id, count, (const char**)args));
+			printf("%i", insert_row(table, has_serial_id, count, (const char**)args));
 		}
 	}
 }
@@ -57,6 +57,20 @@ void cmd_create(char** args, int count) {
 void cmd_transcode(char** args, int count) {
 	if (count >= 2) {
 		transcode_album_release(atoi(args[0]), args[1]);
+	}
+}
+
+void cmd_register(char** args, int count) {
+	if (count >= 2) {
+		bool success = register_user(args[0], args[1]);
+		puts(success ? "1" : "0");
+	}
+}
+
+void cmd_login(char** args, int count) {
+	if (count >= 2) {
+		bool success = login_user(args[0], args[1]);
+		puts(success ? "1" : "0");
 	}
 }
 
@@ -69,6 +83,7 @@ int main(int argc, char** argv) {
 	char** args = argv + 2;
 	int count = argc - 2;
 
+	srand(time(NULL));
 	load_config();
 	connect_database();
 	
@@ -91,6 +106,10 @@ int main(int argc, char** argv) {
 		cmd_transcode(args, count);
 	} else if (!strcmp(cmd, "seed")) {
 		seed_database();
+	} else if (!strcmp(cmd, "register")) {
+		cmd_register(args, count);
+	} else if (!strcmp(cmd, "login")) {
+		cmd_login(args, count);
 	} else {
 		fprintf(stderr, "Invalid command: %s\n", cmd);
 	}

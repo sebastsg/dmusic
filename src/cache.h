@@ -30,6 +30,9 @@ struct memory_cached_data {
 	char* add_group_template;
 	char* search_template;
 	char* search_result_template;
+	char* login_template;
+	char* register_template;
+	char* profile_template;
 };
 
 void load_memory_cache();

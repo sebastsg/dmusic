@@ -45,6 +45,9 @@ static void load_all_templates() {
 	load_template(&memory_cache.add_group_template, "add_group");
 	load_template(&memory_cache.search_template, "search");
 	load_template(&memory_cache.search_result_template, "search_result");
+	load_template(&memory_cache.login_template, "login");
+	load_template(&memory_cache.register_template, "register");
+	load_template(&memory_cache.profile_template, "profile");
 }
 
 void load_memory_cache() {

@@ -17,7 +17,7 @@ void disconnect_database();
 
 void execute_sql_file(const char* name, bool split);
 
-long long insert_row(const char* table, bool has_serial_id, int argc, const char** argv);
+int insert_row(const char* table, bool has_serial_id, int argc, const char** argv);
 int create_session_track(const char* user, int album_release_id, int disc_num, int track_num);
 
 void load_options(struct select_options* options, const char* type);
@@ -30,3 +30,6 @@ void load_group(struct group_data* group, int id);
 void load_session_tracks(struct session_track_data** tracks, int* count, const char* user);
 void load_playlist_list(struct playlist_list_data* list, const char* user);
 void load_group_thumbs(struct group_thumb_data** thumbs, int* num_thumbs);
+
+bool register_user(const char* name, const char* password);
+bool login_user(const char* name, const char* password);

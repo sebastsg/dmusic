@@ -16,22 +16,28 @@ header('Referrer-Policy: no-referrer');
 // todo: tools to capitalizer/lowercase track names?
 // note: for large files, use fopen to file_put_contents to allow for streaming
 
-function login($user) {
-    $_SESSION['user'] = $user;
+function require_fields($fields, $array) {
+    foreach ($fields as $field) {
+        if (!isset($array[$field])) {
+            echo "Missing field: $field\n";
+            var_dump($array);
+            exit;
+        }
+    }
 }
 
-function logout() {
-    session_unset();
+function has_fields($fields, $array) {
+    foreach ($fields as $field) {
+        if (!isset($array[$field])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 function get_user() {
-    if (!isset($_SESSION['user'])) {
-        return false;
-    }
-    return $_SESSION['user'];
+    return isset($_SESSION['user']) ? $_SESSION['user'] : false;
 }
-
-login('dib'); // TODO: Proper login
 
 function get_args() {
 	$base = implode('/', array_slice(explode('/', $_SERVER['SCRIPT_NAME']), 0, -1)) . '/';
@@ -55,42 +61,20 @@ function get_extension_for_content($content) {
     }
 }
 
-function require_fields($fields, $array) {
-    foreach ($fields as $field) {
-        if (!isset($array[$field])) {
-            echo "Missing field: $field\n";
-            var_dump($array);
-            exit;
-        }
-    }
-}
-
-function has_fields($fields, $array) {
-    foreach ($fields as $field) {
-        if (!isset($array[$field])) {
-            return false;
-        }
-    }
-    return true;
-}
-
 function get_random_prefix() {
-    $time = time();
-    $rand = random_int(1000, 9999);
-    return $time . $rand;
+    return time() . random_int(1000, 9999);
 }
 
 function unzip($source, $destination, $name) {
     $zip = new ZipArchive();
     $result = $zip->open($source);
-    if ($result !== true) {
-        return;
+    if ($result === true) {
+        $prefix = get_random_prefix();
+        $name = "$prefix $name";
+        $name = basename($name, '.zip');
+        $zip->extractTo("$destination/$name");
+        $zip->close();
     }
-    $prefix = get_random_prefix();
-    $name = "$prefix $name";
-    $name = basename($name, '.zip');
-    $zip->extractTo("$destination/$name");
-    $zip->close();
 }
 
 function cli_program($program, $command, $args) {
@@ -151,10 +135,9 @@ function is_allowed_format($format) {
 
 function attach($args) {
     require_fields(['method', 'folder'], $_POST);
-    $method = $_POST['method'];
     $folder = $_POST['folder'];
     $attachment = false;
-    if ($method === 'url') {
+    if ($_POST['method'] === 'url') {
         if (!isset($_POST['file'])) {
             echo 'URL not found.';
             return;
@@ -165,7 +148,7 @@ function attach($args) {
             echo 'Failed to download attachment.';
             return;
         }
-    } else if ($method === 'file') {
+    } else if ($_POST['method'] === 'file') {
         if (!isset($_FILES['file'])) {
             echo 'File not found.';
             return;
@@ -383,30 +366,17 @@ function add_group($args) {
 }
 
 function add_session_track($args) {
-    $user = get_user();
-    if ($user === false) {
-        return;
-    }
     require_fields(['album', 'disc', 'track'], $_POST);
-    $album = (int)$_POST['album'];
-    $disc = (int)$_POST['disc'];
-    $track = (int)$_POST['track'];
-    $num = (int)cli('create', ['session_track', 'false', $user, $album, $disc, $track]);
-    echo cli('render', ['session_track', $user, $num]);
+    $num = (int)cli('create', ['session_track', 'false', get_user(), (int)$_POST['album'], (int)$_POST['disc'], (int)$_POST['track']]);
+    echo cli('render', ['session_track', get_user(), $num]);
 }
 
 function transcode($args) {
-    if (get_user() === false) {
-        return;
-    }
     require_fields(['album', 'format'], $_POST);
-    $album = (int)$_POST['album'];
-    $format = $_POST['format'];
-    if (!is_allowed_format($format)) {
-        return;
+    if (is_allowed_format($_POST['format'])) {
+        set_time_limit(15 * 60);
+        echo cli('transcode', [(int)$_POST['album'], $_POST['format']]);
     }
-    set_time_limit(15 * 60);
-    echo cli('transcode', [$album, $format]);
 }
 
 function render($args) {
@@ -414,7 +384,7 @@ function render($args) {
     if ($ajax) {
         array_shift($args);
     } else {
-        $args = array_merge(['main', 'dib'], $args);
+        $args = array_merge(['main', get_user()], $args);
     }
     foreach ($args as &$arg) {
         $arg = urldecode($arg);
@@ -443,12 +413,39 @@ function form($args) {
     }
 }
 
-function start($args) {
-    if (count($args) === 0) {
-        render(['main', 'dib', 'playlists']);
-        return;
+function login() {
+    require_fields(['name', 'password'], $_POST);
+    if ((int)cli('login', [$_POST['name'], $_POST['password']]) === 1) {
+        $_SESSION['user'] = $_POST['name'];
     }
-    if ($args[0] === 'form') {
+}
+
+function register() {
+    require_fields(['name', 'password'], $_POST);
+    cli('register', [$_POST['name'], $_POST['password']]);
+}
+
+function start($args) {
+    if (get_user() === false) {
+        if (count($args) >= 2 && $args[0] === 'form') {
+            if ($args[1] === 'login') {
+                login();
+            } else if ($args[1] === 'register') {
+                register();
+            }
+        } else {
+            if (count($args) >= 1 && $args[0] === 'register') {
+                echo cli('render', ['register']);
+            } else {
+                echo cli('render', ['login']);
+            }
+        }
+    } else if (count($args) === 0) {
+        render(['main', get_user(), 'playlists']);
+    } else if ($args[0] === 'logout') {
+        session_unset();
+        header('Location: /');
+    } else if ($args[0] === 'form') {
         array_shift($args);
         form($args);
     } else {
