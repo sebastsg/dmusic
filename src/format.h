@@ -36,13 +36,22 @@ char* trim_ends(char* str, const char* symbols);
  */
 const char* split_string(char* dest, size_t size, const char* src, char symbol, size_t* discarded);
 
-int count_in_string(const char* source, char symbol);
+int count_in_string(const char* src, char symbol);
 char* format_time(char* dest, size_t size, const char* format, time_t time);
 char* make_duration_string(char* dest, int minutes, int seconds);
-void erase_multi_space(char* string);
+void erase_multi_space(char* str);
 bool any_string_contains(const char* str, const char** needles, int count);
 bool any_string_equal(const char* str, const char** needles, int count);
 void replace_victims_with(char* str, const char* victims, char with);
 bool is_extension_image(const char* extension);
 bool is_extension_audio(const char* extension);
 const char* find_file_extension(const char* path);
+
+/*
+ * Calls strncpy(@dest, @src, @count), then sets @dest[@count] to \0.
+ * @dest:  Destination string.
+ * @src:   Source string.
+ * @count: How many characters to copy.
+ * Returns @dest.
+ */
+char* string_copy_substring(char* dest, const char* src, size_t count);

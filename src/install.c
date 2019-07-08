@@ -11,14 +11,11 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#if PLATFORM_IS_LINUX
 #include <unistd.h>
-#endif
 
 void create_directories() {
-#if PLATFORM_IS_LINUX
 	const char* directories[] = {
-		get_property("path.data_root"),
+		get_property("path.data"),
 		get_property("path.uploads"),
 		get_property("path.groups"),
 		get_property("path.albums"),
@@ -30,14 +27,6 @@ void create_directories() {
 			fprintf(stderr, "Failed to create directory. Error: %s\n", strerror(errno));
 		}
 	}
-	// todo: only configure the actual location, and have hardcoded symlink name
-	const char* real = get_property("path.data_root");
-	const char* link = get_property("path.data_link");
-	printf("Creating symlink: %s -> %s\n", link, real);
-	if (symlink(real, link) == -1) {
-		printf("Failed to create symlink. Error: %s\n", strerror(errno));
-	}
-#endif
 }
 
 void install_database() {

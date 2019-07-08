@@ -24,6 +24,14 @@ static void load_template(char** dest, const char* name) {
 	}
 }
 
+static void load_file(char** dest, const char* name, size_t* size) {
+	static char path[256];
+	*dest = read_file(root_path(path, sizeof(path), name), size);
+	if (!*dest) {
+		fprintf(stderr, "Failed to load file: %s\n", path);
+	}
+}
+
 static void load_all_templates() {
 	load_template(&memory_cache.main_template, "main");
 	load_template(&memory_cache.session_track_template, "playlist_track");
@@ -53,6 +61,10 @@ static void load_all_templates() {
 void load_memory_cache() {
 	load_all_options();
 	load_all_templates();
+	load_file(&memory_cache.style_css, "html/style.css", NULL);
+	load_file(&memory_cache.main_js, "html/main.js", NULL);
+	load_file(&memory_cache.icon_png, "img/icon.png", &memory_cache.icon_png_size);
+	load_file(&memory_cache.bg_jpg, "img/bg.jpg", &memory_cache.bg_jpg_size);
 }
 
 const struct memory_cached_data* mem_cache() {

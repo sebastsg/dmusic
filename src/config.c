@@ -99,6 +99,11 @@ void load_config() {
 	free(source);
 }
 
+char* root_path(char* dest, size_t size, const char* path) {
+	sprintf(dest, "%s/%s", get_property("path.root"), path);
+	return dest;
+}
+
 char* upload_path(char* dest, size_t size, const char* path) {
 	sprintf(dest, "%s/%s", get_property("path.uploads"), path);
 	return dest;
@@ -115,7 +120,7 @@ char* sql_path(char* dest, size_t size, const char* name) {
 }
 
 char* html_path(char* dest, size_t size, const char* name) {
-	sprintf(dest, "%s/template/%s.html", get_property("path.root"), name);
+	sprintf(dest, "%s/html/%s.html", get_property("path.root"), name);
 	return dest;
 }
 

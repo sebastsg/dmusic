@@ -5,17 +5,22 @@
 #include "install.h"
 #include "database.h"
 #include "transcode.h"
+#include "network.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 
-void cmd_render(char** args, int count) {
-	char* html = render(args, count);
-	if (html) {
-		printf("%s", html);
-		free(html);
-	}
+static void free_resources() {
+	free_network();
+	disconnect_database();
+}
+
+static void signal_interrupt_handler(int signal_num) {
+	puts("Closing dmusic\n");
+	free_resources();
+	exit(0);
 }
 
 void cmd_path(char** args, int count) {
@@ -75,28 +80,27 @@ void cmd_login(char** args, int count) {
 }
 
 int main(int argc, char** argv) {
-	if (argc <= 1) {
-		fprintf(stderr, "No command specified.\n");
-		return -1;
-	}
-	char* cmd = argv[1];
-	char** args = argv + 2;
-	int count = argc - 2;
-
 	srand(time(NULL));
 	load_config();
 	connect_database();
 	
-	if (!strcmp(cmd, "install")) {
+	char* cmd = argc > 1 ? argv[1] : NULL;
+	if (cmd && !strcmp(cmd, "install")) {
 		create_directories();
 		install_database();
 		disconnect_database();
 		return 0;
 	}
-	
+
+	initialize_network();
+	signal(SIGINT, signal_interrupt_handler);
 	load_memory_cache();
 
-	if (!strcmp(cmd, "render")) {
+	while (true) {
+		poll_network();
+	}
+
+	/*if (!strcmp(cmd, "render")) {
 		cmd_render(args, count);
 	} else if(!strcmp(cmd, "path")) {
 		cmd_path(args, count);
@@ -112,8 +116,8 @@ int main(int argc, char** argv) {
 		cmd_login(args, count);
 	} else {
 		fprintf(stderr, "Invalid command: %s\n", cmd);
-	}
+	}*/
 
-	disconnect_database();
+	free_resources();
 	return 0;
 }

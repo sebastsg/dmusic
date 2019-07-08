@@ -2,6 +2,8 @@
 
 #include "data.h"
 
+// todo: store cached files in array instead
+
 struct memory_cached_data {
 	struct select_options languages;
 	struct select_options countries;
@@ -33,6 +35,13 @@ struct memory_cached_data {
 	char* login_template;
 	char* register_template;
 	char* profile_template;
+
+	char* style_css;
+	char* main_js;
+	char* icon_png;
+	size_t icon_png_size;
+	char* bg_jpg;
+	size_t bg_jpg_size;
 };
 
 void load_memory_cache();

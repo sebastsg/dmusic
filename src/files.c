@@ -44,5 +44,5 @@ bool write_file(const char* path, const char* data, size_t size) {
 
 bool file_exists(const char* path) {
 	struct stat sb;
-	return stat(path, &sb) != -1;
+	return stat(path, &sb) != -1 && S_ISREG(sb.st_mode);
 }

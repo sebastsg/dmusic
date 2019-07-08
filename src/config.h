@@ -17,6 +17,7 @@
 void load_config();
 const char* get_property(const char* key);
 
+char* root_path(char* dest, size_t size, const char* path);
 char* upload_path(char* dest, size_t size, const char* path);
 char* seed_path(char* dest, size_t size, const char* name);
 char* sql_path(char* dest, size_t size, const char* name);

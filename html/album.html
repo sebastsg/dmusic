@@ -1,0 +1,14 @@
+<div class="album">
+    <img src="{{ image }}">
+    <div>
+        <a href="/album/{{ id_name }}">{{ name }}</a>
+        <span>&gt;</span>
+        <a href="/album/{{ id_play }}/play">Play Album</a>
+        <span>&gt;</span>
+        <a href="/album/{{ id_queue }}/queue">Add to Playlist</a>
+        <span>&gt;</span>
+        <a href="/album/{{ id_download }}/download">Download</a>
+        <p>{{ released }}</p>
+        {{ discs }}
+    </div>
+</div>

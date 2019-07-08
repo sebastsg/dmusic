@@ -395,18 +395,13 @@ static void render_profile(struct render_buffer* buffer) {
 	strcpy(buffer->data, mem_cache()->profile_template);
 }
 
-static void render_main(struct render_buffer* buffer, int argc, char** argv) {
+static void render_main(struct render_buffer* buffer, const char* resource) {
 	char user[64];
-	user[0] = '\0';
-	if (argc > 0) {
-		strcpy(user, argv[0]);
-		argv++;
-		argc--;
-	}
+	strcpy(user, "dib");
 	struct session_track_data* tracks = NULL;
 	int num_tracks = 0;
 	load_session_tracks(&tracks, &num_tracks, user);
-	char* content = render(argv, argc);
+	char* content = render_resource(false, resource);
 	strcpy(buffer->data, "{{ main }}");
 	set_parameter(buffer, "main", mem_cache()->main_template);
 	set_parameter(buffer, "user", user);
@@ -426,7 +421,87 @@ static void render_login(struct render_buffer* buffer) {
 	set_parameter(buffer, "main", mem_cache()->login_template);
 }
 
-char* render(char** args, int count) {
+char* render_resource(bool is_main, const char* resource) {
+	if (!resource) {
+		return NULL;
+	}
+	struct render_buffer buffer;
+	init_render_buffer(&buffer, 4096);
+	char page[64];
+	resource = split_string(page, sizeof(page), resource, '/', NULL);
+	if (is_main) {
+		render_main(&buffer, resource);
+	} else if (!strcmp(page, "groups")) {
+		struct group_thumb_data* thumbs = NULL;
+		int num_thumbs = 0;
+		load_group_thumbs(&thumbs, &num_thumbs);
+		render_group_thumb_list(&buffer, thumbs, num_thumbs);
+		free(thumbs);
+	} else if (!strcmp(page, "group")) {
+		/*int id = atoi(args[0]);
+		if (id == 0) {
+			return buffer.data;
+		}
+		struct group_data group;
+		load_group(&group, id);
+		if (strlen(group.name) > 0) {
+			render_group(&buffer, &group);
+		}
+		free(group.tags);
+		free(group.albums);
+		free(group.tracks);*/
+	} else if (!strcmp(page, "search")) {
+		/*const char* type = args[0];
+		const char* query = args[1];
+		struct search_result_data* results = NULL;
+		int num_results = 0;
+		load_search_results(&results, &num_results, type, query);
+		render_search_results(&buffer, results, num_results);
+		free(results);*/
+	} else if (!strcmp(page, "upload")) {
+		struct upload_data upload;
+		load_upload(&upload);
+		render_upload(&buffer, &upload);
+		free(upload.uploads);
+	} else if (!strcmp(page, "prepare")) {
+		/*struct prepare_data* prepare = (struct prepare_data*)malloc(sizeof(struct prepare_data));
+		if (!prepare) {
+			return buffer.data;
+		}
+		load_prepare(prepare, args[0]);
+		render_prepare(&buffer, prepare);
+		for (int i = 0; i < prepare->num_attachments; i++) {
+			free(prepare->attachments[i].targets.options);
+		}
+		free(prepare);*/
+	} else if (!strcmp(page, "session_track")) {
+		struct session_track_data* tracks = NULL;
+		int num_tracks = 0;
+		load_session_tracks(&tracks, &num_tracks, "dib");
+		if (num_tracks > 0) {
+			strcpy(buffer.data, "{{ track }}");
+			render_session_track(&buffer, "track", &tracks[num_tracks - 1]);
+			free(tracks);
+		}
+	} else if (!strcmp(page, "playlists")) {
+		
+	} else if (!strcmp(page, "add_group")) {
+		struct add_group_data add_group;
+		load_add_group(&add_group);
+		render_add_group(&buffer, &add_group);
+	} else if (!strcmp(page, "profile")) {
+		render_profile(&buffer);
+	} else if (!strcmp(page, "register")) {
+		render_register(&buffer);
+	} else if (!strcmp(page, "login")) {
+		render_login(&buffer);
+	} else {
+		fprintf(stderr, "Cannot render unknown page: %s\n", page);
+	}
+	return buffer.data;
+}
+
+/*char* xyz_old_render(char** args, int count) {
 	if (count == 0) {
 		return NULL;
 	}
@@ -467,7 +542,7 @@ char* render(char** args, int count) {
 	init_render_buffer(&buffer, 4096);
 
 	if (!strcmp(page, "main")) {
-		render_main(&buffer, count, args);
+		//render_main(&buffer, count, args);
 	} else if (!strcmp(page, "groups")) {
 		struct group_thumb_data* thumbs = NULL;
 		int num_thumbs = 0;
@@ -536,7 +611,7 @@ char* render(char** args, int count) {
 	} else if (!strcmp(page, "playlists")) {
 		/*PlaylistList playlists{ load_playlist_list("dib") };
 		playlists.render();
-		html = playlists.html;*/
+		html = playlists.html;
 	} else if (!strcmp(page, "add_group")) {
 		struct add_group_data add_group;
 		load_add_group(&add_group);
@@ -554,4 +629,4 @@ char* render(char** args, int count) {
 		//write_file(cached, html.data(), html.size());
 	}
 	return buffer.data;
-}
+}*/

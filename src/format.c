@@ -10,10 +10,10 @@
 static const char* image_extensions[] = { "jpg", "jpeg", "png", "gif", "webp", "bmp" };
 static const char* audio_extensions[] = { "flac", "mp3", "m4a", "wav", "ogg" };
 
-int count_in_string(const char* source, char symbol) {
+int count_in_string(const char* src, char symbol) {
 	int i = 0;
-	while (*source) {
-		i += (*(source++) == symbol ? 1 : 0);
+	while (*src) {
+		i += (*(src++) == symbol ? 1 : 0);
 	}
 	return i;
 }
@@ -45,14 +45,18 @@ char* trim_ends(char* str, const char* symbols) {
 
 const char* split_string(char* dest, size_t size, const char* src, char symbol, size_t* discarded) {
 	if (!src || !*src) {
+		*dest = '\0';
 		return NULL;
 	}
 	const char* i = src;
 	while (*i && *(i++) != symbol);
 	size_t offset = i - src;
-	if (offset-- == 1) {
+	if (offset == 1) {
 		*dest = '\0';
 		return i;
+	}
+	if (*i) {
+		offset--;
 	}
 	if (discarded) {
 		*discarded = (offset > size ? offset - size : 0);
@@ -131,4 +135,10 @@ const char* find_file_extension(const char* path) {
 		}
 	}
 	return "";
+}
+
+char* string_copy_substring(char* dest, const char* src, size_t count) {
+	strncpy(dest, src, count);
+	dest[count] = '\0';
+	return dest;
 }

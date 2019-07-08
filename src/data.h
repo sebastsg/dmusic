@@ -3,8 +3,9 @@
 #define _XOPEN_SOURCE 500
 
 #include <stddef.h>
+#include <stdbool.h>
 
-char* render(char** argv, int argc);
+char* render_resource(bool is_main, const char* resource);
 
 struct select_option {
 	char code[64];
