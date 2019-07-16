@@ -252,6 +252,15 @@ void load_add_group(struct add_group_data* add) {
 	strcpy(add->person.text, "");
 }
 
+static int sort_uploaded_albums(const void* a, const void* b) {
+	long long prefix_a = 0;
+	long long prefix_b = 0;
+	sscanf(((struct upload_uploaded_data*)a)->prefix, "%lld", &prefix_a);
+	sscanf(((struct upload_uploaded_data*)b)->prefix, "%lld", &prefix_b);
+	long long diff = prefix_a - prefix_b;
+	return diff > 0 ? -1 : (diff < 0 ? 1 : 0);
+}
+
 void load_upload(struct upload_data* upload) {
 	int allocated = 100;
 	upload->num_uploads = 0;
@@ -284,4 +293,5 @@ void load_upload(struct upload_data* upload) {
 		}
 	}
 	closedir(dir);
+	qsort(upload->uploads, upload->num_uploads, sizeof(struct upload_uploaded_data), sort_uploaded_albums);
 }
