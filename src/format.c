@@ -43,7 +43,7 @@ char* trim_ends(char* str, const char* symbols) {
 	return str;
 }
 
-const char* split_string(char* dest, size_t size, const char* src, char symbol, size_t* discarded) {
+const char* split_string(char* dest, size_t size, const char* src, char symbol) {
 	if (!src || !*src) {
 		*dest = '\0';
 		return NULL;
@@ -51,15 +51,8 @@ const char* split_string(char* dest, size_t size, const char* src, char symbol, 
 	const char* i = src;
 	while (*i && *(i++) != symbol);
 	size_t offset = i - src;
-	if (offset == 1) {
-		*dest = '\0';
-		return i;
-	}
 	if (*i) {
 		offset--;
-	}
-	if (discarded) {
-		*discarded = (offset > size ? offset - size : 0);
 	}
 	offset = (offset >= size ? size - 1 : offset);
 	memcpy(dest, src, offset);

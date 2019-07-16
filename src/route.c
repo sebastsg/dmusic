@@ -34,11 +34,8 @@ void route_render(struct route_result* result, const char* resource) {
 	}
 }
 
-void route_render_main(struct route_result* result, const char* page, const char* resource) {
-	if (!page) {
-		return;
-	}
-	if (strlen(page) == 0) {
+void route_render_main(struct route_result* result, const char* resource) {
+	if (strlen(resource) == 0) {
 		resource = "playlists";
 	}
 	result->body = render_resource(true, resource);
@@ -54,13 +51,13 @@ void route_image(struct route_result* result, const char* resource) {
 		return;
 	}
 	char image[32];
-	resource = split_string(image, sizeof(image), resource, '/', NULL);
+	resource = split_string(image, sizeof(image), resource, '/');
 	if (!strcmp(image, "album")) {
 		char album_release_id_str[32];
-		resource = split_string(album_release_id_str, 32, resource, '/', NULL);
+		resource = split_string(album_release_id_str, 32, resource, '/');
 		int album_release_id = atoi(album_release_id_str);
 		char image_format[32];
-		resource = split_string(image_format, 32, resource, '/', NULL);
+		resource = split_string(image_format, 32, resource, '/');
 		char image_path[512];
 		if (!strcmp(image_format, "original")) {
 			route_file(result, server_album_image_path(image_path, album_release_id, 1));
@@ -69,10 +66,10 @@ void route_image(struct route_result* result, const char* resource) {
 		}
 	} else if (!strcmp(image, "group")) {
 		char group_id_str[32];
-		resource = split_string(group_id_str, 32, resource, '/', NULL);
+		resource = split_string(group_id_str, 32, resource, '/');
 		int group_id = atoi(group_id_str);
 		char image_format[32];
-		resource = split_string(image_format, 32, resource, '/', NULL);
+		resource = split_string(image_format, 32, resource, '/');
 		char image_path[512];
 		if (!strcmp(image_format, "original")) {
 			route_file(result, server_group_image_path(image_path, group_id, 1));
@@ -109,7 +106,7 @@ static void route_form_add_group(struct http_data* data) {
 	int priority = 1;
 	char tag[128];
 	const char* tags = http_data_string(data, "tags");
-	while (tags = split_string(tag, 128, tags, ',', NULL)) {
+	while (tags = split_string(tag, 128, tags, ',')) {
 		char priority_str[32];
 		sprintf(priority_str, "%i", priority);
 		const char* tag_params[] = { group_id_str, tag, priority_str };
@@ -167,7 +164,7 @@ void route_form(struct route_result* result, const char* resource, char* body, s
 		return;
 	}
 	char form[32];
-	resource = split_string(form, sizeof(form), resource, '/', NULL);
+	resource = split_string(form, sizeof(form), resource, '/');
 	struct http_data data = http_load_data(body, size, result->client->headers.content_type);
 	if (!strcmp(form, "addgroup")) {
 		route_form_add_group(&data);
@@ -177,7 +174,7 @@ void route_form(struct route_result* result, const char* resource, char* body, s
 
 void process_route(struct route_result* result, const char* resource, char* body, size_t size) {
 	char command[32];
-	const char* it = split_string(command, sizeof(command), resource, '/', NULL);
+	const char* it = split_string(command, sizeof(command), resource, '/');
 	if (!strcmp(command, "img")) {
 		route_image(result, it);
 		return;
@@ -212,7 +209,7 @@ void process_route(struct route_result* result, const char* resource, char* body
 		strcpy(result->type, "image/png");
 		return;
 	}
-	route_render_main(result, command, it);
+	route_render_main(result, resource);
 }
 
 void free_route(struct route_result* result) {

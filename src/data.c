@@ -41,7 +41,7 @@ static void guess_group_name(char* value, char* text, const char* filename) {
 	int num_searches = 0;
 	char word[256];
 	const char* filename_it = filename;
-	while (filename_it = split_string(word, 256, filename_it, ' ', NULL)) {
+	while (filename_it = split_string(word, 256, filename_it, ' ')) {
 		trim_ends(word, " \t");
 		struct search_result_data* group_searches = NULL;
 		int group_search_count = 0;

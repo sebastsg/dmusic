@@ -427,18 +427,22 @@ char* render_resource(bool is_main, const char* resource) {
 	}
 	struct render_buffer buffer;
 	init_render_buffer(&buffer, 4096);
-	char page[64];
-	resource = split_string(page, sizeof(page), resource, '/', NULL);
 	if (is_main) {
 		render_main(&buffer, resource);
-	} else if (!strcmp(page, "groups")) {
+		return buffer.data;
+	}
+	char page[64];
+	resource = split_string(page, sizeof(page), resource, '/');
+	if (!strcmp(page, "groups")) {
 		struct group_thumb_data* thumbs = NULL;
 		int num_thumbs = 0;
 		load_group_thumbs(&thumbs, &num_thumbs);
 		render_group_thumb_list(&buffer, thumbs, num_thumbs);
 		free(thumbs);
 	} else if (!strcmp(page, "group")) {
-		/*int id = atoi(args[0]);
+		char group_id_str[32];
+		resource = split_string(group_id_str, sizeof(group_id_str), resource, '/');
+		int id = atoi(group_id_str);
 		if (id == 0) {
 			return buffer.data;
 		}
@@ -449,15 +453,17 @@ char* render_resource(bool is_main, const char* resource) {
 		}
 		free(group.tags);
 		free(group.albums);
-		free(group.tracks);*/
+		free(group.tracks);
 	} else if (!strcmp(page, "search")) {
-		/*const char* type = args[0];
-		const char* query = args[1];
+		char type[32];
+		char query[512];
+		resource = split_string(type, sizeof(type), resource, '/');
+		resource = split_string(query, sizeof(query), resource, '/');
 		struct search_result_data* results = NULL;
 		int num_results = 0;
 		load_search_results(&results, &num_results, type, query);
 		render_search_results(&buffer, results, num_results);
-		free(results);*/
+		free(results);
 	} else if (!strcmp(page, "upload")) {
 		struct upload_data upload;
 		load_upload(&upload);
@@ -469,7 +475,7 @@ char* render_resource(bool is_main, const char* resource) {
 			return buffer.data;
 		}
 		char prepare_directory[1024];
-		resource = split_string(prepare_directory, sizeof(prepare_directory), resource, '/', NULL);
+		resource = split_string(prepare_directory, sizeof(prepare_directory), resource, '/');
 		load_prepare(prepare, prepare_directory);
 		render_prepare(&buffer, prepare);
 		for (int i = 0; i < prepare->num_attachments; i++) {

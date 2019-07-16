@@ -76,7 +76,7 @@ void load_config() {
 	}
 	char line[256];
 	const char* it = source;
-	while (it = split_string(line, 256, it, '\n', NULL)) {
+	while (it = split_string(line, 256, it, '\n')) {
 		trim_ends(line, " \n\t");
 		if (!*line) {
 			continue;

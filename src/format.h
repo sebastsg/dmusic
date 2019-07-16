@@ -31,10 +31,9 @@ char* trim_ends(char* str, const char* symbols);
  * @size:      Allocated size for @dest.
  * @src:       Search string.
  * @symbol:    The split delimiter.
- * @discarded: If not null, the size that did not fit into @dest will be written to it.
  * Returns the next @source if there is more to read, or null if end of @source is reached.
  */
-const char* split_string(char* dest, size_t size, const char* src, char symbol, size_t* discarded);
+const char* split_string(char* dest, size_t size, const char* src, char symbol);
 
 int count_in_string(const char* src, char symbol);
 char* format_time(char* dest, size_t size, const char* format, time_t time);

@@ -83,7 +83,6 @@ int main(int argc, char** argv) {
 	srand(time(NULL));
 	load_config();
 	connect_database();
-	
 	char* cmd = argc > 1 ? argv[1] : NULL;
 	if (cmd && !strcmp(cmd, "install")) {
 		create_directories();
@@ -91,33 +90,12 @@ int main(int argc, char** argv) {
 		disconnect_database();
 		return 0;
 	}
-
 	initialize_network();
 	signal(SIGINT, signal_interrupt_handler);
 	load_memory_cache();
-
 	while (true) {
 		poll_network();
 	}
-
-	/*if (!strcmp(cmd, "render")) {
-		cmd_render(args, count);
-	} else if(!strcmp(cmd, "path")) {
-		cmd_path(args, count);
-	} else if (!strcmp(cmd, "create")) {
-		cmd_create(args, count);
-	} else if (!strcmp(cmd, "transcode")) {
-		cmd_transcode(args, count);
-	} else if (!strcmp(cmd, "seed")) {
-		seed_database();
-	} else if (!strcmp(cmd, "register")) {
-		cmd_register(args, count);
-	} else if (!strcmp(cmd, "login")) {
-		cmd_login(args, count);
-	} else {
-		fprintf(stderr, "Invalid command: %s\n", cmd);
-	}*/
-
 	free_resources();
 	return 0;
 }
