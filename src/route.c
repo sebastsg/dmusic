@@ -159,6 +159,39 @@ static void route_form_add_group(struct http_data* data) {
 	}
 }
 
+static void route_form_upload(struct http_data* data) {
+	int num_albums = http_data_parameter_array_size(data, "albums");
+	if (num_albums > 20) {
+		return; // calm down.
+	}
+	for (int i = 0; i < num_albums; i++) {
+		struct http_data_part* album = http_data_param(data, "albums", i);
+		if (!strstr(album->filename, ".zip")) {
+			continue;
+		}
+		if (strchr(album->filename, '"')) {
+			fprintf(stderr, "Invalid file name: %s\n", album->filename);
+			continue;
+		}
+		char zip_path[1024];
+		server_uploaded_file_path(zip_path, album->filename);
+		char unzip_filename[512];
+		sprintf(unzip_filename, "%lld%i %s", (long long)time(NULL), 1000 + rand() % 9000, album->filename);
+		char unzip_dir[1024];
+		server_uploaded_file_path(unzip_dir, unzip_filename);
+		char* unzip_dir_dot = strrchr(unzip_dir, '.');
+		*unzip_dir_dot = '\0';
+		if (!create_directory(unzip_dir)) {
+			continue;
+		}
+		write_file(zip_path, album->value, album->size);
+		char unzip_cmd[4096];
+		sprintf(unzip_cmd, "unzip \"%s\" -d \"%s\"", zip_path, unzip_dir);
+		puts(unzip_cmd);
+		system(unzip_cmd);
+	}
+}
+
 void route_form(struct route_result* result, const char* resource, char* body, size_t size) {
 	if (!resource) {
 		return;
@@ -168,6 +201,8 @@ void route_form(struct route_result* result, const char* resource, char* body, s
 	struct http_data data = http_load_data(body, size, result->client->headers.content_type);
 	if (!strcmp(form, "addgroup")) {
 		route_form_add_group(&data);
+	} else if (!strcmp(form, "upload")) {
+		route_form_upload(&data);
 	}
 	http_free_data(&data);
 }
