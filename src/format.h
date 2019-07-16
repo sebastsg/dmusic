@@ -55,3 +55,10 @@ const char* find_file_extension(const char* path);
  * Returns @dest.
  */
 char* string_copy_substring(char* dest, const char* src, size_t count);
+
+/*
+ * Decodes percent encoded strings in place.
+ * @url: The string to decode. Will be modified.
+ * Returns decoded @url.
+ */
+char* url_decode(char* url);

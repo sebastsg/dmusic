@@ -11,8 +11,6 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include <unistd.h>
-
 void create_directories() {
 	const char* directories[] = {
 		get_property("path.data"),
@@ -23,9 +21,7 @@ void create_directories() {
 	};
 	for (int i = 0; i < 5; i++) {
 		printf("Creating directory: %s\n", directories[i]);
-		if (mkdir(directories[i], S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-			fprintf(stderr, "Failed to create directory. Error: %s\n", strerror(errno));
-		}
+		create_directory(directories[i]);
 	}
 }
 

@@ -238,14 +238,7 @@ void load_group_albums(struct album_data** albums, int* num_albums, int group_id
 		strcpy(album->album_type_code, PQgetvalue(result, i, 2));
 		int cover_num = (PQgetisnull(result, i, 3) ? 0 : atoi(PQgetvalue(result, i, 3)));
 		if (cover_num != 0) {
-			album_path(album->image, sizeof(album->image), album->album_release_id);
-			strcat(album->image, "/");
-			char cover_num_str[32];
-			sprintf(cover_num_str, "%i", cover_num);
-			strcat(album->image, cover_num_str);
-			strcat(album->image, ".");
-			strcat(album->image, find_file_extension(album->image));
-			strcpy(album->image, album->image + strlen(get_property("path.www")));
+			client_album_image_path(album->image, album->album_release_id, cover_num);
 		} else {
 			strcpy(album->image, "/img/missing.png");
 		}
@@ -316,11 +309,7 @@ void load_group_thumbs(struct group_thumb_data** thumbs, int* num_thumbs) {
 		struct group_thumb_data* thumb = &(*thumbs)[i];
 		thumb->id = atoi(PQgetvalue(result, i, 0));
 		strcpy(thumb->name, PQgetvalue(result, i, 1));
-		char group_i_path[256];
-		group_path(group_i_path, 256, thumb->id);
-		strcat(group_i_path, "/1");
-		const char* extension = find_file_extension(group_i_path);
-		sprintf(thumb->image, "/data/groups/%i/1%s", thumb->id, extension);
+		client_group_image_path(thumb->image, thumb->id, 1);
 	}
 	PQclear(result);
 }

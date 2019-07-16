@@ -90,10 +90,7 @@ function playTrack(album, disc, track) {
 function onAddGroupForm(target) {
     target.querySelector('button[type=submit]').setAttribute('disabled', true);
     let data = new FormData();
-    let tags = target.querySelector('input[name=tag]').value.split(',');
-    for (let tag of tags) {
-        data.append('tags[]', tag.trim());
-    }
+    data.append('tags', target.querySelector('input[name=tags]').value);
     appendFormData(data, ['name', 'country', 'website', 'description']);
     for (let person of target.querySelectorAll('.group-people tr')) {
         appendFormDataArray(data, person, 'people', ['id', 'role']);
@@ -103,15 +100,16 @@ function onAddGroupForm(target) {
         if (fileInput === null) {
             continue;
         }
-        let name = 'imageurl';
+        let name = 'url';
         let file = fileInput.value;
         if (fileInput.getAttribute('type') === 'file') {
             file = fileInput.files[0];
-            name = 'imagefile';
+            name = 'file';
         }
-        data.append(name + '[background][]', image.querySelector('input[name=background]').getAttribute('checked'));
-        data.append(name + '[file][]', file);
-        data.append(name + '[description][]', image.querySelector('textarea[name=imagedescription]').value);
+        data.append('image-source', name);
+        data.append('image-is-background', image.querySelector('input[name=background]').getAttribute('checked'));
+        data.append('image-file', file);
+        data.append('image-description', image.querySelector('textarea[name=imagedescription]').value);
     }
     ajaxPost('/form/addgroup', data, response => document.querySelector('main section').innerHTML = response);
 }
@@ -297,7 +295,7 @@ document.addEventListener('change', event => {
     let target = event.target;
     if (target.classList.contains('file-upload-method')) {
         const input = document.getElementById(target.dataset.input);
-        let file = (input === undefined ? target.nextElementSibling : input);
+        let file = (input === null ? target.nextElementSibling : input);
         file.setAttribute('type', target.value);
     }
 });
@@ -315,7 +313,7 @@ function appendFormDataArray(data, element, key, names) {
     for (let name of names) {
         let input = element.querySelector('[name=' + name + ']');
         if (input !== null) {
-            data.append(key + '[' + name + '][]', input.value);
+            data.append(key + '-' + name, input.value);
         }
     }
 }

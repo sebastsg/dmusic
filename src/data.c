@@ -21,8 +21,7 @@ void load_prepare_attachment(struct prepare_attachment_data* attachment, const c
 	const char* filename = strrchr(path, '/') + 1;
 	strcpy(attachment->name, filename);
 	strcpy(attachment->path, path);
-	strcpy(attachment->link, "/data/uploads");
-	strcat(attachment->link, attachment->path);
+	client_uploaded_file_path(attachment->link, path);
 	if (is_extension_image(path)) {
 		strcpy(attachment->preview, attachment->link);
 	}

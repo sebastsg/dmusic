@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-static const char* image_extensions[] = { "jpg", "jpeg", "png", "gif", "webp", "bmp" };
+static const char* image_extensions[] = { "jpg", "png", "jpeg", "gif", "webp", "bmp" };
 static const char* audio_extensions[] = { "flac", "mp3", "m4a", "wav", "ogg" };
 
 int count_in_string(const char* src, char symbol) {
@@ -61,7 +61,7 @@ const char* split_string(char* dest, size_t size, const char* src, char symbol, 
 	if (discarded) {
 		*discarded = (offset > size ? offset - size : 0);
 	}
-	offset = (offset > size ? size : offset);
+	offset = (offset >= size ? size - 1 : offset);
 	memcpy(dest, src, offset);
 	dest[offset] = '\0';
 	return i;
@@ -141,4 +141,33 @@ char* string_copy_substring(char* dest, const char* src, size_t count) {
 	strncpy(dest, src, count);
 	dest[count] = '\0';
 	return dest;
+}
+
+char* url_decode(char* url) {
+	char* begin = url;
+	char* end = url + strlen(url);
+	char* dest = url;
+	while (end > url) {
+		if (*url != '%') {
+			*(dest++) = *(url++);
+			continue;
+		}
+		if (url + 3 >= end) {
+			continue;
+		}
+		++url;
+		bool hex_1 = (*url >= 'A' && *url <= 'F');
+		bool dec_1 = (*url >= '0' && *url <= '9');
+		char value_1 = *url - (dec_1 ? '0' : 'A' - 10);
+		++url;
+		bool hex_2 = (*url >= 'A' && *url <= 'F');
+		bool dec_2 = (*url >= '0' && *url <= '9');
+		char value_2 = *url - (dec_2 ? '0' : 'A' - 10);
+		++url;
+		if ((hex_1 || dec_1) && (hex_2 || dec_2)) {
+			*(dest++) = 16 * value_1 + value_2;
+		}
+	}
+	*dest = '\0';
+	return begin;
 }

@@ -18,7 +18,7 @@
 #include <netinet/tcp.h>
 #include <unistd.h>
 
-#define DMUSIC_MAX_CLIENTS 128
+#define DMUSIC_MAX_CLIENTS 1024
 
 struct network_state {
 	struct sockaddr_in address;
@@ -29,7 +29,7 @@ struct network_state {
 struct network_state network;
 
 static int next_free_client_index() {
-	for (int i = 0; i < 128; i++) {
+	for (int i = 0; i < DMUSIC_MAX_CLIENTS; i++) {
 		if (network.clients[i].socket < 0) {
 			return i;
 		}
@@ -67,7 +67,7 @@ static void free_socket(int handle) {
 
 void initialize_network() {
 	int port = atoi(get_property("server.port"));
-	for (int i = 0; i < 128; i++) {
+	for (int i = 0; i < DMUSIC_MAX_CLIENTS; i++) {
 		network.clients[i].socket = -1;
 		network.clients[i].buffer = NULL;
 		network.clients[i].allocated = 0;
@@ -109,16 +109,16 @@ void accept_client() {
 	init_socket(network.clients[client].socket);
 }
 
-void read_from_client(int socket, char** buffer, int* size, int* allocated, int max_size) {
+void read_from_client(int socket, char** buffer, size_t* size, size_t* allocated, size_t max_size) {
 	if (!*buffer) {
 		*buffer = (char*)malloc(2048);
 		(*buffer)[0] = '\0';
 		*size = 0;
 		*allocated = 2048;
 	}
-	int allocated_left = *allocated - *size - 1;
-	int wanted_size = max_size > *size ? max_size - *size : allocated_left;
-	int count = read(socket, *buffer + *size, wanted_size > allocated_left ? allocated_left : wanted_size);
+	size_t allocated_left = *allocated - *size - 1;
+	size_t wanted_size = max_size > *size ? max_size - *size : allocated_left;
+	ssize_t count = read(socket, *buffer + *size, wanted_size > allocated_left ? allocated_left : wanted_size);
 	if (count < 0) {
 		if (errno != EWOULDBLOCK && errno != EAGAIN) {
 			fprintf(stderr, "Failed to read from client. Error: %s\n", strerror(errno));
@@ -136,19 +136,19 @@ void read_from_client(int socket, char** buffer, int* size, int* allocated, int 
 	}
 }
 
-void socket_write_all(int socket, const char* buffer, int size) {
+void socket_write_all(int socket, const char* buffer, size_t size) {
 	if (socket < 0 || !buffer) {
 		return;
 	}
-	int written = 0;
-	size = size >= 0 ? size : (int)strlen(buffer);
+	size_t written = 0;
+	size = size > 0 ? size : strlen(buffer);
 	while (size > written) {
-		int count = write(socket, buffer + written, size - written);
-		if (count == -1) {
+		ssize_t count = send(socket, buffer + written, size - written, MSG_NOSIGNAL);
+		if (count < 0) {
 			if (errno == EWOULDBLOCK || errno == EAGAIN) {
 				continue;
 			}
-			fprintf(stderr, "Failed to write to socket. Error: %s\n", strerror(errno));
+			fprintf(stderr, "Failed to write to socket %i. Error: %s\n", socket, strerror(errno));
 			return;
 		}
 		written += count;
@@ -164,9 +164,7 @@ void poll_client(struct client_state* client) {
 		if (!http_read_headers(client)) {
 			return;
 		}
-		printf("Socket %i received header:\n\tResource: \"%s\"\n", client->socket, client->headers.resource);
-		printf("\tContent-Type: \"%s\"\n", client->headers.content_type);
-		printf("\tContent-Length: %i\n\n", client->headers.content_length);
+		printf("Socket %i: \"%s\"\n", client->socket, client->headers.resource);
 		if (client->headers.content_length > 0) {
 			return;
 		}
@@ -175,6 +173,8 @@ void poll_client(struct client_state* client) {
 	strcpy(response_headers.connection, client->headers.connection);
 
 	struct route_result route;
+	memset(&route, 0, sizeof(struct route_result));
+	route.client = client;
 	process_route(&route, client->headers.resource, client->buffer, client->size);
 	response_headers.content_length = route.size;
 	strcpy(response_headers.content_type, route.type);

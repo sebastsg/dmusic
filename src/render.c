@@ -464,16 +464,18 @@ char* render_resource(bool is_main, const char* resource) {
 		render_upload(&buffer, &upload);
 		free(upload.uploads);
 	} else if (!strcmp(page, "prepare")) {
-		/*struct prepare_data* prepare = (struct prepare_data*)malloc(sizeof(struct prepare_data));
+		struct prepare_data* prepare = (struct prepare_data*)malloc(sizeof(struct prepare_data));
 		if (!prepare) {
 			return buffer.data;
 		}
-		load_prepare(prepare, args[0]);
+		char prepare_directory[1024];
+		resource = split_string(prepare_directory, sizeof(prepare_directory), resource, '/', NULL);
+		load_prepare(prepare, prepare_directory);
 		render_prepare(&buffer, prepare);
 		for (int i = 0; i < prepare->num_attachments; i++) {
 			free(prepare->attachments[i].targets.options);
 		}
-		free(prepare);*/
+		free(prepare);
 	} else if (!strcmp(page, "session_track")) {
 		struct session_track_data* tracks = NULL;
 		int num_tracks = 0;

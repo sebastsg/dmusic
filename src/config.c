@@ -143,3 +143,35 @@ char* album_disc_path(char* dest, size_t size, int album_release_id, int disc_nu
 	sprintf(dest, "%s/%i/%i", get_property("path.albums"), album_release_id, disc_num);
 	return dest;
 }
+
+char* client_group_image_path(char* dest, int group_id, int num) {
+	sprintf(dest, "/img/group/%i/%i", group_id, num);
+	return dest;
+}
+
+char* server_group_image_path(char* dest, int group_id, int num) {
+	sprintf(dest, "%s/%i/%i.", get_property("path.groups"), group_id, num);
+	strcat(dest, find_file_extension(dest));
+	return dest;
+}
+
+char* client_album_image_path(char* dest, int album_release_id, int num) {
+	sprintf(dest, "/img/album/%i/%i", album_release_id, num);
+	return dest;
+}
+
+char* server_album_image_path(char* dest, int album_release_id, int num) {
+	sprintf(dest, "%s/%i/%i.", get_property("path.albums"), album_release_id, num);
+	strcat(dest, find_file_extension(dest));
+	return dest;
+}
+
+char* client_uploaded_file_path(char* dest, const char* filename) {
+	sprintf(dest, "/uploaded/%s", filename);
+	return dest;
+}
+
+char* server_uploaded_file_path(char* dest, const char* filename) {
+	sprintf(dest, "%s/%s", get_property("path.uploads"), filename);
+	return dest;
+}
