@@ -1,6 +1,8 @@
 #pragma once
 
-#define _XOPEN_SOURCE 500
+#if !defined(_XOPEN_SOURCE) || _XOPEN_SOURCE < 500
+# define _XOPEN_SOURCE 500
+#endif
 
 #include <stddef.h>
 #include <stdbool.h>

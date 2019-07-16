@@ -218,7 +218,7 @@ bool http_read_body(struct client_state* client) {
 	return client->size >= client->headers.content_length;
 }
 
-void http_write_headers(int socket, const struct http_headers* headers) {
+void http_write_headers(struct client_state* client, const struct http_headers* headers) {
 	char str[1024];
 	strcpy(str, "HTTP/1.1 ");
 	strcat(str, headers->status);
@@ -230,7 +230,7 @@ void http_write_headers(int socket, const struct http_headers* headers) {
 	sprintf(length_str, "\r\nContent-Length: %zu", headers->content_length);
 	strcat(str, length_str);
 	strcat(str, "\r\n\r\n");
-	socket_write_all(socket, str, 0);
+	socket_write_all(client, str, 0);
 }
 
 // todo: make two arrays to compare instead

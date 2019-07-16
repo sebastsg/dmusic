@@ -2,8 +2,6 @@
 #include "cache.h"
 #include "config.h"
 #include "files.h"
-#include "data.h"
-#include "http.h"
 #include "format.h"
 #include "route.h"
 
@@ -37,14 +35,14 @@ static int next_free_client_index() {
 	return -1;
 }
 
-static bool init_socket(int handle) {
-	int result = fcntl(handle, F_SETFL, O_NONBLOCK);
+static bool init_socket(int socket) {
+	int result = fcntl(socket, F_SETFL, O_NONBLOCK);
 	if (result == -1) {
 		fprintf(stderr, "Failed to set socket to non-blocking. Error: %s\n", strerror(errno));
 		return false;
 	}
 	int option = 1;
-	result = setsockopt(handle, IPPROTO_TCP, TCP_NODELAY, &option, sizeof(int));
+	result = setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, &option, sizeof(int));
 	if (result == -1) {
 		fprintf(stderr, "Failed to enable no-delay for socket. Error: %s\n", strerror(errno));
 		return false;
@@ -52,15 +50,15 @@ static bool init_socket(int handle) {
 	return true;
 }
 
-static void free_socket(int handle) {
-	if (handle < 0) {
+static void free_socket(int socket, bool call_shutdown) {
+	if (socket < 0) {
 		return;
 	}
-	printf("Closing connection to socket %i\n", handle);
-	if (shutdown(handle, SHUT_RDWR) == -1) {
+	printf("Closing connection to socket %i\n", socket);
+	if (call_shutdown && shutdown(socket, SHUT_RDWR) == -1) {
 		fprintf(stderr, "Failed to shutdown socket. Error: %s\n", strerror(errno));
 	}
-	if (close(handle) == -1) {
+	if (close(socket) == -1) {
 		fprintf(stderr, "Failed to close socket. Error: %s\n", strerror(errno));
 	}
 }
@@ -107,6 +105,7 @@ void accept_client() {
 		return;
 	}
 	init_socket(network.clients[client].socket);
+	time(&network.clients[client].last_request);
 }
 
 void read_from_client(int socket, char** buffer, size_t* size, size_t* allocated, size_t max_size) {
@@ -136,19 +135,21 @@ void read_from_client(int socket, char** buffer, size_t* size, size_t* allocated
 	}
 }
 
-void socket_write_all(int socket, const char* buffer, size_t size) {
-	if (socket < 0 || !buffer) {
+void socket_write_all(struct client_state* client, const char* buffer, size_t size) {
+	if (client->socket < 0 || !buffer) {
 		return;
 	}
 	size_t written = 0;
 	size = size > 0 ? size : strlen(buffer);
 	while (size > written) {
-		ssize_t count = send(socket, buffer + written, size - written, MSG_NOSIGNAL);
+		ssize_t count = send(client->socket, buffer + written, size - written, MSG_NOSIGNAL);
 		if (count < 0) {
 			if (errno == EWOULDBLOCK || errno == EAGAIN) {
 				continue;
 			}
-			fprintf(stderr, "Failed to write to socket %i. Error: %s\n", socket, strerror(errno));
+			fprintf(stderr, "Failed to write to socket %i. Error: %s\n", client->socket, strerror(errno));
+			free_socket(client->socket, false);
+			client->socket = -1;
 			return;
 		}
 		written += count;
@@ -179,35 +180,44 @@ void poll_client(struct client_state* client) {
 	response_headers.content_length = route.size;
 	strcpy(response_headers.content_type, route.type);
 	// todo: 1 write() call
-	http_write_headers(client->socket, &response_headers);
-	socket_write_all(client->socket, route.body, response_headers.content_length);
+	http_write_headers(client, &response_headers);
+	socket_write_all(client, route.body, response_headers.content_length);
 	free_route(&route);
 
 	client->buffer[0] = '\0';
 	client->size = 0;
 	client->has_headers = false;
+	time(&client->last_request);
 	if (strcmp(client->headers.connection, "keep-alive")) {
-		free_socket(client->socket);
+		free_socket(client->socket, true);
 		client->socket = -1;
 	}
 }
 
 void poll_network() {
 	accept_client();
+	const time_t now = time(NULL);
 	for (int i = 0; i < DMUSIC_MAX_CLIENTS; i++) {
 		if (network.clients[i].socket >= 0) {
 			poll_client(&network.clients[i]);
+			if (now - network.clients[i].last_request > 30) {
+				free_socket(network.clients[i].socket, true);
+				network.clients[i].socket = -1;
+				network.clients[i].buffer[0] = '\0';
+				network.clients[i].size = 0;
+				network.clients[i].has_headers = false;
+			}
 		}
 	}
 }
 
 void free_network() {
 	for (int i = 0; i < DMUSIC_MAX_CLIENTS; i++) {
-		free_socket(network.clients[i].socket);
+		free_socket(network.clients[i].socket, true);
 		free(network.clients[i].buffer);
 		memset(&network.clients[i], 0, sizeof(struct client_state));
 		network.clients[i].socket = -1;
 	}
-	free_socket(network.listener);
+	free_socket(network.listener, false);
 	network.listener = -1;
 }
