@@ -480,6 +480,19 @@ char* render_resource(bool is_main, const char* resource) {
 			free(prepare->attachments[i].targets.options);
 		}
 		free(prepare);
+	} else if (!strcmp(page, "prepare_attachment")) {
+		struct prepare_attachment_data attachment;
+		memset(&attachment, 0, sizeof(attachment));
+		char folder[512];
+		char filename[512];
+		resource = split_string(folder, 512, resource, '/');
+		resource = split_string(filename, 512, resource, '/');
+		char path[1060];
+		sprintf(path, "%s/%s", folder, filename);
+		load_prepare_attachment(&attachment, path);
+		strcpy(buffer.data, "{{ attachment }}");
+		render_prepare_attachments(&buffer, "attachment", &attachment, 1);
+		free(attachment.targets.options);
 	} else if (!strcmp(page, "session_track")) {
 		struct session_track_data* tracks = NULL;
 		int num_tracks = 0;

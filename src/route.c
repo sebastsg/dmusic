@@ -335,6 +335,34 @@ static void route_form_prepare(struct http_data* data) {
 	}
 }
 
+static void route_form_attach(struct route_result* result, struct http_data* data) {
+	const char* method = http_data_string(data, "method");
+	const char* folder = http_data_string(data, "folder");
+	if (!strcmp(method, "url")) {
+		fprintf(stderr, "Not supported yet.\n");
+	} else if (!strcmp(method, "file")) {
+		struct http_data_part* file = http_data_param(data, "file", 0);
+		if (!file->filename) {
+			fprintf(stderr, "Not a file.\n");
+			return;
+		}
+		char dest_path[1024];
+		server_uploaded_file_path(dest_path, folder);
+		strcat(dest_path, "/");
+		strcat(dest_path, file->filename);
+		if (!write_file(dest_path, file->value, file->size)) {
+			return;
+		}
+		char resource[1024];
+		sprintf(resource, "prepare_attachment/%s/%s", folder, file->filename);
+		result->body = render_resource(false, resource);
+		result->size = strlen(result->body);
+		result->freeable = true;
+	} else {
+		fprintf(stderr, "Invalid attach method: %s\n", method);
+	}
+}
+
 void route_form(struct route_result* result, const char* resource, char* body, size_t size) {
 	if (!resource) {
 		return;
@@ -348,6 +376,8 @@ void route_form(struct route_result* result, const char* resource, char* body, s
 		route_form_upload(&data);
 	} else if (!strcmp(form, "prepare")) {
 		route_form_prepare(&data);
+	} else if (!strcmp(form, "attach")) {
+		route_form_attach(result, &data);
 	}
 	http_free_data(&data);
 }

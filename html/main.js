@@ -259,7 +259,7 @@ function onAttachForm(target) {
     target.querySelector('button').setAttribute('disabled', '');
     ajaxPost(target.getAttribute('action'), new FormData(target), response => {
         let attachments = document.getElementsByClassName('attachments')[0];
-        attachments.append(response);
+        attachments.innerHTML += response;
         target.querySelector('input').setAttribute('value', '');
         target.querySelector('button').removeAttribute('disabled');
     });

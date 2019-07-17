@@ -140,6 +140,7 @@ struct group_thumb_data {
 	char image[128];
 };
 
+void load_prepare_attachment(struct prepare_attachment_data* attachment, const char* path);
 void load_prepare(struct prepare_data* prepare, const char* prefix);
 void load_add_group(struct add_group_data* add);
 void load_upload(struct upload_data* upload);
