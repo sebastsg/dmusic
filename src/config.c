@@ -139,8 +139,13 @@ char* album_path(char* dest, size_t size, int album_release_id) {
 	return dest;
 }
 
-char* album_disc_path(char* dest, size_t size, int album_release_id, int disc_num) {
+char* server_disc_path(char* dest, int album_release_id, int disc_num) {
 	sprintf(dest, "%s/%i/%i", get_property("path.albums"), album_release_id, disc_num);
+	return dest;
+}
+
+char* server_disc_format_path(char* dest, int album_release_id, int disc_num, const char* format) {
+	sprintf(dest, "%s/%i/%i/%s", get_property("path.albums"), album_release_id, disc_num, format);
 	return dest;
 }
 

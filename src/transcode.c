@@ -14,7 +14,7 @@
 
 static void transcode_album_release_disc(int album_release_id, int disc_num, const char* format) {
 	char root_path[512];
-	album_disc_path(root_path, 512, album_release_id, disc_num);
+	server_disc_path(root_path, album_release_id, disc_num);
 	char dest_path[1024];
 	sprintf(dest_path, "%s/%s", root_path, format);
 	if (mkdir(dest_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {

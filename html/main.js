@@ -135,54 +135,39 @@ function onClickA(event) {
 
 function onPrepareForm(target) {
     target.setAttribute('disabled', true);
+    let data = new FormData();
+    data.append('name', document.querySelector('input[name=name]').value);
+    data.append('released-at', document.querySelector('input[name=released_at]').value);
+    data.append('catalog', document.querySelector('input[name=catalog]').value);
+    data.append('format', document.querySelector('select[name=format]').value);
+    data.append('type', document.querySelector('select[name=type]').value);
+    data.append('release-type', document.querySelector('select[name=release_type]').value);
     // TODO: multiple groups in frontend
-    let groups = [
-        document.querySelector('input[name=groups]').value
-    ];
-    let attachments = [];
+    data.append('groups', document.querySelector('input[name=groups]').value);
     for (let attachment of document.querySelectorAll('.attachments tr:not(:first-child)')) {
-        attachments.push({
-            keep: attachment.querySelector('input[name=keep]').getAttribute('checked') !== null,
-            target: attachment.querySelector('select[name=target]').value,
-            path: attachment.querySelector('input[name=path]').value
-        });
+        if (attachment.querySelector('input[name=keep]').getAttribute('checked') !== null) {
+            data.append('attachment-type', attachment.querySelector('select[name=target]').value);
+            data.append('attachment-path', attachment.querySelector('input[name=path]').value);
+        }
     }
-    let discs = [];
-    for (let prepareDisc of document.querySelectorAll('.prepare-disc')) {
-        let disc = null;
+    for (let disc of document.querySelectorAll('.prepare-disc')) {
+        let tracks = 0;
         let headers = 3;
-        for (let track of prepareDisc.querySelectorAll('tr')) {
+        for (let track of disc.querySelectorAll('tr')) {
             if (headers > 0) {
                 headers--;
                 continue;
             }
-            if (disc === null) {
-                disc = {
-                    num: prepareDisc.querySelector('input[name=num]').value,
-                    name: prepareDisc.querySelector('input[name=name]').value,
-                    tracks: []
-                };
-            }
-            disc.tracks.push({
-                num: track.querySelector('input[name=num]').value,
-                name: track.querySelector('input[name=name]').value,
-                path: track.querySelector('input[name=path]').value
-            });
+            data.append('track-num', track.querySelector('input[name=num]').value);
+            data.append('track-name', track.querySelector('input[name=name]').value);
+            data.append('track-path', track.querySelector('input[name=path]').value);
+            tracks++;
         }
-        discs.push(disc);
+        data.append('disc-num', disc.querySelector('input[name=num]').value);
+        data.append('disc-name', disc.querySelector('input[name=name]').value);
+        data.append('disc-tracks', tracks);
     }
-    ajaxPost('/form/prepare', {
-        name: document.querySelector('input[name=name]').value,
-        released_at: document.querySelector('input[name=released_at]').value,
-        catalog: document.querySelector('input[name=catalog]').value,
-        format: document.querySelector('select[name=format]').value,
-        type: document.querySelector('select[name=type]').value,
-        release_type: document.querySelector('select[name=release_type]').value,
-        folder: document.querySelector('input[name=folder]').value,
-        groups: JSON.stringify(groups),
-        attachments: JSON.stringify(attachments),
-        discs: JSON.stringify(discs)
-    }, response => document.querySelector('main section').innerHTML = response);
+    ajaxPost('/form/prepare', data, response => document.querySelector('main section').innerHTML = response);
 }
 
 function onClickAppendRow(target) {

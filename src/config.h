@@ -25,7 +25,9 @@ char* html_path(char* dest, size_t size, const char* name);
 char* cache_path(char* dest, size_t size, const char* path);
 char* group_path(char* dest, size_t size, int group_id);
 char* album_path(char* dest, size_t size, int album_release_id);
-char* album_disc_path(char* dest, size_t size, int album_release_id, int disc_num);
+
+char* server_disc_path(char* dest, int album_release_id, int disc_num);
+char* server_disc_format_path(char* dest, int album_release_id, int disc_num, const char* format);
 
 char* client_group_image_path(char* dest, int group_id, int num);
 char* server_group_image_path(char* dest, int group_id, int num);
