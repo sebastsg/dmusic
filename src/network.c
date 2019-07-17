@@ -26,6 +26,21 @@ struct network_state {
 
 struct network_state network;
 
+static void clear_client_for_next_request(struct client_state* client) {
+	free_route(&client->route);
+	if (client->buffer) {
+		client->buffer[0] = '\0';
+	}
+	client->size = 0;
+	memset(&client->headers, 0, sizeof(struct http_headers));
+	client->has_headers = false;
+	time(&client->last_request);
+	client->is_processing = false;
+	client->write_begin = 0;
+	client->write_end = 0;
+	client->write_index = 0;
+}
+
 static int next_free_client_index() {
 	for (int i = 0; i < DMUSIC_MAX_CLIENTS; i++) {
 		if (network.clients[i].socket < 0) {
@@ -65,11 +80,10 @@ static void free_socket(int socket, bool call_shutdown) {
 
 void initialize_network() {
 	int port = atoi(get_property("server.port"));
+	memset(network.clients, 0, sizeof(struct client_state) * DMUSIC_MAX_CLIENTS);
 	for (int i = 0; i < DMUSIC_MAX_CLIENTS; i++) {
 		network.clients[i].socket = -1;
-		network.clients[i].buffer = NULL;
-		network.clients[i].allocated = 0;
-		network.clients[i].size = 0;
+		network.clients[i].route.client = &network.clients[i];
 	}
 	network.listener = socket(AF_INET, SOCK_STREAM, 0);
 	if (network.listener == -1) {
@@ -105,7 +119,7 @@ void accept_client() {
 		return;
 	}
 	init_socket(network.clients[client].socket);
-	time(&network.clients[client].last_request);
+	clear_client_for_next_request(&network.clients[client]);
 }
 
 void read_from_client(int socket, char** buffer, size_t* size, size_t* allocated, size_t max_size) {
@@ -135,9 +149,9 @@ void read_from_client(int socket, char** buffer, size_t* size, size_t* allocated
 	}
 }
 
-void socket_write_all(struct client_state* client, const char* buffer, size_t size) {
+bool socket_write_all(struct client_state* client, const char* buffer, size_t size) {
 	if (client->socket < 0 || !buffer) {
-		return;
+		return false;
 	}
 	size_t written = 0;
 	size = size > 0 ? size : strlen(buffer);
@@ -150,47 +164,72 @@ void socket_write_all(struct client_state* client, const char* buffer, size_t si
 			fprintf(stderr, "Failed to write to socket %i. Error: %s\n", client->socket, strerror(errno));
 			free_socket(client->socket, false);
 			client->socket = -1;
-			return;
+			return false;
 		}
 		written += count;
+	}
+	return true;
+}
+
+void finish_client_request(struct client_state* client) {
+	clear_client_for_next_request(client);
+	if (strcmp(client->headers.connection, "keep-alive")) {
+		free_socket(client->socket, true);
+		client->socket = -1;
+	}
+}
+
+void init_client_response(struct client_state* client) {
+	struct http_headers response_headers;
+	strcpy(response_headers.connection, client->headers.connection);
+	process_route(&client->route, client->headers.resource, client->buffer, client->size);
+	response_headers.content_length = client->route.size;
+	strcpy(response_headers.content_type, client->route.type);
+	http_write_headers(client, &response_headers);
+	client->write_index = 0;
+	client->write_begin = 0;
+	client->write_end = response_headers.content_length;
+	if (client->write_end - client->write_begin == 0) {
+		finish_client_request(client);
+	}
+}
+
+void read_client_request(struct client_state* client) {
+	if (client->is_processing) {
+		return;
+	}
+	if (client->has_headers) {
+		client->is_processing = http_read_body(client);
+	} else if (http_read_headers(client)) {
+		printf("Socket %i: \"%s\"\n", client->socket, client->headers.resource);
+		client->is_processing = (client->headers.content_length == 0);
+	} else {
+		client->is_processing = false;
+	}
+	if (client->is_processing) {
+		init_client_response(client);
+	}
+}
+
+void process_client_request(struct client_state* client) {
+	size_t write_size = client->write_end - client->write_index;
+	if (write_size > 32768) {
+		write_size = 32768;
+	}
+	printf("Writing %zu bytes to socket %i\n", write_size, client->socket);
+	if (socket_write_all(client, client->route.body + client->write_index, write_size)) {
+		client->write_index += write_size;
+		if (client->write_index >= client->write_end) {
+			puts("Done!\n");
+			finish_client_request(client);
+		}
 	}
 }
 
 void poll_client(struct client_state* client) {
-	if (client->has_headers) {
-		if (!http_read_body(client)) {
-			return;
-		}
-	} else {
-		if (!http_read_headers(client)) {
-			return;
-		}
-		printf("Socket %i: \"%s\"\n", client->socket, client->headers.resource);
-		if (client->headers.content_length > 0) {
-			return;
-		}
-	}
-	struct http_headers response_headers;
-	strcpy(response_headers.connection, client->headers.connection);
-
-	struct route_result route;
-	memset(&route, 0, sizeof(struct route_result));
-	route.client = client;
-	process_route(&route, client->headers.resource, client->buffer, client->size);
-	response_headers.content_length = route.size;
-	strcpy(response_headers.content_type, route.type);
-	// todo: 1 write() call
-	http_write_headers(client, &response_headers);
-	socket_write_all(client, route.body, response_headers.content_length);
-	free_route(&route);
-
-	client->buffer[0] = '\0';
-	client->size = 0;
-	client->has_headers = false;
-	time(&client->last_request);
-	if (strcmp(client->headers.connection, "keep-alive")) {
-		free_socket(client->socket, true);
-		client->socket = -1;
+	read_client_request(client);
+	if (client->is_processing) {
+		process_client_request(client);
 	}
 }
 
@@ -203,9 +242,6 @@ void poll_network() {
 			if (now - network.clients[i].last_request > 30) {
 				free_socket(network.clients[i].socket, true);
 				network.clients[i].socket = -1;
-				network.clients[i].buffer[0] = '\0';
-				network.clients[i].size = 0;
-				network.clients[i].has_headers = false;
 			}
 		}
 	}

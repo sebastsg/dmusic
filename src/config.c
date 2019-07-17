@@ -175,3 +175,23 @@ char* server_uploaded_file_path(char* dest, const char* filename) {
 	sprintf(dest, "%s/%s", get_property("path.uploads"), filename);
 	return dest;
 }
+
+char* client_track_path(char* dest, const char* format, int album_release_id, int disc_num, int track_num) {
+	sprintf(dest, "/track/%s/%i/%i/%i", format, album_release_id, disc_num, track_num);
+	return dest;
+}
+
+char* server_track_path(char* dest, const char* format, int album_release_id, int disc_num, int track_num) {
+	char ext[16];
+	if (!strncmp(format, "mp3", 3)) {
+		strcpy(ext, "mp3");
+	} else if (!strncmp(format, "aac", 3)) {
+		strcpy(ext, "m4a");
+	} else if (!strncmp(format, "flac", 4)) {
+		strcpy(ext, "flac");
+	} else {
+		return dest;
+	}
+	sprintf(dest, "%s/%i/%i/%s/%i.%s", get_property("path.albums"), album_release_id, disc_num, format, track_num, ext);
+	return dest;
+}

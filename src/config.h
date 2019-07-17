@@ -35,3 +35,6 @@ char* server_album_image_path(char* dest, int album_release_id, int num);
 
 char* client_uploaded_file_path(char* dest, const char* filename);
 char* server_uploaded_file_path(char* dest, const char* filename);
+
+char* client_track_path(char* dest, const char* format, int album_release_id, int disc_num, int track_num);
+char* server_track_path(char* dest, const char* format, int album_release_id, int disc_num, int track_num);

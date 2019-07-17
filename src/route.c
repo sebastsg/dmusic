@@ -87,6 +87,26 @@ void route_image(struct route_result* result, const char* resource) {
 	}
 }
 
+void route_track(struct route_result* result, const char* resource) {
+	if (!resource) {
+		return;
+	}
+	printf("Range: %s\n", result->client->headers.range);
+	char format[16];
+	int album_release_id = 0;
+	int disc_num = 0;
+	int track_num = 0;
+	resource = split_string(format, 16, resource, '/');
+	int num = sscanf(resource, "%i/%i/%i", &album_release_id, &disc_num, &track_num);
+	if (num != 3) {
+		fprintf(stderr, "Invalid request: %s\n", resource);
+		return;
+	}
+	char path[1024];
+	server_track_path(path, format, album_release_id, disc_num, track_num);
+	route_file(result, path);
+}
+
 static void route_form_add_group(struct http_data* data) {
 	const char* name = http_data_string(data, "name");
 	const char* country = http_data_string(data, "country");
@@ -214,6 +234,10 @@ void process_route(struct route_result* result, const char* resource, char* body
 		route_image(result, it);
 		return;
 	}
+	if (!strcmp(command, "track")) {
+		route_track(result, it);
+		return;
+	}
 	if (!strcmp(command, "render")) {
 		route_render(result, it);
 		return;
@@ -250,7 +274,8 @@ void process_route(struct route_result* result, const char* resource, char* body
 void free_route(struct route_result* result) {
 	if (result->freeable) {
 		free(result->body);
-		result->body = NULL;
-		result->size = 0;
+		result->freeable = false;
 	}
+	result->body = NULL;
+	result->size = 0;
 }

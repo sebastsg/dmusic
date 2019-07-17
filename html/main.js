@@ -83,7 +83,7 @@ function onInternalLinkClick(target) {
 
 function playTrack(album, disc, track) {
     let audio = document.getElementById('audio');
-    audio.setAttribute('src', '/data/albums/' + album + '/' + disc + '/mp3-320/' + track + '.mp3');
+    audio.setAttribute('src', '/track/mp3-320/' + album + '/' + disc + '/' + track);
     audio.play();
 }
 
@@ -114,7 +114,8 @@ function onAddGroupForm(target) {
     ajaxPost('/form/addgroup', data, response => document.querySelector('main section').innerHTML = response);
 }
 
-function onClickA(target) {
+function onClickA(event) {
+    let target = event.target;
     if (target.parentNode.tagName === 'NAV') {
         event.preventDefault();
         onNavClick(target);
@@ -248,7 +249,7 @@ function onClickLi(target) {
 document.addEventListener('click', function (event) {
     let target = event.target;
     if (target.tagName === 'A') {
-        onClickA(target);
+        onClickA(event);
     } else if (target.tagName === 'LI') {
         onClickLi(target);
     } else if (target.tagName === 'BUTTON') {

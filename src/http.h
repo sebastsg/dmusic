@@ -14,6 +14,7 @@ struct http_headers {
 	char status[32];
 	char resource[128];
 	char content_type[256];
+	char range[128];
 };
 
 struct http_data_part {

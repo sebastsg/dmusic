@@ -49,6 +49,17 @@ static void http_read_content_type(char* dest, const char* src) {
 	}
 }
 
+static void http_read_range(char* dest, const char* src) {
+	const char* begin = strstr(src, "Range: ");
+	if (begin) {
+		begin += strlen("Range: ");
+		const char* end = strstr(begin, "\r\n");
+		if (end) {
+			string_copy_substring(dest, begin, end - begin);
+		}
+	}
+}
+
 static char* http_next_form_data(char* buffer, size_t buffer_size, const char* boundary, const char** name, size_t* size, const char** filename) {
 	buffer++; // buffer could be \0 (see end). maybe this is bad design, but should work fine
 	buffer_size--;
@@ -198,6 +209,7 @@ bool http_read_headers(struct client_state* client) {
 	http_read_resource(client->headers.resource, client->buffer);
 	http_read_content_type(client->headers.content_type, client->buffer);
 	http_read_content_length(&client->headers, client->buffer);
+	http_read_range(client->headers.range, client->buffer);
 	if (strstr(client->buffer, "Connection: keep-alive")) {
 		strcpy(client->headers.connection, "keep-alive");
 	} else {
@@ -273,7 +285,7 @@ const char* http_file_content_type(const char* path) {
 	if (!strcmp(extension, "mp3")) {
 		return "audio/mpeg";
 	}
-	if (!strcmp(extension, "aac")) {
+	if (!strcmp(extension, "m4a")) {
 		return "audio/aac";
 	}
 	if (!strcmp(extension, "webm")) {

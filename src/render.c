@@ -155,14 +155,12 @@ static void render_tags(struct render_buffer* buffer, const char* key, struct ta
 
 static void render_track(struct render_buffer* buffer, const char* key, struct track_data* track) {
 	set_parameter(buffer, key, mem_cache()->track_template);
-	set_parameter_int(buffer, "queue_album_id", track->album_release_id);
-	set_parameter_int(buffer, "queue_disc_num", track->disc_num);
-	set_parameter_int(buffer, "queue_track_num", track->num);
+	char track_url[64];
+	client_track_path(track_url, "mp3-320", track->album_release_id, track->disc_num, track->num);
+	set_parameter(buffer, "queue_url", track_url);
 	set_parameter(buffer, "space_prefix", track->num < 10 ? "&nbsp;" : "");
 	set_parameter_int(buffer, "num_str", track->num);
-	set_parameter_int(buffer, "play_album_id", track->album_release_id);
-	set_parameter_int(buffer, "play_disc_num", track->disc_num);
-	set_parameter_int(buffer, "play_track_num", track->num);
+	set_parameter(buffer, "play_url", track_url);
 	set_parameter(buffer, "name", track->name);
 }
 
