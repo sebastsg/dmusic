@@ -236,7 +236,7 @@ void http_write_headers(struct client_state* client, const struct http_headers* 
 	strcat(str, headers->status);
 	strcat(str, "\r\nServer: dmusic\r\nConnection: ");
 	strcat(str, headers->connection);
-	strcat(str, "\r\nContent-Type: ");
+	strcat(str, "\r\nAccept-Ranges: bytes\r\nContent-Type: ");
 	strcat(str, headers->content_type);
 	char length_str[32];
 	sprintf(length_str, "\r\nContent-Length: %zu", headers->content_length);
