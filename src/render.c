@@ -47,6 +47,11 @@ static void init_render_buffer(struct render_buffer* buffer, int size) {
 	resize_render_buffer(buffer, size);
 }
 
+static void append_buffer(struct render_buffer* buffer, const char* str) {
+	resize_render_buffer(buffer, strlen(buffer->data) + strlen(str) + 1);
+	strcat(buffer->data, str);
+}
+
 static void set_parameter(struct render_buffer* buffer, const char* key, const char* value) {
 	static char key_buffer[128];
 	if (strlen(key) >= sizeof(key_buffer)) {
@@ -85,7 +90,7 @@ static void render_search_results(struct render_buffer* buffer, struct search_re
 	struct render_buffer result_buffer;
 	init_render_buffer(&result_buffer, 2048);
 	for (int i = 0; i < num_results; i++) {
-		strcat(result_buffer.data, mem_cache()->search_result_template);
+		append_buffer(&result_buffer, mem_cache()->search_result_template);
 		set_parameter(&result_buffer, "value", results[i].value);
 		set_parameter(&result_buffer, "text", results[i].text);
 	}
@@ -114,7 +119,7 @@ static void render_session_tracks(struct render_buffer* buffer, const char* key,
 	struct render_buffer item_buffer;
 	init_render_buffer(&item_buffer, 512);
 	for (int i = 0; i < num_tracks; i++) {
-		strcat(item_buffer.data, "{{ track }}");
+		append_buffer(&item_buffer, "{{ track }}");
 		render_session_track(&item_buffer, "track", &tracks[i]);
 	}
 	set_parameter(buffer, key, item_buffer.data);
@@ -132,7 +137,7 @@ static void render_group_thumb_list(struct render_buffer* buffer, struct group_t
 	struct render_buffer item_buffer;
 	init_render_buffer(&item_buffer, 512);
 	for (int i = 0; i < num_thumbs; i++) {
-		strcat(item_buffer.data, "{{ thumb }}");
+		append_buffer(&item_buffer, "{{ thumb }}");
 		render_group_thumb(&item_buffer, "thumb", thumbs[i].id, thumbs[i].name, thumbs[i].image);
 	}
 	strcpy(buffer->data, mem_cache()->group_thumb_list_template);
@@ -144,7 +149,7 @@ static void render_tags(struct render_buffer* buffer, const char* key, struct ta
 	struct render_buffer item_buffer;
 	init_render_buffer(&item_buffer, 512);
 	for (int i = 0; i < num_tags; i++) {
-		strcat(item_buffer.data, "{{ tag }}");
+		append_buffer(&item_buffer, "{{ tag }}");
 		set_parameter(&item_buffer, "tag", mem_cache()->tag_link_template);
 		set_parameter(&item_buffer, "tag_link", tags[i].name);
 		set_parameter(&item_buffer, "tag_name", tags[i].name);
@@ -154,7 +159,7 @@ static void render_tags(struct render_buffer* buffer, const char* key, struct ta
 }
 
 static void render_track(struct render_buffer* buffer, struct track_data* track) {
-	strcat(buffer->data, mem_cache()->track_template);
+	append_buffer(buffer, mem_cache()->track_template);
 	char track_url[64];
 	client_track_path(track_url, "mp3-320", track->album_release_id, track->disc_num, track->num);
 	set_parameter(buffer, "queue_url", track_url);
@@ -175,14 +180,14 @@ static void render_disc(struct render_buffer* buffer, int album_release_id, int 
 		render_track(&tracks_buffer, &tracks[*track_offset]);
 		(*track_offset)++;
 		if (*track_offset % 16 == 0) {
-			strcat(buffer->data, mem_cache()->disc_template);
+			append_buffer(buffer, mem_cache()->disc_template);
 			set_parameter(buffer, "tracks", tracks_buffer.data);
 			tracks_buffer.data[0] = '\0';
 			tracks_buffer.offset = 0;
 		}
 	}
 	if (*track_offset % 16 != 0) {
-		strcat(buffer->data, mem_cache()->disc_template);
+		append_buffer(buffer, mem_cache()->disc_template);
 		set_parameter(buffer, "tracks", tracks_buffer.data);
 	}
 	free(tracks_buffer.data);
@@ -221,7 +226,7 @@ static void render_albums(struct render_buffer* buffer, const char* key, const c
 		if (strcmp(type, albums[i].album_type_code)) {
 			continue;
 		}
-		strcat(item_buffer.data, "{{ album }}");
+		append_buffer(&item_buffer, "{{ album }}");
 		render_album(&item_buffer, "album", &albums[i], tracks, num_tracks, &track_offset);
 		count++;
 	}
@@ -244,11 +249,31 @@ static void render_group(struct render_buffer* buffer, struct group_data* group)
 	init_render_buffer(&album_list_buffer, 2048);
 	for (int i = 0; i < mem_cache()->album_types.count; i++) {
 		struct select_option* option = &mem_cache()->album_types.options[i];
-		strcat(album_list_buffer.data, "{{ albums }}");
+		append_buffer(&album_list_buffer, "{{ albums }}");
 		render_albums(&album_list_buffer, "albums", option->code, option->name, group->albums, group->num_albums, group->tracks, group->num_tracks);
 	}
 	set_parameter(buffer, "albums", album_list_buffer.data);
 	free(album_list_buffer.data);
+}
+
+static void render_sftp_ls(struct render_buffer* buffer) {
+	char ftp_command[2048];
+	sprintf(ftp_command, "%s/ls_ftp.sh %s %s", get_property("path.root"), get_property("ftp.user"), get_property("ftp.host"));
+	char* result = system_output(ftp_command);
+	if (!result) {
+		return;
+	}
+	char line[1024];
+	const char* it = result;
+	append_buffer(buffer, "<ul class=\"remote-directory-list\">");
+	while (it = split_string(line, 1024, it, '\n')) {
+		if (!strchr(line, '>')) {
+			append_buffer(buffer, "<li>{{ line }}</li>");
+			set_parameter(buffer, "line", line);
+		}
+	}
+	append_buffer(buffer, "</ul>");
+	free(result);
 }
 
 static void render_upload(struct render_buffer* buffer, struct upload_data* upload) {
@@ -261,6 +286,7 @@ static void render_upload(struct render_buffer* buffer, struct upload_data* uplo
 		set_parameter(&uploads_buffer, "prefix", upload->uploads[i].prefix);
 		set_parameter(&uploads_buffer, "name", upload->uploads[i].name);
 	}
+	render_sftp_ls(&uploads_buffer);
 	set_parameter(buffer, "uploads", uploads_buffer.data);
 	free(uploads_buffer.data);
 }
@@ -288,7 +314,7 @@ static void render_prepare_attachments(struct render_buffer* buffer, const char*
 	struct render_buffer attachments_buffer;
 	init_render_buffer(&attachments_buffer, 4096);
 	for (int i = 0; i < num_attachments; i++) {
-		strcat(attachments_buffer.data, mem_cache()->prepare_attachment_template);
+		append_buffer(&attachments_buffer, mem_cache()->prepare_attachment_template);
 		const char* extension = strrchr(attachments[i].name, '.');
 		const char* blacklist[] = { ".sfv", ".m3u", ".nfo" };
 		bool checked = true;
@@ -343,7 +369,7 @@ static void render_prepare(struct render_buffer* buffer, struct prepare_data* pr
 		if (strstr(format->name, "AAC") && strcmp(extension, "m4a")) {
 			continue;
 		}
-		strcat(select_buffer.data, "{{ option }}");
+		append_buffer(&select_buffer, "{{ option }}");
 		bool selected = !strcmp(prepare->audio_format, format->code);
 		render_select_option(&select_buffer, "option", format->code, format->name, selected);
 	}
@@ -361,7 +387,7 @@ static void render_prepare(struct render_buffer* buffer, struct prepare_data* pr
 	select_buffer.data[0] = '\0';
 	for (int i = 0; i < mem_cache()->album_release_types.count; i++) {
 		struct select_option* type = &mem_cache()->album_release_types.options[i];
-		strcat(select_buffer.data, "{{ option }}");
+		append_buffer(&select_buffer, "{{ option }}");
 		bool selected = !strcmp(prepare->album_release_type, type->code);
 		render_select_option(&select_buffer, "option", type->code, type->name, selected);
 	}
@@ -371,7 +397,7 @@ static void render_prepare(struct render_buffer* buffer, struct prepare_data* pr
 	struct render_buffer discs_buffer;
 	init_render_buffer(&discs_buffer, 8192);
 	for (int i = 0; i < prepare->num_discs; i++) {
-		strcat(discs_buffer.data, "{{ disc }}");
+		append_buffer(&discs_buffer, "{{ disc }}");
 		render_prepare_disc(&discs_buffer, "disc", &prepare->discs[i]);
 	}
 	set_parameter(buffer, "discs", discs_buffer.data);
@@ -388,7 +414,7 @@ static void render_add_group(struct render_buffer* buffer, struct add_group_data
 	init_render_buffer(&select_buffer, 2048);
 	for (int i = 0; i < mem_cache()->roles.count; i++) {
 		struct select_option* role = &mem_cache()->roles.options[i];
-		strcat(select_buffer.data, "{{ option }}");
+		append_buffer(&select_buffer, "{{ option }}");
 		render_select_option(&select_buffer, "option", role->code, role->name, 0);
 	}
 	set_parameter(buffer, "roles", select_buffer.data);

@@ -8,6 +8,7 @@
 #include <stdbool.h>
 
 char* render_resource(bool is_main, const char* resource);
+char* system_output(const char* command);
 
 struct select_option {
 	char code[64];

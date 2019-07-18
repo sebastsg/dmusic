@@ -17,6 +17,30 @@
 #include <unistd.h>
 #endif
 
+char* system_output(const char* command) {
+	FILE* process = popen(command, "r");
+	if (!process) {
+		fprintf(stderr, "Failed to run \"%s\". Error: %s\n", command, strerror(errno));
+		return NULL;
+	}
+	size_t index = 0;
+	size_t size = 512;
+	char* buffer = (char*)malloc(size);
+	while (fgets(buffer + index, size - index, process)) {
+		index += strlen(buffer + index);
+		if (index + 1 >= size) {
+			char* new_buffer = (char*)realloc(buffer, size * 2);
+			if (!new_buffer) {
+				break;
+			}
+			buffer = new_buffer;
+			size *= 2;
+		}
+	}
+	pclose(process);
+	return buffer;
+}
+
 void load_prepare_attachment(struct prepare_attachment_data* attachment, const char* path) {
 	const char* filename = strrchr(path, '/') + 1;
 	strcpy(attachment->name, filename);

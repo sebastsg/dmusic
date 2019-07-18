@@ -37,7 +37,7 @@ function ajaxGet(path, done) {
 function ajaxPost(path, data, done, progress) {
     let xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
-        if (this.readyState == 4) {
+        if (this.readyState == 4 && done !== undefined) {
             done(this.responseText, this.status);
         }
     };
@@ -233,6 +233,9 @@ function onClickLi(target) {
         removeClassFromAll(list.children, 'active');
         target.classList.add('active');
         playTrack(target.dataset.album, target.dataset.disc, target.dataset.track);
+    } else if (list.classList.contains('remote-directory-list')) {
+        ajaxPost('/form/downloadremote', { directory: target.innerHTML });
+        target.innerHTML = '';
     }
 }
 

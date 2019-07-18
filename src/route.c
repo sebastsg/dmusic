@@ -213,30 +213,6 @@ static void route_form_upload(struct http_data* data) {
 	}
 }
 
-char* system_output(const char* command) {
-	FILE* process = popen(command, "r");
-	if (!process) {
-		fprintf(stderr, "Failed to run \"%s\". Error: %s\n", command, strerror(errno));
-		return NULL;
-	}
-	size_t index = 0;
-	size_t size = 512;
-	char* buffer = (char*)malloc(size);
-	while (fgets(buffer + index, size - index, process)) {
-		index += strlen(buffer + index);
-		if (index >= size) {
-			char* new_buffer = (char*)realloc(buffer, size * 2);
-			if (!new_buffer) {
-				break;
-			}
-			buffer = new_buffer;
-			size *= 2;
-		}
-	}
-	pclose(process);
-	return buffer;
-}
-
 static void route_form_prepare(struct http_data* data) {
 	int num_discs = http_data_parameter_array_size(data, "disc-num");
 	if (num_discs > 10) {
@@ -375,6 +351,31 @@ static void route_form_add_session_track(struct route_result* result, struct htt
 	route_render(result, resource);
 }
 
+static void route_form_download_remote(struct http_data* data) {
+	const char* directory = http_data_string(data, "directory");
+	if (strlen(directory) == 0) {
+		return;
+	}
+	const char* user = get_property("ftp.user");
+	const char* host = get_property("ftp.host");
+	const char* root_dir = get_property("path.root");
+	const char* uploads_dir = get_property("path.uploads");
+	char dir[1024];
+	strcpy(dir, directory);
+	trim_ends(dir, " \t\r\n");
+	char command[4096];
+	sprintf(command, "%s/get_ftp.sh %s %s \"%s\" \"%s\"", root_dir, user, host, uploads_dir, dir);
+	char* result = system_output(command);
+	if (!result) {
+		return;
+	}
+	puts(result);
+	free(result);
+	sprintf(command, "mv \"%s/%s\" \"%s/%lld%i %s\"", uploads_dir, dir, uploads_dir, (long long)time(NULL), 1000 + rand() % 9000, dir);
+	puts(command);
+	system(command);
+}
+
 void route_form(struct route_result* result, const char* resource, char* body, size_t size) {
 	if (!resource) {
 		return;
@@ -392,6 +393,8 @@ void route_form(struct route_result* result, const char* resource, char* body, s
 		route_form_attach(result, &data);
 	} else if (!strcmp(form, "addsessiontrack")) {
 		route_form_add_session_track(result, &data);
+	} else if (!strcmp(form, "downloadremote")) {
+		route_form_download_remote(&data);
 	}
 	http_free_data(&data);
 }
