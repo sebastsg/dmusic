@@ -355,12 +355,24 @@ static void route_form_attach(struct route_result* result, struct http_data* dat
 		}
 		char resource[1024];
 		sprintf(resource, "prepare_attachment/%s/%s", folder, file->filename);
-		result->body = render_resource(false, resource);
-		result->size = strlen(result->body);
-		result->freeable = true;
+		route_render(result, resource);
 	} else {
 		fprintf(stderr, "Invalid attach method: %s\n", method);
 	}
+}
+
+static void route_form_add_session_track(struct route_result* result, struct http_data* data) {
+	const char* album_release_id = http_data_string(data, "album");
+	const char* disc_num = http_data_string(data, "disc");
+	const char* track_num = http_data_string(data, "track");
+	int num = create_session_track("dib", atoi(album_release_id), atoi(disc_num), atoi(track_num));
+	if (num == 0) {
+		fputs("Failed to add session track.\n", stderr);
+		return;
+	}
+	char resource[128];
+	sprintf(resource, "session_track/%s/%i", "dib", num);
+	route_render(result, resource);
 }
 
 void route_form(struct route_result* result, const char* resource, char* body, size_t size) {
@@ -378,6 +390,8 @@ void route_form(struct route_result* result, const char* resource, char* body, s
 		route_form_prepare(&data);
 	} else if (!strcmp(form, "attach")) {
 		route_form_attach(result, &data);
+	} else if (!strcmp(form, "addsessiontrack")) {
+		route_form_add_session_track(result, &data);
 	}
 	http_free_data(&data);
 }

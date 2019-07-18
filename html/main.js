@@ -123,9 +123,9 @@ function onClickA(event) {
     if (target.classList.contains('queue-track')) {
         event.preventDefault();
         let parts = target.getAttribute('href').split('/');
-        const album = parts[2];
-        const disc = parts[3];
-        const track = parts[4];
+        const album = parts[3];
+        const disc = parts[4];
+        const track = parts[5];
         addToPlaylist(album, disc, track);
     } else if (!target.classList.contains('external-link')) {
         event.preventDefault();
@@ -224,8 +224,13 @@ function onClickButton(target) {
 }
 
 function onClickLi(target) {
-    if (target.parentNode.getAttribute('id') === 'playlist') {
-        removeClassFromAll(target.parentNode.children, 'active');
+    let list = target.parentNode;
+    let wrapper = list.parentNode;
+    if (wrapper === null) {
+        return;
+    }
+    if (wrapper.getAttribute('id') === 'playlist') {
+        removeClassFromAll(list.children, 'active');
         target.classList.add('active');
         playTrack(target.dataset.album, target.dataset.disc, target.dataset.track);
     }
