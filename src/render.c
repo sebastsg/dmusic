@@ -153,8 +153,8 @@ static void render_tags(struct render_buffer* buffer, const char* key, struct ta
 	free(item_buffer.data);
 }
 
-static void render_track(struct render_buffer* buffer, const char* key, struct track_data* track) {
-	set_parameter(buffer, key, mem_cache()->track_template);
+static void render_track(struct render_buffer* buffer, struct track_data* track) {
+	strcat(buffer->data, mem_cache()->track_template);
 	char track_url[64];
 	client_track_path(track_url, "mp3-320", track->album_release_id, track->disc_num, track->num);
 	set_parameter(buffer, "queue_url", track_url);
@@ -164,7 +164,7 @@ static void render_track(struct render_buffer* buffer, const char* key, struct t
 	set_parameter(buffer, "name", track->name);
 }
 
-static void render_disc(struct render_buffer* buffer, const char* key, int album_release_id, int disc_num, struct track_data* tracks, int num_tracks, int* track_offset, bool* last_track) {
+static void render_disc(struct render_buffer* buffer, int album_release_id, int disc_num, struct track_data* tracks, int num_tracks, int* track_offset, bool* last_track) {
 	struct render_buffer tracks_buffer;
 	init_render_buffer(&tracks_buffer, 2048);
 	while (*track_offset < num_tracks) {
@@ -172,12 +172,19 @@ static void render_disc(struct render_buffer* buffer, const char* key, int album
 			*last_track = true;
 			break;
 		}
-		strcat(tracks_buffer.data, "{{ track }}");
-		render_track(&tracks_buffer, "track", &tracks[*track_offset]);
+		render_track(&tracks_buffer, &tracks[*track_offset]);
 		(*track_offset)++;
+		if (*track_offset % 16 == 0) {
+			strcat(buffer->data, mem_cache()->disc_template);
+			set_parameter(buffer, "tracks", tracks_buffer.data);
+			tracks_buffer.data[0] = '\0';
+			tracks_buffer.offset = 0;
+		}
 	}
-	set_parameter(buffer, key, mem_cache()->disc_template);
-	set_parameter(buffer, "tracks", tracks_buffer.data);
+	if (*track_offset % 16 != 0) {
+		strcat(buffer->data, mem_cache()->disc_template);
+		set_parameter(buffer, "tracks", tracks_buffer.data);
+	}
 	free(tracks_buffer.data);
 	if (*track_offset == num_tracks) {
 		*last_track = true;
@@ -190,8 +197,7 @@ static void render_album(struct render_buffer* buffer, const char* key, struct a
 	bool last_track = false;
 	int i = 1;
 	while (!last_track) {
-		strcat(discs_buffer.data, "{{ disc }}");
-		render_disc(&discs_buffer, "disc", album->album_release_id, i, tracks, num_tracks, track_offset, &last_track);
+		render_disc(&discs_buffer, album->album_release_id, i, tracks, num_tracks, track_offset, &last_track);
 		i++;
 	}
 	set_parameter(buffer, key, mem_cache()->album_template);
