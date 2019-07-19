@@ -332,6 +332,26 @@ main section {
     background: #191c1c;
 }
 
+.remote-directory-list {
+    list-style: none;
+    padding: 8px;
+}
+
+.remote-directory-list li {
+    padding: 4px;
+    color: #808080;
+    background: #1f2022;
+}
+
+.remote-directory-list li:nth-child(odd) {
+    background: #191c1c;
+}
+
+.remote-directory-list li:hover {
+    cursor: pointer;
+    color: #aad2ff;
+}
+
 table {
     border-collapse: collapse;
     width: 100%;

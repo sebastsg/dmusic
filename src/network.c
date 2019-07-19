@@ -220,7 +220,6 @@ void process_client_request(struct client_state* client) {
 	if (socket_write_all(client, client->route.body + client->write_index, write_size)) {
 		client->write_index += write_size;
 		if (client->write_index >= client->write_end) {
-			puts("Done!\n");
 			finish_client_request(client);
 		}
 	}

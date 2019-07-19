@@ -263,16 +263,19 @@ static void render_sftp_ls(struct render_buffer* buffer) {
 	if (!result) {
 		return;
 	}
+	struct render_buffer directories_buffer;
+	init_render_buffer(&directories_buffer, 2048);
 	char line[1024];
 	const char* it = result;
-	append_buffer(buffer, "<ul class=\"remote-directory-list\">");
 	while (it = split_string(line, 1024, it, '\n')) {
 		if (!strchr(line, '>')) {
-			append_buffer(buffer, "<li>{{ line }}</li>");
-			set_parameter(buffer, "line", line);
+			append_buffer(&directories_buffer, "<li>");
+			append_buffer(&directories_buffer, line);
+			append_buffer(&directories_buffer, "</li>");
 		}
 	}
-	append_buffer(buffer, "</ul>");
+	set_parameter(buffer, "directories", directories_buffer.data);
+	free(directories_buffer.data);
 	free(result);
 }
 
@@ -286,8 +289,8 @@ static void render_upload(struct render_buffer* buffer, struct upload_data* uplo
 		set_parameter(&uploads_buffer, "prefix", upload->uploads[i].prefix);
 		set_parameter(&uploads_buffer, "name", upload->uploads[i].name);
 	}
-	render_sftp_ls(&uploads_buffer);
 	set_parameter(buffer, "uploads", uploads_buffer.data);
+	render_sftp_ls(buffer);
 	free(uploads_buffer.data);
 }
 

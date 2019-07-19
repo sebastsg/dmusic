@@ -11,14 +11,20 @@
 </div>
 <hr>
 <div>
-    <h1>Uploaded albums</h1>
+    <a href="/add_group">Add new group</a>
+    <hr>
+    <a href="/add_person">Add new person</a>
+</div>
+<hr>
+<div>
+    <h1>Local albums</h1>
     <ul class="uploads">
         {{ uploads }}
     </ul>
 </div>
-<hr>
 <div>
-    <a href="/add_group">Add new group</a>
-    <hr>
-    <a href="/add_person">Add new person</a>
+    <h1>Remote albums</h1>
+    <ul class="remote-directory-list">
+        {{ directories }}
+    </ul>
 </div>
