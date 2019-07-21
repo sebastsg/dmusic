@@ -169,43 +169,42 @@ static void render_track(struct render_buffer* buffer, struct track_data* track)
 	set_parameter(buffer, "name", track->name);
 }
 
-static void render_disc(struct render_buffer* buffer, int album_release_id, int disc_num, struct track_data* tracks, int num_tracks, int* track_offset, bool* last_track) {
+static bool render_disc(struct render_buffer* buffer, int album_release_id, int disc_num, struct track_data* tracks, int num_tracks) {
 	struct render_buffer tracks_buffer;
 	init_render_buffer(&tracks_buffer, 2048);
-	while (*track_offset < num_tracks) {
-		if (tracks[*track_offset].album_release_id != album_release_id) {
-			*last_track = true;
-			break;
+	int tracks_added = 0;
+	int i = 0;
+	while (i < num_tracks) {
+		if (tracks[i].album_release_id != album_release_id || tracks[i].disc_num != disc_num) {
+			i++;
+			continue;
 		}
-		render_track(&tracks_buffer, &tracks[*track_offset]);
-		(*track_offset)++;
-		if (*track_offset % 16 == 0) {
+		render_track(&tracks_buffer, &tracks[i]);
+		i++;
+		tracks_added++;
+		if (tracks_added % 16 == 0) {
 			append_buffer(buffer, mem_cache()->disc_template);
 			set_parameter(buffer, "tracks", tracks_buffer.data);
 			tracks_buffer.data[0] = '\0';
 			tracks_buffer.offset = 0;
 		}
 	}
-	if (*track_offset % 16 != 0) {
+	if (tracks_added % 16 != 0) {
 		append_buffer(buffer, mem_cache()->disc_template);
 		set_parameter(buffer, "tracks", tracks_buffer.data);
 	}
 	free(tracks_buffer.data);
-	if (*track_offset == num_tracks) {
-		*last_track = true;
-	}
+	return tracks_added > 0;
 }
 
-static void render_album(struct render_buffer* buffer, const char* key, struct album_data* album, struct track_data* tracks, int num_tracks, int* track_offset) {
+static void render_album(struct render_buffer* buffer, struct album_data* album, struct track_data* tracks, int num_tracks) {
 	struct render_buffer discs_buffer;
 	init_render_buffer(&discs_buffer, 2048);
-	bool last_track = false;
 	int i = 1;
-	while (!last_track) {
-		render_disc(&discs_buffer, album->album_release_id, i, tracks, num_tracks, track_offset, &last_track);
+	while (render_disc(&discs_buffer, album->album_release_id, i, tracks, num_tracks)) {
 		i++;
 	}
-	set_parameter(buffer, key, mem_cache()->album_template);
+	append_buffer(buffer, mem_cache()->album_template);
 	set_parameter(buffer, "image", album->image);
 	set_parameter_int(buffer, "id_name", album->id);
 	set_parameter(buffer, "name", album->name);
@@ -217,25 +216,21 @@ static void render_album(struct render_buffer* buffer, const char* key, struct a
 	free(discs_buffer.data);
 }
 
-static void render_albums(struct render_buffer* buffer, const char* key, const char* type, const char* name, struct album_data* albums, int num_albums, struct track_data* tracks, int num_tracks) {
+static void render_albums(struct render_buffer* buffer, const char* type, const char* name, struct album_data* albums, int num_albums, struct track_data* tracks, int num_tracks) {
 	struct render_buffer item_buffer;
 	init_render_buffer(&item_buffer, 2048);
-	int track_offset = 0;
 	int count = 0;
 	for (int i = 0; i < num_albums; i++) {
-		if (strcmp(type, albums[i].album_type_code)) {
-			continue;
+		if (!strcmp(type, albums[i].album_type_code)) {
+			render_album(&item_buffer, &albums[i], tracks, num_tracks);
+			count++;
 		}
-		append_buffer(&item_buffer, "{{ album }}");
-		render_album(&item_buffer, "album", &albums[i], tracks, num_tracks, &track_offset);
-		count++;
 	}
 	if (count > 0) {
-		set_parameter(buffer, key, mem_cache()->albums_template);
+		append_buffer(buffer, "{{ albums }}");
+		set_parameter(buffer, "albums", mem_cache()->albums_template);
 		set_parameter(buffer, "title", name);
 		set_parameter(buffer, "albums", item_buffer.data);
-	} else {
-		set_parameter(buffer, key, "");
 	}
 	free(item_buffer.data);
 }
@@ -249,8 +244,7 @@ static void render_group(struct render_buffer* buffer, struct group_data* group)
 	init_render_buffer(&album_list_buffer, 2048);
 	for (int i = 0; i < mem_cache()->album_types.count; i++) {
 		struct select_option* option = &mem_cache()->album_types.options[i];
-		append_buffer(&album_list_buffer, "{{ albums }}");
-		render_albums(&album_list_buffer, "albums", option->code, option->name, group->albums, group->num_albums, group->tracks, group->num_tracks);
+		render_albums(&album_list_buffer, option->code, option->name, group->albums, group->num_albums, group->tracks, group->num_tracks);
 	}
 	set_parameter(buffer, "albums", album_list_buffer.data);
 	free(album_list_buffer.data);

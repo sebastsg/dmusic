@@ -33,6 +33,7 @@ begin
     left join "album_attachment"
            on "album_attachment"."album_release_id" = "album_release"."id"
           and "album_attachment"."type" = 'cover'
-        where "group"."id" = in_group_id;
+        where "group"."id" = in_group_id
+     order by "album_release"."released_at" desc;
 end;
 $$;

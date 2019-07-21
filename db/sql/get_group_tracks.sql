@@ -22,6 +22,9 @@ begin
         on "album_release_group"."group_id" = "group"."id"
       join "track"
         on "track"."album_release_id" = "album_release_group"."album_release_id"
-     where "group"."id" = in_group_id;
+     where "group"."id" = in_group_id
+  order by "track"."album_release_id" asc,
+           "track"."disc_num" asc,
+           "track"."num" asc;
 end;
 $$;

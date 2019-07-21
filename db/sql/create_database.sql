@@ -224,7 +224,7 @@ create table "track" (
     "disc_num"         int          not null,
     "num"              int          not null,
     "seconds"          int          not null,
-    "name"             varchar(160) not null,
+    "name"             varchar(256) not null,
     
     constraint  fk_track_disc
     foreign key ("album_release_id", "disc_num") references "disc" ("album_release_id", "num"),
