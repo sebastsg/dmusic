@@ -106,8 +106,8 @@ static void render_select_option(struct render_buffer* buffer, const char* key, 
 	set_parameter(buffer, "text", text);
 }
 
-static void render_session_track(struct render_buffer* buffer, const char* key, struct session_track_data* track) {
-	set_parameter(buffer, key, mem_cache()->session_track_template);
+static void render_session_track(struct render_buffer* buffer, struct session_track_data* track) {
+	append_buffer(buffer, mem_cache()->session_track_template);
 	set_parameter_int(buffer, "album", track->album_release_id);
 	set_parameter_int(buffer, "disc", track->disc_num);
 	set_parameter_int(buffer, "track", track->track_num);
@@ -119,8 +119,7 @@ static void render_session_tracks(struct render_buffer* buffer, const char* key,
 	struct render_buffer item_buffer;
 	init_render_buffer(&item_buffer, 512);
 	for (int i = 0; i < num_tracks; i++) {
-		append_buffer(&item_buffer, "{{ track }}");
-		render_session_track(&item_buffer, "track", &tracks[i]);
+		render_session_track(&item_buffer, &tracks[i]);
 	}
 	set_parameter(buffer, key, item_buffer.data);
 	free(item_buffer.data);
@@ -522,15 +521,22 @@ char* render_resource(bool is_main, const char* resource) {
 		strcpy(buffer.data, "{{ attachment }}");
 		render_prepare_attachments(&buffer, "attachment", &attachment, 1);
 		free(attachment.targets.options);
-	} else if (!strcmp(page, "session_track")) {
+	} else if (!strcmp(page, "session_tracks")) {
+		char num_str[32];
+		resource = split_string(num_str, 32, resource, '/');
+		int from_num = atoi(num_str);
+		resource = split_string(num_str, 32, resource, '/');
+		int to_num = atoi(num_str);
 		struct session_track_data* tracks = NULL;
 		int num_tracks = 0;
 		load_session_tracks(&tracks, &num_tracks, "dib");
-		if (num_tracks > 0) {
-			strcpy(buffer.data, "{{ track }}");
-			render_session_track(&buffer, "track", &tracks[num_tracks - 1]);
-			free(tracks);
+		if (num_tracks > to_num || from_num > to_num) {
+			to_num = num_tracks;
 		}
+		for (int num = from_num; num <= to_num; num++) {
+			render_session_track(&buffer, &tracks[num - 1]);
+		}
+		free(tracks);
 	} else if (!strcmp(page, "playlists")) {
 		
 	} else if (!strcmp(page, "add_group")) {

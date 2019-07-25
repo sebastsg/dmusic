@@ -127,6 +127,11 @@ function onClickA(event) {
         const disc = parts[4];
         const track = parts[5];
         addToPlaylist(album, disc, track);
+    } else if (target.classList.contains('queue-album')) {
+        event.preventDefault();
+        let parts = target.getAttribute('href').split('/');
+        const album = parts[2];
+        addToPlaylist(album, 0, 0);
     } else if (!target.classList.contains('external-link')) {
         event.preventDefault();
         onInternalLinkClick(target);

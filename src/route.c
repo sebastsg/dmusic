@@ -60,11 +60,7 @@ void route_image(struct route_result* result, const char* resource) {
 		char image_format[32];
 		resource = split_string(image_format, 32, resource, '/');
 		char image_path[512];
-		if (!strcmp(image_format, "original")) {
-			route_file(result, server_album_image_path(image_path, album_release_id, 1));
-		} else {
-			route_file(result, server_album_image_path(image_path, album_release_id, 1));
-		}
+		route_file(result, server_album_image_path(image_path, album_release_id, 1));
 	} else if (!strcmp(image, "group")) {
 		char group_id_str[32];
 		resource = split_string(group_id_str, 32, resource, '/');
@@ -72,11 +68,7 @@ void route_image(struct route_result* result, const char* resource) {
 		char image_format[32];
 		resource = split_string(image_format, 32, resource, '/');
 		char image_path[512];
-		if (!strcmp(image_format, "original")) {
-			route_file(result, server_group_image_path(image_path, group_id, 1));
-		} else {
-			route_file(result, server_group_image_path(image_path, group_id, 1));
-		}
+		route_file(result, server_group_image_path(image_path, group_id, 1));
 	} else if (!strcmp(image, "flag")) {
 
 	} else if (!strcmp(image, "missing.png")) {
@@ -338,16 +330,40 @@ static void route_form_attach(struct route_result* result, struct http_data* dat
 }
 
 static void route_form_add_session_track(struct route_result* result, struct http_data* data) {
-	const char* album_release_id = http_data_string(data, "album");
-	const char* disc_num = http_data_string(data, "disc");
-	const char* track_num = http_data_string(data, "track");
-	int num = create_session_track("dib", atoi(album_release_id), atoi(disc_num), atoi(track_num));
-	if (num == 0) {
+	int album_release_id = atoi(http_data_string(data, "album"));
+	int disc_num = atoi(http_data_string(data, "disc"));
+	int track_num = atoi(http_data_string(data, "track"));
+	int from_num = 0;
+	int to_num = 0;
+	if (track_num > 0) {
+		from_num = create_session_track("dib", album_release_id, disc_num, track_num);
+	} else if (disc_num > 0) {
+		struct track_data* tracks = NULL;
+		int count = 0;
+		load_disc_tracks(&tracks, &count, album_release_id, disc_num);
+		for (int i = 0; i < count; i++) {
+			to_num = create_session_track("dib", album_release_id, disc_num, tracks[i].num);
+			if (from_num == 0) {
+				from_num = to_num;
+			}
+		}
+	} else {
+		struct track_data* tracks = NULL;
+		int count = 0;
+		load_album_tracks(&tracks, &count, album_release_id);
+		for (int i = 0; i < count; i++) {
+			to_num = create_session_track("dib", album_release_id, tracks[i].disc_num, tracks[i].num);
+			if (from_num == 0) {
+				from_num = to_num;
+			}
+		}
+	}
+	if (from_num == 0) {
 		fputs("Failed to add session track.\n", stderr);
 		return;
 	}
 	char resource[128];
-	sprintf(resource, "session_track/%s/%i", "dib", num);
+	sprintf(resource, "session_tracks/%i/%i", from_num, to_num);
 	route_render(result, resource);
 }
 
