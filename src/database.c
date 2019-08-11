@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <dirent.h>
 
 #define DMUSIC_HASH_STRING_SIZE (SHA256_DIGEST_LENGTH * 2 + 1)
 #define DMUSIC_SALT_SIZE        32
@@ -125,6 +124,12 @@ int create_session_track(const char* user, int album_release_id, int disc_num, i
 	int num = (PQntuples(result) > 0) ? atoi(PQgetvalue(result, 0, 0)) : 0;
 	PQclear(result);
 	return num;
+}
+
+void delete_session_tracks(const char* user) {
+	const char* params[] = { user };
+	PGresult* result = execute_sql("delete from \"session_track\" where \"user_name\" = $1", params, 1);
+	PQclear(result);
 }
 
 void load_options(struct select_options* options, const char* type) {
@@ -277,6 +282,9 @@ void load_album_tracks(struct track_data** tracks, int* count, int album_release
 	const char* params[] = { album_release_id_str };
 	PGresult* result = execute_sql("select \"disc_num\", \"num\", \"name\" from \"track\" where \"album_release_id\" = $1", params, 1);
 	*count = PQntuples(result);
+	if (*count == 0) {
+		fprintf(stderr, "Did not find any tracks for album release %i\n", album_release_id);
+	}
 	*tracks = (struct track_data*)malloc(*count * sizeof(struct track_data));
 	if (*tracks) {
 		for (int i = 0; i < *count; i++) {
@@ -367,6 +375,27 @@ static void make_sha256_hash(const char* password, const char* salt, char* dest)
 	}
 }
 
+void find_best_audio_format(char* dest, int album_release_id, bool lossless) {
+	*dest = '\0';
+	char str[32];
+	sprintf(str, "%i", album_release_id);
+	const char* params[] = { str };
+	PGresult* result = call_procedure("select * from get_album_formats", params, 1);
+	int best_quality = -1;
+	for (int i = 0; i < PQntuples(result); i++) {
+		if (!lossless && atoi(PQgetvalue(result, i, 2)) == 1) {
+			continue;
+		}
+		const char* code = PQgetvalue(result, i, 0);
+		int quality = atoi(PQgetvalue(result, i, 1));
+		if (quality > best_quality) {
+			strcpy(dest, code);
+			best_quality = quality;
+		}
+	}
+	PQclear(result);
+}
+
 bool register_user(const char* name, const char* password) {
 	if (strlen(name) < 1 || strlen(password) < 8) {
 		return false;
@@ -407,4 +436,78 @@ bool login_user(const char* name, const char* password) {
 	bool exists = PQntuples(result) > 0;
 	PQclear(result);
 	return exists;
+}
+
+void update_track_duration(int album_release_id, int disc_num, int track_num) {
+	char path[512];
+	char format[16];
+	find_best_audio_format(format, album_release_id, true);
+	if (format[0] == '\0') {
+		fprintf(stderr, "Did not find any file for track %i in disc %i in album release %i\n", track_num, disc_num, album_release_id);
+		return;
+	}
+	server_track_path(path, format, album_release_id, disc_num, track_num);
+	char soxi_command[1024];
+	sprintf(soxi_command, "soxi -D \"%s\"", path);
+	char* soxi_out = system_output(soxi_command);
+	if (!soxi_out) {
+		fprintf(stderr, "Failed to run soxi %s\n", soxi_command);
+		return;
+	}
+	char seconds[32];
+	sprintf(seconds, "%i", atoi(soxi_out));
+	free(soxi_out);
+	char album_release_id_str[32];
+	char disc_num_str[32];
+	char track_num_str[32];
+	sprintf(album_release_id_str, "%i", album_release_id);
+	sprintf(disc_num_str, "%i", disc_num);
+	sprintf(track_num_str, "%i", track_num);
+	const char* params[] = { seconds, album_release_id_str, disc_num_str, track_num_str };
+	const char* query = "update \"track\" set \"seconds\" = $1 where \"album_release_id\" = $2 and \"disc_num\" = $3 and \"num\" = $4";
+	PQclear(execute_sql(query, params, 4));
+}
+
+void update_disc_track_durations(int album_release_id, int disc_num) {
+	char album_str[32];
+	char disc_str[32];
+	sprintf(album_str, "%i", album_release_id);
+	sprintf(disc_str, "%i", disc_num);
+	const char* params[] = { album_str, disc_str };
+	PGresult* result = execute_sql("select \"num\" from \"track\" where \"album_release_id\" = $1 and \"disc_num\" = $2", params, 2);
+	if (!result) {
+		fprintf(stderr, "Did not find any tracks for disc %i in album release %i\n", disc_num, album_release_id);
+		return;
+	}
+	for (int i = 0; i < PQntuples(result); i++) {
+		update_track_duration(album_release_id, disc_num, atoi(PQgetvalue(result, i, 0)));
+	}
+	PQclear(result);
+}
+
+void update_album_track_durations(int album_release_id) {
+	printf("Updating track durations for album release %i\n", album_release_id);
+	char str[32];
+	sprintf(str, "%i", album_release_id);
+	const char* params[] = { str };
+	PGresult* result = execute_sql("select \"num\" from \"disc\" where \"album_release_id\" = $1", params, 1);
+	if (!result) {
+		fprintf(stderr, "Did not find any discs for album release %i\n", album_release_id);
+		return;
+	}
+	for (int i = 0; i < PQntuples(result); i++) {
+		update_disc_track_durations(album_release_id, atoi(PQgetvalue(result, i, 0)));
+	}
+	PQclear(result);
+}
+
+void update_all_track_durations() {
+	PGresult* result = execute_sql("select \"id\" from \"album_release\"", NULL, 0);
+	if (!result) {
+		return;
+	}
+	for (int i = 0; i < PQntuples(result); i++) {
+		update_album_track_durations(atoi(PQgetvalue(result, i, 0)));
+	}
+	PQclear(result);
 }

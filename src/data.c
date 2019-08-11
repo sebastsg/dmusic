@@ -26,6 +26,7 @@ char* system_output(const char* command) {
 	size_t index = 0;
 	size_t size = 512;
 	char* buffer = (char*)malloc(size);
+	*buffer = '\0';
 	while (fgets(buffer + index, size - index, process)) {
 		index += strlen(buffer + index);
 		if (index + 1 >= size) {

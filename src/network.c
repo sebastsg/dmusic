@@ -115,7 +115,10 @@ void accept_client() {
 	}
 	socklen_t addrsize = sizeof(network.address);
 	network.clients[client].socket = accept(network.listener, (struct sockaddr*)&network.address, (socklen_t*)&addrsize);
-	if (network.clients[client].socket < 0) {
+	if (network.clients[client].socket == -1) {
+		if (errno != EWOULDBLOCK && errno != EAGAIN) {
+			fprintf(stderr, "Failed to accept client. Error: %s\n", strerror(errno));
+		}
 		return;
 	}
 	init_socket(network.clients[client].socket);
@@ -216,7 +219,7 @@ void process_client_request(struct client_state* client) {
 	if (write_size > 32768) {
 		write_size = 32768;
 	}
-	printf("Writing %zu bytes to socket %i\n", write_size, client->socket);
+	printf("%lld Writing %zu bytes to socket %i\n", (long long)time(NULL), write_size, client->socket);
 	if (socket_write_all(client, client->route.body + client->write_index, write_size)) {
 		client->write_index += write_size;
 		if (client->write_index >= client->write_end) {

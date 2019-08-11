@@ -28,7 +28,7 @@ struct track_data {
 	int album_release_id;
 	int disc_num;
 	int num;
-	char name[128];
+	char name[192];
 };
 
 struct album_data {

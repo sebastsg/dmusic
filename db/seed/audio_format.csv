@@ -1,16 +1,16 @@
-flac-16;FLAC 16-bit
-flac-24;FLAC 24-bit
-flac-cd-16;FLAC CD 16-bit
-flac-web-16;FLAC WEB 16-bit
-flac-cd-24;FLAC CD 24-bit
-flac-web-24;FLAC WEB 24-bit
-mp3-320;MP3 320
-mp3-256;MP3 256
-mp3-224;MP3 224
-mp3-192;MP3 192
-mp3-160;MP3 160
-mp3-128;MP3 128
-mp3-v0;MP3 V0
-mp3-v1;MP3 V1
-mp3-v2;MP3 V2
-aac-256;AAC 256
+flac-16;FLAC 16-bit;110;1
+flac-24;FLAC 24-bit;140;1
+flac-cd-16;FLAC CD 16-bit;120;1
+flac-web-16;FLAC WEB 16-bit;130;1
+flac-cd-24;FLAC CD 24-bit;150;1
+flac-web-24;FLAC WEB 24-bit;160;1
+mp3-320;MP3 320;100;0
+mp3-256;MP3 256;50;0
+mp3-224;MP3 224;40;0
+mp3-192;MP3 192;30;0
+mp3-160;MP3 160;20;0
+mp3-128;MP3 128;10;0
+mp3-v0;MP3 V0;90;0
+mp3-v1;MP3 V1;80;0
+mp3-v2;MP3 V2;70;0
+aac-256;AAC 256;60;0

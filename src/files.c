@@ -56,6 +56,11 @@ bool file_exists(const char* path) {
 	return stat(path, &sb) != -1 && S_ISREG(sb.st_mode);
 }
 
+bool directory_exists(const char* path) {
+	struct stat sb;
+	return stat(path, &sb) != -1 && S_ISDIR(sb.st_mode);
+}
+
 bool create_directory(const char* path) {
 	bool success = mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != -1;
 	if (!success) {

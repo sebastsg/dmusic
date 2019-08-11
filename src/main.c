@@ -28,14 +28,19 @@ int main(int argc, char** argv) {
 	connect_database();
 	char* cmd = argc > 1 ? argv[1] : NULL;
 	if (cmd) {
-		if (!strcmp(cmd, "install")) {
+		if (!strcmp(cmd, "--install")) {
 			create_directories();
 			install_database();
-			disconnect_database();
-		} else if (!strcmp(cmd, "seed")) {
+			replace_database_functions();
 			seed_database();
-			disconnect_database();
+		} else if (!strcmp(cmd, "--seed")) {
+			seed_database();
+		} else if (!strcmp(cmd, "--replace-functions")) {
+			replace_database_functions();
+		} else if (!strcmp(cmd, "--update-track-durations")) {
+			update_all_track_durations();
 		}
+		disconnect_database();
 		return 0;
 	}
 	initialize_network();

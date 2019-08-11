@@ -56,6 +56,7 @@ static void load_all_templates() {
 	load_template(&memory_cache.login_template, "login");
 	load_template(&memory_cache.register_template, "register");
 	load_template(&memory_cache.profile_template, "profile");
+	load_template(&memory_cache.playlists_template, "playlists");
 }
 
 void load_memory_cache() {

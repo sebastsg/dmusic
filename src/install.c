@@ -26,25 +26,25 @@ void create_directories() {
 }
 
 void install_database() {
-	char sql_path[512];
-	sprintf(sql_path, "%s/db/sql", get_property("path.root"));
-	DIR* dir = opendir(sql_path);
+	execute_sql_file("create_database.sql", true);
+}
+
+void replace_database_functions() {
+	char path[512];
+	sprintf(path, "%s/db/functions", get_property("path.root"));
+	DIR* dir = opendir(path);
 	if (!dir) {
-		printf("Failed to read directory: %s\n", sql_path);
+		printf("Failed to read directory: %s\n", path);
 		exit(1);
 	}
 	struct dirent* entry = NULL;
 	while (entry = readdir(dir)) {
-		if (entry->d_type != DT_REG) {
-			continue;
+		if (entry->d_type == DT_REG && strstr(entry->d_name, ".sql")) {
+			strcpy(path, "functions/");
+			strcat(path, entry->d_name);
+			printf("Executing sql file: %s\n", path);
+			execute_sql_file(path, false);
 		}
-		if (!strstr(entry->d_name, ".sql")) {
-			printf("Found non-sql file: %s\n", entry->d_name);
-			continue;
-		}
-		bool split = (strcmp(entry->d_name, "create_database.sql") == 0);
-		printf("Executing sql file: %s\n", entry->d_name);
-		execute_sql_file(entry->d_name, split);
 	}
 	closedir(dir);
 }

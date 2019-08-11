@@ -148,8 +148,7 @@ static void render_tags(struct render_buffer* buffer, const char* key, struct ta
 	struct render_buffer item_buffer;
 	init_render_buffer(&item_buffer, 512);
 	for (int i = 0; i < num_tags; i++) {
-		append_buffer(&item_buffer, "{{ tag }}");
-		set_parameter(&item_buffer, "tag", mem_cache()->tag_link_template);
+		append_buffer(&item_buffer, mem_cache()->tag_link_template);
 		set_parameter(&item_buffer, "tag_link", tags[i].name);
 		set_parameter(&item_buffer, "tag_name", tags[i].name);
 	}
@@ -160,7 +159,7 @@ static void render_tags(struct render_buffer* buffer, const char* key, struct ta
 static void render_track(struct render_buffer* buffer, struct track_data* track) {
 	append_buffer(buffer, mem_cache()->track_template);
 	char track_url[64];
-	client_track_path(track_url, "mp3-320", track->album_release_id, track->disc_num, track->num);
+	client_track_path(track_url, track->album_release_id, track->disc_num, track->num);
 	set_parameter(buffer, "queue_url", track_url);
 	set_parameter(buffer, "space_prefix", track->num < 10 ? "&nbsp;" : "");
 	set_parameter_int(buffer, "num_str", track->num);
@@ -226,8 +225,7 @@ static void render_albums(struct render_buffer* buffer, const char* type, const 
 		}
 	}
 	if (count > 0) {
-		append_buffer(buffer, "{{ albums }}");
-		set_parameter(buffer, "albums", mem_cache()->albums_template);
+		append_buffer(buffer, mem_cache()->albums_template);
 		set_parameter(buffer, "title", name);
 		set_parameter(buffer, "albums", item_buffer.data);
 	}
@@ -538,7 +536,8 @@ char* render_resource(bool is_main, const char* resource) {
 		}
 		free(tracks);
 	} else if (!strcmp(page, "playlists")) {
-		
+		append_buffer(&buffer, mem_cache()->playlists_template);
+		set_parameter(&buffer, "playlists", "No playlists.");
 	} else if (!strcmp(page, "add_group")) {
 		struct add_group_data add_group;
 		load_add_group(&add_group);

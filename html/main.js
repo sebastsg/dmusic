@@ -74,16 +74,17 @@ function addToPlaylist(album, disc, track) {
 }
 
 function onInternalLinkClick(target) {
-    if (!hasAnyClass(target, ['external-link', 'queue-track', 'play-track', 'queue-album', 'play-album'])) {
-        let section = document.querySelector('main section');
-        ajaxGet('/render' + target.getAttribute('href'), response => section.innerHTML = response);
-        history.pushState({}, '', target.getAttribute('href'));
+    if (hasAnyClass(target, ['external-link', 'queue-track', 'play-track', 'queue-album', 'play-album'])) {
+        return;
     }
+    let section = document.querySelector('main section');
+    ajaxGet('/render' + target.getAttribute('href'), response => section.innerHTML = response);
+    history.pushState({}, '', target.getAttribute('href'));
 }
 
 function playTrack(album, disc, track) {
     let audio = document.getElementById('audio');
-    audio.setAttribute('src', '/track/mp3-320/' + album + '/' + disc + '/' + track);
+    audio.setAttribute('src', '/track/' + album + '/' + disc + '/' + track);
     audio.play();
 }
 
@@ -123,16 +124,25 @@ function onClickA(event) {
     if (target.classList.contains('queue-track')) {
         event.preventDefault();
         let parts = target.getAttribute('href').split('/');
-        const album = parts[3];
-        const disc = parts[4];
-        const track = parts[5];
+        const album = parts[2];
+        const disc = parts[3];
+        const track = parts[4];
         addToPlaylist(album, disc, track);
-    } else if (target.classList.contains('queue-album')) {
+        return;
+    }
+    if (target.classList.contains('queue-album')) {
         event.preventDefault();
         let parts = target.getAttribute('href').split('/');
         const album = parts[2];
         addToPlaylist(album, 0, 0);
-    } else if (!target.classList.contains('external-link')) {
+        return;
+    }
+    if (target.classList.contains('clear-session-playlist')) {
+        event.preventDefault();
+        ajaxPost('/form/clear-session-playlist', null, () => document.querySelector('#playlist ul').innerHTML = '');
+        return;
+    }
+    if (!target.classList.contains('external-link')) {
         event.preventDefault();
         onInternalLinkClick(target);
     }

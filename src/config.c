@@ -115,7 +115,7 @@ char* seed_path(char* dest, size_t size, const char* name) {
 }
 
 char* sql_path(char* dest, size_t size, const char* name) {
-	sprintf(dest, "%s/db/sql/%s", get_property("path.root"), name);
+	sprintf(dest, "%s/db/%s", get_property("path.root"), name);
 	return dest;
 }
 
@@ -181,8 +181,8 @@ char* server_uploaded_file_path(char* dest, const char* filename) {
 	return dest;
 }
 
-char* client_track_path(char* dest, const char* format, int album_release_id, int disc_num, int track_num) {
-	sprintf(dest, "/track/%s/%i/%i/%i", format, album_release_id, disc_num, track_num);
+char* client_track_path(char* dest, int album_release_id, int disc_num, int track_num) {
+	sprintf(dest, "/track/%i/%i/%i", album_release_id, disc_num, track_num);
 	return dest;
 }
 

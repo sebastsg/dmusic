@@ -35,6 +35,7 @@ struct memory_cached_data {
 	char* login_template;
 	char* register_template;
 	char* profile_template;
+	char* playlists_template;
 
 	char* style_css;
 	char* main_js;

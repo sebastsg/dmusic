@@ -85,17 +85,17 @@ void route_track(struct route_result* result, const char* resource) {
 		return;
 	}
 	printf("Range: %s\n", result->client->headers.range);
-	char format[16];
 	int album_release_id = 0;
 	int disc_num = 0;
 	int track_num = 0;
-	resource = split_string(format, 16, resource, '/');
 	int num = sscanf(resource, "%i/%i/%i", &album_release_id, &disc_num, &track_num);
 	if (num != 3) {
 		fprintf(stderr, "Invalid request: %s\n", resource);
 		return;
 	}
-	char path[1024];
+	char format[16];
+	find_best_audio_format(format, album_release_id, false);
+	char path[512];
 	server_track_path(path, format, album_release_id, disc_num, track_num);
 	route_file(result, path);
 }
@@ -331,6 +331,10 @@ static void route_form_attach(struct route_result* result, struct http_data* dat
 
 static void route_form_add_session_track(struct route_result* result, struct http_data* data) {
 	int album_release_id = atoi(http_data_string(data, "album"));
+	if (album_release_id == 0) {
+		fputs("Album release must be specified when adding a session track", stderr);
+		return;
+	}
 	int disc_num = atoi(http_data_string(data, "disc"));
 	int track_num = atoi(http_data_string(data, "track"));
 	int from_num = 0;
@@ -357,9 +361,10 @@ static void route_form_add_session_track(struct route_result* result, struct htt
 				from_num = to_num;
 			}
 		}
+		free(tracks);
 	}
 	if (from_num == 0) {
-		fputs("Failed to add session track.\n", stderr);
+		fputs("Failed to add session track.", stderr);
 		return;
 	}
 	char resource[128];
@@ -411,6 +416,8 @@ void route_form(struct route_result* result, const char* resource, char* body, s
 		route_form_add_session_track(result, &data);
 	} else if (!strcmp(form, "downloadremote")) {
 		route_form_download_remote(&data);
+	} else if (!strcmp(form, "clear-session-playlist")) {
+		delete_session_tracks("dib");
 	}
 	http_free_data(&data);
 }
