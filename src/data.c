@@ -13,9 +13,7 @@
 #include <ftw.h>
 #include <sys/stat.h>
 
-#if PLATFORM_IS_LINUX
 #include <unistd.h>
-#endif
 
 char* system_output(const char* command) {
 	FILE* process = popen(command, "r");
@@ -151,9 +149,7 @@ static void guess_attachments(struct prepare_attachment_data* attachments, int* 
 	nftw_user_data_1 = attachments;
 	nftw_user_data_2 = num_attachments;
 	if (nftw(full_path, nftw_guess_attachment, 20, 0) == -1) {
-#if PLATFORM_IS_LINUX
 		printf("\"%s\" error occured while preparing attachments: %s\n", strerror(errno), full_path);
-#endif
 	}
 }
 
@@ -163,8 +159,10 @@ static void guess_attachments(struct prepare_attachment_data* attachments, int* 
  */
 static int nftw_guess_track(const char* path, const struct stat* stat_buffer, int flag, struct FTW* ftw_buffer) {
 	if (flag != FTW_F || !is_extension_audio(path)) {
+		printf("Skipping invalid file: %s\n", path);
 		return 0;
 	}
+	printf("Found track file: %s\n", path);
 	struct prepare_disc_data* discs = (struct prepare_disc_data*)nftw_user_data_1;
 	int* num_discs = (int*)nftw_user_data_2;
 	size_t uploads_path_size = strlen(get_property("path.uploads"));
@@ -172,6 +170,7 @@ static int nftw_guess_track(const char* path, const struct stat* stat_buffer, in
 	int disc_num = guess_disc_num(uploaded_name);
 	if (disc_num > 5) {
 		// TODO: Compare with number of tracks? If there are 100 audio files, perhaps it is right.
+		fprintf(stderr, "The filenames make it seem like there are %i discs. This is unlikely, and currently not allowed.", disc_num);
 		return 0;
 	}
 	while (disc_num > *num_discs || *num_discs == 0) {
@@ -201,9 +200,7 @@ static void guess_tracks(struct prepare_disc_data* discs, int* num_discs, const 
 	nftw_user_data_1 = discs;
 	nftw_user_data_2 = num_discs;
 	if (nftw(full_path, nftw_guess_track, 20, 0) == -1) {
-#if PLATFORM_IS_LINUX
-		printf("\"%s\" error occured while preparing tracks: %s\n", strerror(errno), full_path);
-#endif
+		print_error_f(A_CYAN "\"%s\"" A_RESET " error occured while preparing tracks: " A_CYAN "%s\n", strerror(errno), full_path);
 	}
 	for (int i = 0; i < *num_discs; i++) {
 		qsort(discs[i].tracks, discs[i].num_tracks, sizeof(struct prepare_track_data), sort_prepare_track_num);
@@ -215,12 +212,12 @@ static bool find_upload_path_by_prefix(char* dest, const char* prefix) {
 	const char* uploads = get_property("path.uploads");
 	DIR* dir = opendir(uploads);
 	if (!dir) {
-		printf("Failed to read uploads directory: %s\n", uploads);
+		print_error_f("Failed to read uploads directory: " A_CYAN "%s\n", uploads);
 		return false;
 	}
 	struct dirent* entry = NULL;
 	while (entry = readdir(dir)) {
-		if (entry->d_type == DT_DIR && strstr(entry->d_name, prefix)) {
+		if (strstr(entry->d_name, prefix)) {
 			strcpy(dest, entry->d_name);
 			break;
 		}
@@ -233,6 +230,7 @@ void load_prepare(struct prepare_data* prepare, const char* prefix) {
 	memset(prepare, 0, sizeof(struct prepare_data));
 	char path[256];
 	if (!find_upload_path_by_prefix(path, prefix)) {
+		print_error_f("Did not find upload path based on prefix " A_CYAN "%s\n", prefix);
 		return;
 	}
 	strcpy(prepare->filename, path + strlen(prefix) + 1);
@@ -297,12 +295,12 @@ void load_upload(struct upload_data* upload) {
 	const char* uploads = get_property("path.uploads");
 	DIR* dir = opendir(uploads);
 	if (!dir) {
-		printf("Failed to read uploads directory: %s\n", uploads);
+		print_error_f("Failed to read uploads directory: " A_CYAN "%s\n", uploads);
 		return;
 	}
 	struct dirent* entry = NULL;
 	while (entry = readdir(dir)) {
-		if (entry->d_type != DT_DIR) {
+		if (!is_dirent_directory(uploads, entry)) {
 			continue;
 		}
 		char* space = strchr(entry->d_name, ' ');

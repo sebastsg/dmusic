@@ -6,6 +6,7 @@
 #include "network.h"
 #include "database.h"
 #include "files.h"
+#include "transcode.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -60,7 +61,10 @@ void route_image(struct route_result* result, const char* resource) {
 		char image_format[32];
 		resource = split_string(image_format, 32, resource, '/');
 		char image_path[512];
-		route_file(result, server_album_image_path(image_path, album_release_id, 1));
+		int num = first_album_attachment_of_type(album_release_id, "cover");
+		if (num > 0) {
+			route_file(result, server_album_image_path(image_path, album_release_id, num));
+		}
 	} else if (!strcmp(image, "group")) {
 		char group_id_str[32];
 		resource = split_string(group_id_str, 32, resource, '/');
@@ -68,7 +72,10 @@ void route_image(struct route_result* result, const char* resource) {
 		char image_format[32];
 		resource = split_string(image_format, 32, resource, '/');
 		char image_path[512];
-		route_file(result, server_group_image_path(image_path, group_id, 1));
+		int num = first_group_attachment_of_type(group_id, "background");
+		if (num > 0) {
+			route_file(result, server_group_image_path(image_path, group_id, num));
+		}
 	} else if (!strcmp(image, "flag")) {
 
 	} else if (!strcmp(image, "missing.png")) {
@@ -167,8 +174,10 @@ static void route_form_add_group(struct http_data* data) {
 		}
 		char num_str[32];
 		sprintf(num_str, "%i", i + 1);
-		const char* image_params[] = { group_id_str, num_str, image_description };
-		insert_row("group_image", false, 3, image_params);
+		char attachment_type[16];
+		strcpy(attachment_type, "background"); // todo: use is_background
+		const char* image_params[] = { group_id_str, num_str, attachment_type, image_description };
+		insert_row("group_attachment", false, 4, image_params);
 	}
 }
 
@@ -232,6 +241,8 @@ static void route_form_prepare(struct http_data* data) {
 	}
 	char album_release_id_str[32];
 	sprintf(album_release_id_str, "%i", album_release_id);
+	const char* params[] = { album_release_id_str, format };
+	insert_row("album_release_format", false, 2, params);
 	int num_groups = http_data_parameter_array_size(data, "groups");
 	for (int i = 0; i < num_groups; i++) {
 		const char* group_id_str = http_data_string_at(data, "groups", i);
@@ -300,6 +311,9 @@ static void route_form_prepare(struct http_data* data) {
 		sprintf(copy_command, "cp -p \"%s\" \"%s\"", attachment_src_path, attachment_dest_path);
 		printf("Executing command: %s\n", copy_command);
 		system(copy_command);
+	}
+	if (!strncmp(format, "flac", 4)) {
+		transcode_album_release(album_release_id, "mp3-320");
 	}
 }
 
@@ -418,6 +432,15 @@ void route_form(struct route_result* result, const char* resource, char* body, s
 		route_form_download_remote(&data);
 	} else if (!strcmp(form, "clear-session-playlist")) {
 		delete_session_tracks("dib");
+	} else if (!strcmp(form, "transcode")) {
+		char album_release_id[32];
+		char format[32];
+		resource = split_string(album_release_id, 32, resource, '/');
+		resource = split_string(format, 32, resource, '/');
+		if (strlen(format) == 0) {
+			strcpy(format, "mp3-320");
+		}
+		transcode_album_release(atoi(album_release_id), format);
 	}
 	http_free_data(&data);
 }

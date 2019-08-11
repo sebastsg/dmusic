@@ -1,5 +1,16 @@
 window.addEventListener('popstate', () => location.reload());
 
+function setAppropriateBackground() {
+    const path = location.pathname;
+    const index = path.lastIndexOf('group/');
+    let url = '/img/bg.jpg';
+    if (index >= 0) {
+        url = '/img/group/' + parseInt(path.substr(index + 'group/'.length));
+    }
+    let main = document.getElementsByTagName('main')[0];
+    main.style.backgroundImage = "url('" + url + "')";
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     let audio = document.getElementById('audio');
     if (audio !== null) {
@@ -10,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+    setAppropriateBackground();
 });
 
 function removeClassFromAll(elements, className) {
@@ -28,6 +40,7 @@ function ajaxGet(path, done) {
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
             done(this.responseText, this.status);
+            setAppropriateBackground();
         }
     };
     xhttp.open('get', path, true);

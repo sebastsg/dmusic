@@ -61,6 +61,9 @@ static void http_read_range(char* dest, const char* src) {
 }
 
 static char* http_next_form_data(char* buffer, size_t buffer_size, const char* boundary, const char** name, size_t* size, const char** filename) {
+	if (buffer_size == 0) {
+		return NULL;
+	}
 	buffer++; // buffer could be \0 (see end). maybe this is bad design, but should work fine
 	buffer_size--;
 	char* begin = strstr(buffer, boundary); // don't care about "--" prefix, at least for now
@@ -69,7 +72,8 @@ static char* http_next_form_data(char* buffer, size_t buffer_size, const char* b
 	}
 	size_t boundary_size = strlen(boundary);
 	begin += boundary_size + 2; // also skip "\r\n"
-	size_t begin_size = buffer_size - (begin - buffer);
+	size_t begin_offset = begin - buffer;
+	size_t begin_size = buffer_size - begin_offset;
 	char* end = memmem(begin, begin_size, boundary, boundary_size);
 	if (!end) {
 		return NULL;
@@ -216,7 +220,10 @@ bool http_read_headers(struct client_state* client) {
 		strcpy(client->headers.connection, "close");
 	}
 	client->has_headers = true;
-	client->size -= end - client->buffer;
+	size_t end_offset = end - client->buffer;
+	if (client->size >= end_offset) {
+		client->size -= end_offset;
+	}
 	memmove(client->buffer, end, client->size);
 	client->buffer[client->size] = '\0';
 	return true;

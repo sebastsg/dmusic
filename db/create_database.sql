@@ -99,15 +99,16 @@ create table "group_tag" (
     primary key ("group_id", "tag_name")
 );
 
-create table "group_image" (
-    "group_id"    int  not null,
-    "num"         int  not null,
-    "description" text not null,
+create table "group_attachment" (
+    "group_id"    int         not null,
+    "num"         int         not null,
+    "type"        varchar(16) not null,
+    "description" text        not null,
 
-    constraint  fk_group_image_group
+    constraint  fk_group_attachment_group
     foreign key ("group_id") references "group" ("id"),
     
-    constraint  pk_album_image
+    constraint  pk_group_attachment
     primary key ("group_id", "num")
 );
 
@@ -187,7 +188,7 @@ create table "album_attachment" (
     "type"              varchar(16) not null,
     "description"       text        not null,
 
-    constraint  fk_album_release_image_album
+    constraint  fk_album_attachment_album_release
     foreign key ("album_release_id") references "album_release" ("id"),
     
     constraint  pk_album_attachment

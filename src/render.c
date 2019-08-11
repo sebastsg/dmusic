@@ -342,6 +342,7 @@ static void render_prepare_attachments(struct render_buffer* buffer, const char*
 
 static void render_prepare(struct render_buffer* buffer, struct prepare_data* prepare) {
 	if (prepare->num_discs < 1 || prepare->discs[0].num_tracks < 1) {
+		fprintf(stderr, "Invalid number of discs (%i) or tracks (%i)\n", prepare->num_discs, (prepare->num_discs > 0 ? prepare->discs[0].num_tracks : 0));
 		return;
 	}
 	strcpy(buffer->data, mem_cache()->prepare_template);
@@ -479,6 +480,7 @@ char* render_resource(bool is_main, const char* resource) {
 		free(group.albums);
 		free(group.tracks);
 	} else if (!strcmp(page, "search")) {
+		printf("Search: " A_MAGENTA "\"%s\"\n" A_RESET, resource);
 		char type[32];
 		char query[512];
 		resource = split_string(type, sizeof(type), resource, '/');

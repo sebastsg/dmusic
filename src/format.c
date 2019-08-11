@@ -145,8 +145,8 @@ char* url_decode(char* url) {
 			*(dest++) = *(url++);
 			continue;
 		}
-		if (url + 3 >= end) {
-			continue;
+		if (url + 3 > end) {
+			break;
 		}
 		++url;
 		bool hex_1 = (*url >= 'A' && *url <= 'F');

@@ -68,3 +68,27 @@ bool create_directory(const char* path) {
 	}
 	return success;
 }
+
+bool is_dirent_directory(const char* root_path, struct dirent* entry) {
+	if (entry->d_type == DT_DIR) {
+		return true;
+	}
+	if (entry->d_type == DT_UNKNOWN) {
+		char path[1024];
+		sprintf(path, "%s/%s", root_path, entry->d_name);
+		return directory_exists(path);
+	}
+	return false;
+}
+
+bool is_dirent_file(const char* root_path, struct dirent* entry) {
+	if (entry->d_type == DT_REG) {
+		return true;
+	}
+	if (entry->d_type == DT_UNKNOWN) {
+		char path[1024];
+		sprintf(path, "%s/%s", root_path, entry->d_name);
+		return file_exists(path);
+	}
+	return false;
+}

@@ -39,5 +39,8 @@ void update_disc_track_durations(int album_release_id, int disc_num);
 void update_album_track_durations(int album_release_id);
 void update_all_track_durations();
 
+int first_album_attachment_of_type(int album_release_id, const char* type);
+int first_group_attachment_of_type(int group_id, const char* type);
+
 bool register_user(const char* name, const char* password);
 bool login_user(const char* name, const char* password);

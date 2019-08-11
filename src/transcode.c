@@ -1,9 +1,11 @@
 #include "transcode.h"
 #include "config.h"
+#include "data.h"
+#include "files.h"
+#include "database.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -19,7 +21,7 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 	sprintf(dest_path, "%s/%s", root_path, format);
 	if (mkdir(dest_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
 		if (errno != EEXIST) {
-			fprintf(stderr, "Failed to create directory: \"%s\". Error: %s\n", dest_path, strerror(errno));
+			print_error_f("Failed to create directory: " A_CYAN "\"%s\"" A_RESET ". Error: " A_CYAN "%s\n", dest_path, strerror(errno));
 			return;
 		}
 	}
@@ -30,13 +32,17 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 		sprintf(src_path, "%s/flac-web-16", root_path);
 		dir = opendir(src_path);
 		if (!dir) {
-			fprintf(stderr, "Failed to read directory: %s\n", src_path);
-			return;
+			sprintf(src_path, "%s/flac-16", root_path);
+			dir = opendir(src_path);
+			if (!dir) {
+				print_error_f("Failed to read directory: " A_CYAN "%s\n", src_path);
+				return;
+			}
 		}
 	}
 	struct dirent* entry = NULL;
 	while (entry = readdir(dir)) {
-		if (entry->d_type != DT_REG) {
+		if (!is_dirent_file(src_path, entry)) {
 			continue;
 		}
 		char* extension = strrchr(entry->d_name, '.');
@@ -66,19 +72,23 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 
 void transcode_album_release(int album_release_id, const char* format) {
 	if (album_release_id <= 0) {
-		fprintf(stderr, "Invalid album release id: %i\n", album_release_id);
+		print_error_f("Invalid album release id: " A_CYAN "%i\n", album_release_id);
 		return;
 	}
 	if (strcmp(format, "mp3-320")) {
-		fprintf(stderr, "Can only transcode to 320 for now.\n");
+		print_error("Can only transcode to 320 for now.\n");
 		return;
 	}
 	char path[512];
 	album_path(path, 512, album_release_id);
 	DIR* dir = opendir(path);
+	if (!dir) {
+		print_error_f("Failed to read directory: " A_CYAN "%s\n", path);
+		return;
+	}
 	struct dirent* entry = NULL;
 	while (entry = readdir(dir)) {
-		if (entry->d_type != DT_DIR) {
+		if (!is_dirent_directory(path, entry)) {
 			continue;
 		}
 		int disc_num = atoi(entry->d_name);
@@ -87,4 +97,8 @@ void transcode_album_release(int album_release_id, const char* format) {
 		}
 	}
 	closedir(dir);
+	char id_str[32];
+	sprintf(id_str, "%i", album_release_id);
+	const char* params[] = { id_str, format };
+	insert_row("album_release_format", false, 2, params);
 }

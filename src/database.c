@@ -149,6 +149,10 @@ void load_options(struct select_options* options, const char* type) {
 }
 
 void load_search_results(struct search_result_data** search_results, int* count, const char* type, const char* query) {
+	if (strcmp(type, "country") && strcmp(type, "groups") && strcmp(type, "person")) {
+		print_error_f("Invalid search type: " A_CYAN "%s\n", type);
+		return;
+	}
 	char procedure[32];
 	sprintf(procedure, "select * from search_%s", type);
 	char search[32];
@@ -510,4 +514,40 @@ void update_all_track_durations() {
 		update_album_track_durations(atoi(PQgetvalue(result, i, 0)));
 	}
 	PQclear(result);
+}
+
+int first_album_attachment_of_type(int album_release_id, const char* type) {
+	char id_str[32];
+	sprintf(id_str, "%i", album_release_id);
+	const char* params[] = { id_str, type };
+	PGresult* result = execute_sql("select \"num\" from \"album_attachment\" where \"album_release_id\" = $1 and \"type\" = $2", params, 2);
+	if (!result) {
+		return 0;
+	}
+	int num = 0;
+	if (PQntuples(result) > 0) {
+		num = atoi(PQgetvalue(result, 0, 0));
+	} else {
+		print_error_f("No attachment of type " A_CYAN "%s" A_RED " was found for album " A_CYAN "%i\n", type, album_release_id);
+	}
+	PQclear(result);
+	return num;
+}
+
+int first_group_attachment_of_type(int group_id, const char* type) {
+	char id_str[32];
+	sprintf(id_str, "%i", group_id);
+	const char* params[] = { id_str, type };
+	PGresult* result = execute_sql("select \"num\" from \"group_attachment\" where \"group_id\" = $1 and \"type\" = $2", params, 2);
+	if (!result) {
+		return 0;
+	}
+	int num = 0;
+	if (PQntuples(result) > 0) {
+		num = atoi(PQgetvalue(result, 0, 0));
+	} else {
+		print_error_f("No attachment of type " A_CYAN "%s" A_RED " was found for group " A_CYAN "%i\n", type, group_id);
+	}
+	PQclear(result);
+	return num;
 }

@@ -39,7 +39,7 @@ void replace_database_functions() {
 	}
 	struct dirent* entry = NULL;
 	while (entry = readdir(dir)) {
-		if (entry->d_type == DT_REG && strstr(entry->d_name, ".sql")) {
+		if (is_dirent_file(path, entry) && strstr(entry->d_name, ".sql")) {
 			strcpy(path, "functions/");
 			strcat(path, entry->d_name);
 			printf("Executing sql file: %s\n", path);
