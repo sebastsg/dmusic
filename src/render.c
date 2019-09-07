@@ -276,7 +276,7 @@ static void render_upload(struct render_buffer* buffer, struct upload_data* uplo
 	struct render_buffer uploads_buffer;
 	init_render_buffer(&uploads_buffer, 2048);
 	for (int i = 0; i < upload->num_uploads; i++) {
-		strcat(uploads_buffer.data, mem_cache()->uploaded_album_template);
+		append_buffer(&uploads_buffer, mem_cache()->uploaded_album_template);
 		set_parameter(&uploads_buffer, "prefix", upload->uploads[i].prefix);
 		set_parameter(&uploads_buffer, "name", upload->uploads[i].name);
 	}
@@ -293,7 +293,7 @@ static void render_prepare_disc(struct render_buffer* buffer, const char* key, s
 	init_render_buffer(&tracks_buffer, 4096);
 	for (int i = 0; i < disc->num_tracks; i++) {
 		// todo: fix potential security issue where a path has {{ fixed }} etc...
-		strcat(tracks_buffer.data, mem_cache()->prepare_track_template);
+		append_buffer(&tracks_buffer, mem_cache()->prepare_track_template);
 		set_parameter_int(&tracks_buffer, "num", disc->tracks[i].num);
 		set_parameter(&tracks_buffer, "path", disc->tracks[i].path);
 		set_parameter(&tracks_buffer, "fixed", disc->tracks[i].fixed);
@@ -325,7 +325,7 @@ static void render_prepare_attachments(struct render_buffer* buffer, const char*
 		init_render_buffer(&select_buffer, 2048);
 		for (int j = 0; j < attachments[i].targets.count; j++) {
 			struct select_option* target = &attachments[i].targets.options[j];
-			strcat(select_buffer.data, "{{ option }}");
+			append_buffer(&select_buffer, "{{ option }}");
 			render_select_option(&select_buffer, "option", target->code, target->name, j == attachments[i].selected_target);
 		}
 		set_parameter(&attachments_buffer, "targets", select_buffer.data);
@@ -373,7 +373,7 @@ static void render_prepare(struct render_buffer* buffer, struct prepare_data* pr
 	select_buffer.data[0] = '\0';
 	for (int i = 0; i < mem_cache()->album_types.count; i++) {
 		struct select_option* type = &mem_cache()->album_types.options[i];
-		strcat(select_buffer.data, "{{ option }}");
+		append_buffer(&select_buffer, "{{ option }}");
 		bool selected = !strcmp(prepare->album_type, type->code);
 		render_select_option(&select_buffer, "option", type->code, type->name, selected);
 	}

@@ -234,6 +234,7 @@ bool http_read_body(struct client_state* client) {
 		return true;
 	}
 	read_from_client(client->socket, &client->buffer, &client->size, &client->allocated, client->headers.content_length);
+	client->last_request = time(NULL);
 	return client->size >= client->headers.content_length;
 }
 
