@@ -134,7 +134,7 @@ void delete_session_tracks(const char* user) {
 
 void load_options(struct select_options* options, const char* type) {
 	char query[128];
-	sprintf(query, "select * from %s order by \"name\"", type);
+	snprintf(query, sizeof(query), "select * from %s order by \"name\"", type);
 	PGresult* result = execute_sql(query, NULL, 0);
 	options->count = PQntuples(result);
 	options->options = (struct select_option*)malloc(options->count * sizeof(struct select_option));
@@ -153,12 +153,11 @@ void load_search_results(struct search_result_data** search_results, int* count,
 		print_error_f("Invalid search type: " A_CYAN "%s\n", type);
 		return;
 	}
-	char procedure[32];
+	char procedure[64];
 	sprintf(procedure, "select * from search_%s", type);
-	char search[32];
-	char limit[32];
-	sprintf(search, "%%%s%%", query);
-	strcpy(limit, "10");
+	char search[256];
+	snprintf(search, sizeof(search), "%%%s%%", query);
+	const char* limit = "10";
 	const char* params[] = { search, limit };
 	PGresult* result = call_procedure(procedure, params, 2);
 	*count = PQntuples(result);

@@ -25,20 +25,19 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 			return;
 		}
 	}
+	const char* allowed_formats[] = { "flac-cd-16", "flac-web-16", "flac-16", "flac-cd-24", "flac-web-24", "flac-24" };
+	const size_t num_formats = sizeof(allowed_formats) / sizeof(char*);
 	char src_path[1024];
-	sprintf(src_path, "%s/flac-cd-16", root_path);
-	DIR* dir = opendir(src_path);
-	if (!dir) {
-		sprintf(src_path, "%s/flac-web-16", root_path);
-		dir = opendir(src_path);
-		if (!dir) {
-			sprintf(src_path, "%s/flac-16", root_path);
-			dir = opendir(src_path);
-			if (!dir) {
-				print_error_f("Failed to read directory: " A_CYAN "%s\n", src_path);
-				return;
-			}
+	DIR* dir = NULL;
+	for (size_t i = 0; i < num_formats; i++) {
+		snprintf(src_path, sizeof(src_path), "%s/%s", root_path, allowed_formats[i]);
+		if (dir = opendir(src_path)) {
+			break;
 		}
+	}
+	if (!dir) {
+		print_error_f("Failed to read directory: " A_CYAN "%s\n", src_path);
+		return;
 	}
 	struct dirent* entry = NULL;
 	while (entry = readdir(dir)) {

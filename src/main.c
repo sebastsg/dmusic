@@ -5,6 +5,7 @@
 #include "database.h"
 #include "network.h"
 #include "cache.h"
+#include "transcode.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -22,10 +23,7 @@ static void signal_interrupt_handler(int signal_num) {
 	exit(0);
 }
 
-int main(int argc, char** argv) {
-	srand(time(NULL));
-	load_config();
-	connect_database();
+static bool process_command(int argc, char** argv) {
 	char* cmd = argc > 1 ? argv[1] : NULL;
 	if (cmd) {
 		if (!strcmp(cmd, "--install")) {
@@ -39,7 +37,21 @@ int main(int argc, char** argv) {
 			replace_database_functions();
 		} else if (!strcmp(cmd, "--update-track-durations")) {
 			update_all_track_durations();
+		} else if (!strcmp(cmd, "--transcode")) {
+			if (argc > 2) {
+				transcode_album_release(atoi(argv[2]), argc > 3 ? argv[3] : "mp3-320");
+			}
 		}
+		return true;
+	}
+	return false;
+}
+
+int main(int argc, char** argv) {
+	srand(time(NULL));
+	load_config();
+	connect_database();
+	if (process_command(argc, argv)) {
 		disconnect_database();
 		return 0;
 	}
