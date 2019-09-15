@@ -20,7 +20,7 @@
 #define print_error(STR)        fprintf(stderr, A_RED STR A_RESET)
 
 char* render_resource(bool is_main, const char* resource);
-char* system_output(const char* command);
+char* system_output(const char* command, size_t* size);
 
 struct select_option {
 	char code[64];

@@ -15,28 +15,32 @@
 
 #include <unistd.h>
 
-char* system_output(const char* command) {
+char* system_output(const char* command, size_t* out_size) {
 	FILE* process = popen(command, "r");
 	if (!process) {
 		fprintf(stderr, "Failed to run \"%s\". Error: %s\n", command, strerror(errno));
 		return NULL;
 	}
 	size_t index = 0;
-	size_t size = 512;
-	char* buffer = (char*)malloc(size);
+	size_t allocated_size = 512;
+	char* buffer = (char*)malloc(allocated_size);
 	*buffer = '\0';
-	while (fgets(buffer + index, size - index, process)) {
-		index += strlen(buffer + index);
-		if (index + 1 >= size) {
-			char* new_buffer = (char*)realloc(buffer, size * 2);
+	size_t last_read_size = 0;
+	while (last_read_size = fread(buffer + index, 1, allocated_size - index, process)) {
+		index += last_read_size;
+		if (index + 1 >= allocated_size) {
+			char* new_buffer = (char*)realloc(buffer, allocated_size * 2);
 			if (!new_buffer) {
 				break;
 			}
 			buffer = new_buffer;
-			size *= 2;
+			allocated_size *= 2;
 		}
 	}
 	pclose(process);
+	if (out_size) {
+		*out_size = index;
+	}
 	return buffer;
 }
 

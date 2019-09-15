@@ -6,6 +6,7 @@
 #include "network.h"
 #include "cache.h"
 #include "transcode.h"
+#include "files.h"
 
 #include <string.h>
 #include <stdio.h>

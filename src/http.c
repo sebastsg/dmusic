@@ -1,6 +1,7 @@
 #include "http.h"
 #include "network.h"
 #include "format.h"
+#include "data.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -309,4 +310,14 @@ const char* http_file_content_type(const char* path) {
 		return "application/zip";
 	}
 	return "text/plain";
+}
+
+char* download_http_file(const char* path, size_t* size) {
+	if (strchr(path, '"')) {
+		print_error_f("Can't download %s. Contains invalid character.", path);
+		return NULL;
+	}
+	char command[4096];
+	snprintf(command, sizeof(command), "curl -s \"%s\"", path);
+	return system_output(command, size);
 }

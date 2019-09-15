@@ -250,7 +250,7 @@ static void render_group(struct render_buffer* buffer, struct group_data* group)
 static void render_sftp_ls(struct render_buffer* buffer) {
 	char ftp_command[2048];
 	sprintf(ftp_command, "%s/ls_ftp.sh %s %s", get_property("path.root"), get_property("ftp.user"), get_property("ftp.host"));
-	char* result = system_output(ftp_command);
+	char* result = system_output(ftp_command, NULL);
 	if (!result) {
 		return;
 	}

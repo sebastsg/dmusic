@@ -452,7 +452,7 @@ void update_track_duration(int album_release_id, int disc_num, int track_num) {
 	server_track_path(path, format, album_release_id, disc_num, track_num);
 	char soxi_command[1024];
 	sprintf(soxi_command, "soxi -D \"%s\"", path);
-	char* soxi_out = system_output(soxi_command);
+	char* soxi_out = system_output(soxi_command, NULL);
 	if (!soxi_out) {
 		fprintf(stderr, "Failed to run soxi %s\n", soxi_command);
 		return;

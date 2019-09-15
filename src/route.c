@@ -284,7 +284,7 @@ static void route_form_prepare(struct http_data* data) {
 			char soxi_command[1024];
 			sprintf(soxi_command, "soxi -D \"%s\"", track_dest_path);
 			printf("Executing command: %s\n", soxi_command);
-			char* soxi_out = system_output(soxi_command);
+			char* soxi_out = system_output(soxi_command, NULL);
 			char seconds[32]; // in case of error, this will just be 0
 			sprintf(seconds, "%i", atoi(soxi_out));
 			const char* track_params[] = { album_release_id_str, disc_num, track_num, seconds, track_name };
@@ -321,23 +321,41 @@ static void route_form_attach(struct route_result* result, struct http_data* dat
 	const char* method = http_data_string(data, "method");
 	const char* folder = http_data_string(data, "folder");
 	if (!strcmp(method, "url")) {
-		fprintf(stderr, "Not supported yet.\n");
+		const char* url = http_data_string(data, "file");
+		char file_name[512];
+		const char* url_base = strrchr(url, '/');
+		if (url_base) {
+			snprintf(file_name, sizeof(file_name), "%s", url_base + 1);
+		} else {
+			const char* file_ext = strrchr(url, '.');
+			snprintf(file_name, sizeof(file_name), "file-%i%s", (int)time(NULL), file_ext ? file_ext : "");
+		}
+		char dest_path[1024];
+		server_uploaded_file_path(dest_path, folder);
+		strcat(dest_path, "/");
+		strcat(dest_path, file_name);
+		size_t file_size = 0;
+		char* file_data = download_http_file(url, &file_size);
+		if (write_file(dest_path, file_data, file_size)) {
+			char resource[1024];
+			sprintf(resource, "prepare_attachment/%s/%s", folder, file_name);
+			route_render(result, resource);
+		}
 	} else if (!strcmp(method, "file")) {
 		struct http_data_part* file = http_data_param(data, "file", 0);
 		if (!file->filename) {
-			fprintf(stderr, "Not a file.\n");
+			print_error("Not a file.\n");
 			return;
 		}
 		char dest_path[1024];
 		server_uploaded_file_path(dest_path, folder);
 		strcat(dest_path, "/");
 		strcat(dest_path, file->filename);
-		if (!write_file(dest_path, file->value, file->size)) {
-			return;
+		if (write_file(dest_path, file->value, file->size)) {
+			char resource[1024];
+			sprintf(resource, "prepare_attachment/%s/%s", folder, file->filename);
+			route_render(result, resource);
 		}
-		char resource[1024];
-		sprintf(resource, "prepare_attachment/%s/%s", folder, file->filename);
-		route_render(result, resource);
 	} else {
 		fprintf(stderr, "Invalid attach method: %s\n", method);
 	}
@@ -400,7 +418,7 @@ static void route_form_download_remote(struct http_data* data) {
 	trim_ends(dir, " \t\r\n");
 	char command[4096];
 	sprintf(command, "%s/get_ftp.sh %s %s \"%s\" \"%s\"", root_dir, user, host, uploads_dir, dir);
-	char* result = system_output(command);
+	char* result = system_output(command, NULL);
 	if (!result) {
 		return;
 	}

@@ -42,3 +42,6 @@ bool http_read_headers(struct client_state* client);
 bool http_read_body(struct client_state* client);
 void http_write_headers(struct client_state* client, const struct http_headers* headers);
 const char* http_file_content_type(const char* path);
+
+char* download_http_file(const char* path, size_t* size);
+
