@@ -318,6 +318,6 @@ char* download_http_file(const char* path, size_t* size) {
 		return NULL;
 	}
 	char command[4096];
-	snprintf(command, sizeof(command), "curl -s \"%s\"", path);
+	snprintf(command, sizeof(command), "curl --cookie cookies --silent \"%s\"", path);
 	return system_output(command, size);
 }

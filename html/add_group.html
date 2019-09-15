@@ -59,35 +59,34 @@
         </tr>
     </table>
     <hr>
-    <table class="group-images">
+    <table id="group_attachments">
         <tr>
             <th>Background</th>
             <th>File</th>
-            <th>Description</th>
             <th></th>
+            <th>Description</th>
         </tr>
+    </table>
+    <table id="attach_group_image_wrapper">
         <tr>
-            <td class="short-column">
+            <th class="short-column">
                 <input type="radio" name="background" checked>
-            </td>
-            <td>
-                <select class="file-upload-method">
+            </th>
+            <th>
+                <select class="file-upload-method" data-input="attach_file">
                     <option value="url" selected>url</option>
                     <option value="file">browse file</option>
                 </select>
-                <input type="url" name="file" class="long" autocomplete="off">
-            </td>
-            <td>
+            </th>
+            <th>
+                <input type="url" id="attach_file" name="file" class="long" autocomplete="off">
+            </th>
+            <th>
                 <textarea cols="40" rows="4" name="imagedescription"></textarea>
-            </td>
-            <td>
-                <button type="button" class="delete-row">-</button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="4">
-                <button type="button" class="append-row">+</button>
-            </td>
+            </th>
+            <th>
+                <button class="attach-group-image">attach</button>
+            </th>
         </tr>
     </table>
     <button type="submit">submit</button>

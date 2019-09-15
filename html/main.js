@@ -109,7 +109,7 @@ function onAddGroupForm(target) {
     for (let person of target.querySelectorAll('.group-people tr')) {
         appendFormDataArray(data, person, 'people', ['id', 'role']);
     }
-    for (let image of target.querySelectorAll('.group-images tr')) {
+    for (let image of target.querySelectorAll('#group_attachments tr')) {
         let fileInput = image.querySelector('input[name=file]');
         if (fileInput === null) {
             continue;
@@ -198,29 +198,19 @@ function onPrepareForm(target) {
     ajaxPost('/form/prepare', data, response => document.querySelector('main section').innerHTML = response);
 }
 
-function onClickAppendRow(target) {
-    let table = target.closest('table');
-    if (table === null) {
-        return;
-    }
-    let sources = table.getElementsByTagName('tr');
-    let source = sources[1];
-    let copy = source.cloneNode(true);
-    for (let input of copy.getElementsByTagName('input')) {
-        input.value = '';
-        input.removeAttribute('checked');
-    }
-    for (let textarea of copy.getElementsByTagName('textarea')) {
-        textarea.value = '';
-    }
-    copy.insertBefore(target.parentNode.parentNode);
-}
-
-function onClickDeleteRow(target) {
-    let row = target.parentNode.parentNode;
-    if (row.parentNode.children.getElementsByTagName('tr').length >= 4) {
-        row.remove();
-    }
+function onAttachGroupImage(target) {
+    let form = document.getElementById('attach_group_image_wrapper');
+    let newRow = form.querySelector('tr').cloneNode(true);
+    const cleanAttachForm = form => {
+        form.querySelector('input[name=background]').removeAttribute('checked');
+        form.querySelector('input[name=file]').value = '';
+        form.querySelector('textarea[name=imagedescription]').value = '';
+    };
+    cleanAttachForm(form);
+    newRow.querySelector('#attach_file').removeAttribute('id');
+    newRow.querySelector('.attach-group-image').parentNode.remove();
+    let attachments = document.getElementById('group_attachments');
+    attachments.appendChild(newRow);
 }
 
 function onClickLoginSubmit(target) {
@@ -237,13 +227,13 @@ function onClickRegisterSubmit(target) {
     }, response => location.href = '/');
 }
 
-function onClickButton(target) {
+function onClickButton(event) {
+    let target = event.target;
     if (target.classList.contains('submit-prepare')) {
         onPrepareForm(target);
-    } else if (target.classList.contains('append-row')) {
-        onClickAppendRow(target);
-    } else if (target.classList.contains('delete-row')) {
-        onClickDeleteRow(target);
+    } else if (target.classList.contains('attach-group-image')) {
+        event.preventDefault();
+        onAttachGroupImage(target);
     } else if (target.classList.contains('login-submit')) {
         onClickLoginSubmit(target);
     } else if (target.classList.contains('register-submit')) {
@@ -274,7 +264,7 @@ document.addEventListener('click', function (event) {
     } else if (target.tagName === 'LI') {
         onClickLi(target);
     } else if (target.tagName === 'BUTTON') {
-        onClickButton(target);
+        onClickButton(event);
     }
 });
 

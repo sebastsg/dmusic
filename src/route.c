@@ -154,28 +154,41 @@ static void route_form_add_group(struct http_data* data) {
 	for (int i = 0; i < num_images; i++) {
 		const char* source = http_data_string_at(data, "image-source", i);
 		const char* is_background = http_data_string_at(data, "image-is-background", i);
-		struct http_data_part* image_file = http_data_param(data, "image-file", i);
-		if (!image_file) {
-			continue;
-		}
 		const char* image_description = http_data_string_at(data, "image-description", i);
 		char dest_path[512];
 		sprintf(dest_path, "%s/%i", directory, i + 1);
-		const char* image_extension = strrchr(image_file->filename, '.');
-		if (image_extension) {
-			strcat(dest_path, image_extension);
-		}
 		if (!strcmp(source, "url")) {
-			// todo: download from url
-			fputs("Images from URL not supported yet.\n", stderr);
-			continue;
+			const char* url = http_data_string_at(data, "image-file", i);
+			if (!url) {
+				continue;
+			}
+			const char* image_extension = strrchr(url, '.');
+			if (image_extension && is_extension_image(image_extension)) {
+				strcat(dest_path, image_extension);
+			} else {
+				print_error_f("Group image %i did not get a file extension.\n", i + 1);
+			}
+			size_t image_size = 0;
+			char* image_file = download_http_file(url, &image_size);
+			write_file(dest_path, image_file, image_size);
+			free(image_file);
 		} else if (!strcmp(source, "file")) {
+			struct http_data_part* image_file = http_data_param(data, "image-file", i);
+			if (!image_file) {
+				continue;
+			}
+			const char* image_extension = strrchr(image_file->filename, '.');
+			if (image_extension) {
+				strcat(dest_path, image_extension);
+			}
 			write_file(dest_path, image_file->value, image_file->size);
 		}
 		char num_str[32];
 		sprintf(num_str, "%i", i + 1);
 		char attachment_type[16];
-		strcpy(attachment_type, "background"); // todo: use is_background
+		if (is_background) {
+			strcpy(attachment_type, "background");
+		}
 		const char* image_params[] = { group_id_str, num_str, attachment_type, image_description };
 		insert_row("group_attachment", false, 4, image_params);
 	}
@@ -323,13 +336,14 @@ static void route_form_attach(struct route_result* result, struct http_data* dat
 	if (!strcmp(method, "url")) {
 		const char* url = http_data_string(data, "file");
 		char file_name[512];
-		const char* url_base = strrchr(url, '/');
-		if (url_base) {
-			snprintf(file_name, sizeof(file_name), "%s", url_base + 1);
+		const char* url_path = strrchr(url, '/');
+		if (url_path) {
+			snprintf(file_name, sizeof(file_name), "%s", url_path + 1);
 		} else {
 			const char* file_ext = strrchr(url, '.');
 			snprintf(file_name, sizeof(file_name), "file-%i%s", (int)time(NULL), file_ext ? file_ext : "");
 		}
+		replace_victims_with(file_name, "!@%^*~|\"&=?/\\#", '_');
 		char dest_path[1024];
 		server_uploaded_file_path(dest_path, folder);
 		strcat(dest_path, "/");
@@ -341,6 +355,7 @@ static void route_form_attach(struct route_result* result, struct http_data* dat
 			sprintf(resource, "prepare_attachment/%s/%s", folder, file_name);
 			route_render(result, resource);
 		}
+		free(file_data);
 	} else if (!strcmp(method, "file")) {
 		struct http_data_part* file = http_data_param(data, "file", 0);
 		if (!file->filename) {
