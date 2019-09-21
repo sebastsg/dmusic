@@ -3,6 +3,7 @@
 #include "files.h"
 #include "data.h"
 #include "format.h"
+#include "stack.h"
 
 #include <postgresql/libpq-fe.h>
 #include <openssl/sha.h>
@@ -65,8 +66,7 @@ static PGresult* call_procedure(const char* procedure, const char** params, int 
 }
 
 void execute_sql_file(const char* name, bool split) {
-	char path[256];
-	char* sql = read_file(sql_path(path, 256, name), NULL);
+	char* sql = read_file(server_sql_path(name), NULL);
 	if (!sql) {
 		fprintf(stderr, "Unable to read file: %s\n", name);
 		return;
@@ -242,9 +242,9 @@ void load_group_albums(struct album_data** albums, int* num_albums, int group_id
 			strcpy(album->album_type_code, PQgetvalue(result, i, 2));
 			int cover_num = (PQgetisnull(result, i, 3) ? 0 : atoi(PQgetvalue(result, i, 3)));
 			if (cover_num != 0) {
-				client_album_image_path(album->image, album->album_release_id, cover_num);
+				album->image = copy_string(client_album_image_path(album->album_release_id, cover_num));
 			} else {
-				strcpy(album->image, "/img/missing.png");
+				album->image = copy_string("/img/missing.png");
 			}
 		}
 	}
@@ -350,7 +350,7 @@ void load_group_thumbs(struct group_thumb_data** thumbs, int* num_thumbs) {
 			struct group_thumb_data* thumb = &(*thumbs)[i];
 			thumb->id = atoi(PQgetvalue(result, i, 0));
 			strcpy(thumb->name, PQgetvalue(result, i, 1));
-			client_group_image_path(thumb->image, thumb->id, 1);
+			thumb->image = copy_string(client_group_image_path(thumb->id, 1));
 		}
 	}
 	PQclear(result);
@@ -442,14 +442,13 @@ bool login_user(const char* name, const char* password) {
 }
 
 void update_track_duration(int album_release_id, int disc_num, int track_num) {
-	char path[512];
 	char format[16];
 	find_best_audio_format(format, album_release_id, true);
 	if (format[0] == '\0') {
 		fprintf(stderr, "Did not find any file for track %i in disc %i in album release %i\n", track_num, disc_num, album_release_id);
 		return;
 	}
-	server_track_path(path, format, album_release_id, disc_num, track_num);
+	const char* path = server_track_path(format, album_release_id, disc_num, track_num);
 	char soxi_command[1024];
 	sprintf(soxi_command, "soxi -D \"%s\"", path);
 	char* soxi_out = system_output(soxi_command, NULL);

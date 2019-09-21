@@ -15,7 +15,7 @@ char* read_file(const char* path, size_t* size) {
 	}
 	FILE* file = fopen(path, "rb");
 	if (!file) {
-		fprintf(stderr, "Failed to open file %s for reading. Error: %s\n", path, strerror(errno));
+		print_error_f("Failed to open file %s for reading. Error: %s\n", path, strerror(errno));
 		return NULL;
 	}
 	fseek(file, 0, SEEK_END);
@@ -31,7 +31,7 @@ char* read_file(const char* path, size_t* size) {
 	if (fread(buffer, 1, file_size, file) != file_size) {
 		free(buffer);
 		fclose(file);
-		fprintf(stderr, "I/O error while reading file %s. Error: %s\n", path, strerror(errno));
+		print_error_f("I/O error while reading file %s. Error: %s\n", path, strerror(errno));
 		return NULL;
 	}
 	fclose(file);

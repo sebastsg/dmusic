@@ -158,8 +158,7 @@ static void render_tags(struct render_buffer* buffer, const char* key, struct ta
 
 static void render_track(struct render_buffer* buffer, struct track_data* track) {
 	append_buffer(buffer, mem_cache()->track_template);
-	char track_url[64];
-	client_track_path(track_url, track->album_release_id, track->disc_num, track->num);
+	const char* track_url = client_track_path(track->album_release_id, track->disc_num, track->num);
 	set_parameter(buffer, "queue_url", track_url);
 	set_parameter(buffer, "space_prefix", track->num < 10 ? "&nbsp;" : "");
 	set_parameter_int(buffer, "num_str", track->num);
@@ -463,6 +462,9 @@ char* render_resource(bool is_main, const char* resource) {
 		int num_thumbs = 0;
 		load_group_thumbs(&thumbs, &num_thumbs);
 		render_group_thumb_list(&buffer, thumbs, num_thumbs);
+		for (int i = 0; i < num_thumbs; i++) {
+			free(thumbs[i].image);
+		}
 		free(thumbs);
 	} else if (!strcmp(page, "group")) {
 		char group_id_str[32];
@@ -477,6 +479,9 @@ char* render_resource(bool is_main, const char* resource) {
 			render_group(&buffer, &group);
 		}
 		free(group.tags);
+		for (int i = 0; i < group.num_albums; i++) {
+			free(group.albums[i].image);
+		}
 		free(group.albums);
 		free(group.tracks);
 	} else if (!strcmp(page, "search")) {
@@ -506,6 +511,10 @@ char* render_resource(bool is_main, const char* resource) {
 		render_prepare(&buffer, prepare);
 		for (int i = 0; i < prepare->num_attachments; i++) {
 			free(prepare->attachments[i].targets.options);
+			free(prepare->attachments[i].name);
+			free(prepare->attachments[i].link);
+			free(prepare->attachments[i].preview);
+			free(prepare->attachments[i].path);
 		}
 		free(prepare);
 	} else if (!strcmp(page, "prepare_attachment")) {

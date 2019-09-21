@@ -110,11 +110,11 @@ void replace_victims_with(char* str, const char* victims, char with) {
 }
 
 bool is_extension_image(const char* extension) {
-	return any_string_contains(extension, image_extensions, NUM_ARRAY_ELEMENTS(image_extensions, char*));
+	return extension && any_string_contains(extension, image_extensions, NUM_ARRAY_ELEMENTS(image_extensions, char*));
 }
 
 bool is_extension_audio(const char* extension) {
-	return any_string_contains(extension, audio_extensions, NUM_ARRAY_ELEMENTS(audio_extensions, char*));
+	return extension && any_string_contains(extension, audio_extensions, NUM_ARRAY_ELEMENTS(audio_extensions, char*));
 }
 
 const char* find_file_extension(const char* path) {

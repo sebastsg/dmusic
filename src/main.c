@@ -7,6 +7,7 @@
 #include "cache.h"
 #include "transcode.h"
 #include "files.h"
+#include "stack.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -16,6 +17,7 @@
 static void free_resources() {
 	free_network();
 	disconnect_database();
+	free_stack();
 }
 
 static void signal_interrupt_handler(int signal_num) {
@@ -50,10 +52,12 @@ static bool process_command(int argc, char** argv) {
 
 int main(int argc, char** argv) {
 	srand(time(NULL));
+	initialize_stack();
 	load_config();
 	connect_database();
 	if (process_command(argc, argv)) {
 		disconnect_database();
+		free_stack();
 		return 0;
 	}
 	initialize_network();

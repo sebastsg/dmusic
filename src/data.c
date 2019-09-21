@@ -4,6 +4,7 @@
 #include "config.h"
 #include "files.h"
 #include "database.h"
+#include "stack.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -12,7 +13,6 @@
 #include <dirent.h>
 #include <ftw.h>
 #include <sys/stat.h>
-
 #include <unistd.h>
 
 char* system_output(const char* command, size_t* out_size) {
@@ -41,18 +41,19 @@ char* system_output(const char* command, size_t* out_size) {
 	if (out_size) {
 		*out_size = index;
 	}
+	buffer[index] = '\0';
 	return buffer;
 }
 
 void load_prepare_attachment(struct prepare_attachment_data* attachment, const char* path) {
-	const char* filename = strrchr(path, '/') + 1;
-	strcpy(attachment->name, filename);
-	strcpy(attachment->path, path);
-	client_uploaded_file_path(attachment->link, path);
+	const char* name = strrchr(path, '/') + 1;
+	attachment->name = copy_string(name);
+	attachment->path = copy_string(path);
+	attachment->link = copy_string(client_uploaded_file_path(path));
 	if (is_extension_image(path)) {
-		strcpy(attachment->preview, attachment->link);
+		attachment->preview = copy_string(attachment->link);
 	}
-	attachment->selected_target = guess_targets(filename, &attachment->targets);
+	attachment->selected_target = guess_targets(name, &attachment->targets);
 }
 
 struct group_guess_search {
@@ -134,7 +135,12 @@ static void* nftw_user_data_2 = NULL;
  * @nftw_user_data_2: int* num_attachments
  */
 static int nftw_guess_attachment(const char* path, const struct stat* stat_buffer, int flag, struct FTW* ftw_buffer) {
-	if (flag != FTW_F || is_extension_audio(path)) {
+	if (flag != FTW_F) {
+		printf("Skipping invalid entry. Not a file: %s\n", path);
+		return 0;
+	}
+	if (is_extension_audio(strrchr(path, '.'))) {
+		printf("Skipping invalid attachment file. Is audio: %s\n", path);
 		return 0;
 	}
 	struct prepare_attachment_data* attachments = (struct prepare_attachment_data*)nftw_user_data_1;
@@ -148,13 +154,13 @@ static int nftw_guess_attachment(const char* path, const struct stat* stat_buffe
 
 static void guess_attachments(struct prepare_attachment_data* attachments, int* num_attachments, const char* path) {
 	*num_attachments = 0;
-	char full_path[512];
-	upload_path(full_path, 512, path);
+	const char* full_path = push_string(server_uploaded_file_path(path));
 	nftw_user_data_1 = attachments;
 	nftw_user_data_2 = num_attachments;
 	if (nftw(full_path, nftw_guess_attachment, 20, 0) == -1) {
-		printf("\"%s\" error occured while preparing attachments: %s\n", strerror(errno), full_path);
+		print_error_f("\"%s\" error occured while preparing attachments: %s\n", strerror(errno), full_path);
 	}
+	pop_string();
 }
 
 /*
@@ -162,8 +168,12 @@ static void guess_attachments(struct prepare_attachment_data* attachments, int* 
  * @nftw_user_data_2: int* num_discs
  */
 static int nftw_guess_track(const char* path, const struct stat* stat_buffer, int flag, struct FTW* ftw_buffer) {
-	if (flag != FTW_F || !is_extension_audio(path)) {
-		printf("Skipping invalid file: %s\n", path);
+	if (flag != FTW_F) {
+		printf("Skipping invalid entry. Not a file: %s\n", path);
+		return 0;
+	}
+	if (!is_extension_audio(strrchr(path, '.'))) {
+		printf("Skipping invalid track file. Not audio: %s\n", path);
 		return 0;
 	}
 	printf("Found track file: %s\n", path);
@@ -174,7 +184,7 @@ static int nftw_guess_track(const char* path, const struct stat* stat_buffer, in
 	int disc_num = guess_disc_num(uploaded_name);
 	if (disc_num > 5) {
 		// TODO: Compare with number of tracks? If there are 100 audio files, perhaps it is right.
-		fprintf(stderr, "The filenames make it seem like there are %i discs. This is unlikely, and currently not allowed.", disc_num);
+		print_error_f("The filenames make it seem like there are %i discs. This is unlikely, and currently not allowed.", disc_num);
 		return 0;
 	}
 	while (disc_num > *num_discs || *num_discs == 0) {
@@ -199,13 +209,13 @@ static int sort_prepare_track_num(const void* a, const void* b) {
 
 static void guess_tracks(struct prepare_disc_data* discs, int* num_discs, const char* path) {
 	*num_discs = 0;
-	char full_path[512];
-	upload_path(full_path, 512, path);
+	const char* full_path = push_string(server_uploaded_file_path(path));
 	nftw_user_data_1 = discs;
 	nftw_user_data_2 = num_discs;
 	if (nftw(full_path, nftw_guess_track, 20, 0) == -1) {
 		print_error_f(A_CYAN "\"%s\"" A_RESET " error occured while preparing tracks: " A_CYAN "%s\n", strerror(errno), full_path);
 	}
+	pop_string();
 	for (int i = 0; i < *num_discs; i++) {
 		qsort(discs[i].tracks, discs[i].num_tracks, sizeof(struct prepare_track_data), sort_prepare_track_num);
 	}

@@ -3,7 +3,7 @@ CFLAGS = -fsanitize=address -fsanitize=undefined -g -O0 -std=c18 -D_DEFAULT_SOUR
 LDFLAGS = -lasan -lubsan -lpq -lssl -lcrypto -lpthread -lpcre2-8
 SRCDIR = src
 OBJDIR = obj
-OBJECTS = $(addprefix $(OBJDIR)/, cache.o config.o data.o database.o files.o format.o http.o install.o main.o network.o prepare.o render.o route.o transcode.o)
+OBJECTS = $(addprefix $(OBJDIR)/, cache.o config.o data.o database.o files.o format.o http.o install.o main.o network.o prepare.o render.o route.o stack.o transcode.o)
 
 all: $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) $(LDFLAGS) -o dmusic

@@ -1,42 +1,28 @@
 #pragma once
 
-#include <stddef.h>
-
-#ifdef __GNUC__
-# define COMPILER_IS_GCC 1
-#else
-# define COMPILER_IS_GCC 0
-#endif
-
-#ifdef __linux__
-# define PLATFORM_IS_LINUX 1
-#else
-# define PLATFORM_IS_LINUX 0
-#endif
-
 void load_config();
 const char* get_property(const char* key);
 
-char* root_path(char* dest, size_t size, const char* path);
-char* upload_path(char* dest, size_t size, const char* path);
-char* seed_path(char* dest, size_t size, const char* name);
-char* sql_path(char* dest, size_t size, const char* name);
-char* html_path(char* dest, size_t size, const char* name);
-char* cache_path(char* dest, size_t size, const char* path);
-char* group_path(char* dest, size_t size, int group_id);
-char* album_path(char* dest, size_t size, int album_release_id);
+const char* server_root_path(const char* path);
+const char* server_seed_path(const char* name);
+const char* server_sql_path(const char* name);
+const char* server_html_path(const char* name);
+const char* server_cache_path(const char* path);
+const char* server_group_path(int group_id);
+const char* server_album_path(int album_release_id);
 
-char* server_disc_path(char* dest, int album_release_id, int disc_num);
-char* server_disc_format_path(char* dest, int album_release_id, int disc_num, const char* format);
+const char* server_disc_path(int album_release_id, int disc_num);
+const char* server_disc_format_path(int album_release_id, int disc_num, const char* format);
 
-char* client_group_image_path(char* dest, int group_id, int num);
-char* server_group_image_path(char* dest, int group_id, int num);
+const char* client_group_image_path(int group_id, int num);
+const char* server_group_image_path(int group_id, int num);
 
-char* client_album_image_path(char* dest, int album_release_id, int num);
-char* server_album_image_path(char* dest, int album_release_id, int num);
+const char* client_album_image_path(int album_release_id, int num);
+const char* server_album_image_path(int album_release_id, int num);
 
-char* client_uploaded_file_path(char* dest, const char* filename);
-char* server_uploaded_file_path(char* dest, const char* filename);
+const char* client_uploaded_file_path(const char* filename);
+const char* server_uploaded_file_path(const char* filename);
+const char* server_uploaded_directory_file_path(const char* directory, const char* filename);
 
-char* client_track_path(char* dest, int album_release_id, int disc_num, int track_num);
-char* server_track_path(char* dest, const char* format, int album_release_id, int disc_num, int track_num);
+const char* client_track_path(int album_release_id, int disc_num, int track_num);
+const char* server_track_path(const char* format, int album_release_id, int disc_num, int track_num);

@@ -17,18 +17,18 @@ static void load_all_options() {
 }
 
 static void load_template(char** dest, const char* name) {
-	static char path[256];
-	*dest = read_file(html_path(path, sizeof(path), name), NULL);
+	const char* path = server_html_path(name);
+	*dest = read_file(path, NULL);
 	if (!*dest) {
-		fprintf(stderr, "Failed to load template: %s\n", path);
+		print_error_f("Failed to load template: %s\n", path);
 	}
 }
 
 static void load_file(char** dest, const char* name, size_t* size) {
-	static char path[256];
-	*dest = read_file(root_path(path, sizeof(path), name), size);
+	const char* path = server_root_path(name);
+	*dest = read_file(path, size);
 	if (!*dest) {
-		fprintf(stderr, "Failed to load file: %s\n", path);
+		print_error_f("Failed to load file: %s\n", path);
 	}
 }
 

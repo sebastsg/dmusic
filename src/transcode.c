@@ -3,20 +3,17 @@
 #include "data.h"
 #include "files.h"
 #include "database.h"
+#include "stack.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <string.h>
-
-#if PLATFORM_IS_LINUX
 #include <unistd.h>
-#endif
 
 static void transcode_album_release_disc(int album_release_id, int disc_num, const char* format) {
-	char root_path[512];
-	server_disc_path(root_path, album_release_id, disc_num);
+	const char* root_path = server_disc_path(album_release_id, disc_num);
 	char dest_path[1024];
 	sprintf(dest_path, "%s/%s", root_path, format);
 	if (mkdir(dest_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
@@ -78,11 +75,11 @@ void transcode_album_release(int album_release_id, const char* format) {
 		print_error("Can only transcode to 320 for now.\n");
 		return;
 	}
-	char path[512];
-	album_path(path, 512, album_release_id);
+	const char* path = push_string(server_album_path(album_release_id));
 	DIR* dir = opendir(path);
 	if (!dir) {
 		print_error_f("Failed to read directory: " A_CYAN "%s\n", path);
+		pop_string();
 		return;
 	}
 	struct dirent* entry = NULL;
@@ -95,6 +92,7 @@ void transcode_album_release(int album_release_id, const char* format) {
 			transcode_album_release_disc(album_release_id, disc_num, format);
 		}
 	}
+	pop_string();
 	closedir(dir);
 	char id_str[32];
 	sprintf(id_str, "%i", album_release_id);

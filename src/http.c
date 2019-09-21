@@ -61,6 +61,18 @@ static void http_read_range(char* dest, const char* src) {
 	}
 }
 
+static void http_read_session_cookie(char* dest, const char* src) {
+	const char* begin = strstr(src, "Cookie: DSESSION=");
+	if (begin) {
+		begin += strlen("Cookie: DSESSION=");
+		const char* end = strstr(begin, "\r\n");
+		if (end) {
+			size_t count = end - begin;
+			string_copy_substring(dest, begin, count >= 127 ? 127 : count);
+		}
+	}
+}
+
 static char* http_next_form_data(char* buffer, size_t buffer_size, const char* boundary, const char** name, size_t* size, const char** filename) {
 	if (buffer_size == 0) {
 		return NULL;
@@ -215,6 +227,7 @@ bool http_read_headers(struct client_state* client) {
 	http_read_content_type(client->headers.content_type, client->buffer);
 	http_read_content_length(&client->headers, client->buffer);
 	http_read_range(client->headers.range, client->buffer);
+	http_read_session_cookie(client->headers.session_cookie, client->buffer);
 	if (strstr(client->buffer, "Connection: keep-alive")) {
 		strcpy(client->headers.connection, "keep-alive");
 	} else {

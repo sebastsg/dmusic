@@ -61,8 +61,8 @@ static int csv_num_fields(const char* csv) {
 }
 
 static void seed_table(const char* table) {
-	char path[512];
-	char* csv = read_file(seed_path(path, 512, table), NULL);
+	const char* path = server_seed_path(table);
+	char* csv = read_file(path, NULL);
 	if (!csv) {
 		printf("Seed file is missing: %s\n", path);
 		return;

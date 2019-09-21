@@ -48,7 +48,7 @@ struct album_data {
 	int album_release_id;
 	char released_at[16];
 	char name[128];
-	char image[128];
+	char* image;
 	char album_type_code[64];
 	int num_discs;
 };
@@ -76,10 +76,10 @@ struct search_result_data {
 };
 
 struct prepare_attachment_data {
-	char name[128];
-	char link[256];
-	char preview[256];
-	char path[256];
+	char* name;
+	char* link;
+	char* preview;
+	char* path;
 	struct select_options targets;
 	int selected_target;
 };
@@ -150,7 +150,7 @@ struct add_group_data {
 struct group_thumb_data {
 	int id;
 	char name[128];
-	char image[128];
+	char* image;
 };
 
 void load_prepare_attachment(struct prepare_attachment_data* attachment, const char* path);

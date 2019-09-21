@@ -11,7 +11,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-
 #include <sys/socket.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -257,6 +256,7 @@ void poll_network() {
 
 void free_network() {
 	for (int i = 0; i < DMUSIC_MAX_CLIENTS; i++) {
+		clear_client_for_next_request(&network.clients[i]);
 		free_socket(network.clients[i].socket, true);
 		free(network.clients[i].buffer);
 		memset(&network.clients[i], 0, sizeof(struct client_state));

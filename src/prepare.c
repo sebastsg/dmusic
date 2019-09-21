@@ -85,7 +85,7 @@ int regex_search(const char* pattern, const char** str) {
 	if (!regex) {
 		PCRE2_UCHAR error_str[128];
 		pcre2_get_error_message(error, error_str, sizeof(error_str));
-		fprintf(stderr, "Error compiling regex: \"%s\" at %i\n", error_str, (int)error_offset);
+		print_error_f("Error compiling regex: \"%s\" at %i\n", error_str, (int)error_offset);
 		return 0;
 	}
 	pcre2_match_data* match_data = pcre2_match_data_create_from_pattern(regex, NULL);

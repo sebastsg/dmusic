@@ -7,6 +7,7 @@
 #include "database.h"
 #include "files.h"
 #include "transcode.h"
+#include "stack.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -23,8 +24,7 @@ void route_file(struct route_result* result, const char* path) {
 }
 
 void route_uploaded_file(struct route_result* result, const char* resource) {
-	char path[1024];
-	route_file(result, server_uploaded_file_path(path, resource));
+	route_file(result, server_uploaded_file_path(resource));
 }
 
 void route_render(struct route_result* result, const char* resource) {
@@ -60,10 +60,9 @@ void route_image(struct route_result* result, const char* resource) {
 		int album_release_id = atoi(album_release_id_str);
 		char image_format[32];
 		resource = split_string(image_format, 32, resource, '/');
-		char image_path[512];
 		int num = first_album_attachment_of_type(album_release_id, "cover");
 		if (num > 0) {
-			route_file(result, server_album_image_path(image_path, album_release_id, num));
+			route_file(result, server_album_image_path(album_release_id, num));
 		}
 	} else if (!strcmp(image, "group")) {
 		char group_id_str[32];
@@ -71,10 +70,9 @@ void route_image(struct route_result* result, const char* resource) {
 		int group_id = atoi(group_id_str);
 		char image_format[32];
 		resource = split_string(image_format, 32, resource, '/');
-		char image_path[512];
 		int num = first_group_attachment_of_type(group_id, "background");
 		if (num > 0) {
-			route_file(result, server_group_image_path(image_path, group_id, num));
+			route_file(result, server_group_image_path(group_id, num));
 		}
 	} else if (!strcmp(image, "flag")) {
 
@@ -102,9 +100,7 @@ void route_track(struct route_result* result, const char* resource) {
 	}
 	char format[16];
 	find_best_audio_format(format, album_release_id, false);
-	char path[512];
-	server_track_path(path, format, album_release_id, disc_num, track_num);
-	route_file(result, path);
+	route_file(result, server_track_path(format, album_release_id, disc_num, track_num));
 }
 
 static void route_form_add_group(struct http_data* data) {
@@ -120,8 +116,8 @@ static void route_form_add_group(struct http_data* data) {
 	}
 	char group_id_str[32];
 	sprintf(group_id_str, "%i", group_id);
-	char directory[256];
-	create_directory(group_path(directory, 256, group_id));
+	const char* directory = server_group_path(group_id);
+	create_directory(directory);
 	// tags
 	int priority = 1;
 	char tag[128];
@@ -208,12 +204,10 @@ static void route_form_upload(struct http_data* data) {
 			fprintf(stderr, "Invalid file name: %s\n", album->filename);
 			continue;
 		}
-		char zip_path[1024];
-		server_uploaded_file_path(zip_path, album->filename);
-		char unzip_filename[512];
-		sprintf(unzip_filename, "%lld%i %s", (long long)time(NULL), 1000 + rand() % 9000, album->filename);
-		char unzip_dir[1024];
-		server_uploaded_file_path(unzip_dir, unzip_filename);
+		const char* zip_path = server_uploaded_file_path(album->filename);
+		char unzip_filename[1024];
+		snprintf(unzip_filename, sizeof(unzip_filename), "%lld%i %s", (long long)time(NULL), 1000 + rand() % 9000, album->filename);
+		const char* unzip_dir = server_uploaded_file_path(unzip_filename);
 		char* unzip_dir_dot = strrchr(unzip_dir, '.');
 		*unzip_dir_dot = '\0';
 		if (!create_directory(unzip_dir)) {
@@ -264,8 +258,7 @@ static void route_form_prepare(struct http_data* data) {
 		const char* album_release_group_params[] = { album_release_id_str, group_id_str, priority_str };
 		insert_row("album_release_group", false, 3, album_release_group_params);
 	}
-	char album_dir[512];
-	album_path(album_dir, 512, album_release_id);
+	const char* album_dir = push_string(server_album_path(album_release_id));
 	create_directory(album_dir);
 	int current_track = 0;
 	int num_tracks = http_data_parameter_array_size(data, "track-num");
@@ -274,24 +267,19 @@ static void route_form_prepare(struct http_data* data) {
 		const char* disc_name = http_data_string_at(data, "disc-name", i);
 		const char* disc_params[] = { album_release_id_str, disc_num, disc_name };
 		insert_row("disc", false, 3, disc_params);
-		char disc_dir[512];
-		char disc_format_dir[512];
-		server_disc_path(disc_dir, album_release_id, atoi(disc_num));
-		server_disc_format_path(disc_format_dir, album_release_id, atoi(disc_num), format);
-		create_directory(disc_dir);
-		create_directory(disc_format_dir);
+		create_directory(server_disc_path(album_release_id, atoi(disc_num)));
+		create_directory(server_disc_format_path(album_release_id, atoi(disc_num), format));
 		int disc_tracks = atoi(http_data_string_at(data, "disc-tracks", i));
 		disc_tracks += current_track;
 		while (disc_tracks > current_track && current_track < num_tracks) {
 			const char* track_num = http_data_string_at(data, "track-num", current_track);
 			const char* track_name = http_data_string_at(data, "track-name", current_track);
 			const char* track_path = http_data_string_at(data, "track-path", current_track);
-			char track_src_path[512];
-			char track_dest_path[512];
-			server_uploaded_file_path(track_src_path, track_path);
-			server_track_path(track_dest_path, format, album_release_id, atoi(disc_num), atoi(track_num));
-			char copy_command[1200];
-			sprintf(copy_command, "cp -p \"%s\" \"%s\"", track_src_path, track_dest_path);
+			const char* track_src_path = push_string(server_uploaded_file_path(track_path));
+			const char* track_dest_path = server_track_path(format, album_release_id, atoi(disc_num), atoi(track_num));
+			char copy_command[2048];
+			snprintf(copy_command, 2048, "cp -p \"%s\" \"%s\"", track_src_path, track_dest_path);
+			pop_string();
 			printf("Executing command: %s\n", copy_command);
 			system(copy_command);
 			char soxi_command[1024];
@@ -315,8 +303,7 @@ static void route_form_prepare(struct http_data* data) {
 		const char* description = "";
 		const char* attachment_params[] = { album_release_id_str, attachment_num, attachment_type, description };
 		insert_row("album_attachment", false, 4, attachment_params);
-		char attachment_src_path[512];
-		server_uploaded_file_path(attachment_src_path, attachment_path);
+		const char* attachment_src_path = server_uploaded_file_path(attachment_path);
 		char attachment_dest_path[600];
 		const char* extension = strrchr(attachment_path, '.');
 		sprintf(attachment_dest_path, "%s/%i%s", album_dir, i + 1, extension ? extension : "");
@@ -325,6 +312,7 @@ static void route_form_prepare(struct http_data* data) {
 		printf("Executing command: %s\n", copy_command);
 		system(copy_command);
 	}
+	pop_string();
 	if (!strncmp(format, "flac", 4)) {
 		transcode_album_release(album_release_id, "mp3-320");
 	}
@@ -344,13 +332,9 @@ static void route_form_attach(struct route_result* result, struct http_data* dat
 			snprintf(file_name, sizeof(file_name), "file-%i%s", (int)time(NULL), file_ext ? file_ext : "");
 		}
 		replace_victims_with(file_name, "!@%^*~|\"&=?/\\#", '_');
-		char dest_path[1024];
-		server_uploaded_file_path(dest_path, folder);
-		strcat(dest_path, "/");
-		strcat(dest_path, file_name);
 		size_t file_size = 0;
 		char* file_data = download_http_file(url, &file_size);
-		if (write_file(dest_path, file_data, file_size)) {
+		if (write_file(server_uploaded_directory_file_path(folder, file_name), file_data, file_size)) {
 			char resource[1024];
 			sprintf(resource, "prepare_attachment/%s/%s", folder, file_name);
 			route_render(result, resource);
@@ -362,11 +346,7 @@ static void route_form_attach(struct route_result* result, struct http_data* dat
 			print_error("Not a file.\n");
 			return;
 		}
-		char dest_path[1024];
-		server_uploaded_file_path(dest_path, folder);
-		strcat(dest_path, "/");
-		strcat(dest_path, file->filename);
-		if (write_file(dest_path, file->value, file->size)) {
+		if (write_file(server_uploaded_directory_file_path(folder, file->filename), file->value, file->size)) {
 			char resource[1024];
 			sprintf(resource, "prepare_attachment/%s/%s", folder, file->filename);
 			route_render(result, resource);
@@ -481,6 +461,10 @@ void route_form(struct route_result* result, const char* resource, char* body, s
 void process_route(struct route_result* result, const char* resource, char* body, size_t size) {
 	char command[32];
 	const char* it = split_string(command, sizeof(command), resource, '/');
+	if (strncmp(result->client->headers.session_cookie, "temporary", 9)) {
+		route_file(result, server_html_path("login"));
+		return;
+	}
 	if (!strcmp(command, "img")) {
 		route_image(result, it);
 		return;
