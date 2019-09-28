@@ -4,6 +4,7 @@
 #include "files.h"
 #include "format.h"
 #include "route.h"
+#include "system.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,13 +54,13 @@ static int next_free_client_index() {
 static bool init_socket(int socket) {
 	int result = fcntl(socket, F_SETFL, O_NONBLOCK);
 	if (result == -1) {
-		print_error_f("Failed to set socket to non-blocking. Error: " A_CYAN "%s\n", strerror(errno));
+		print_error_f("Failed to set socket to non-blocking. Error: " A_CYAN "%s", strerror(errno));
 		return false;
 	}
 	int option = 1;
 	result = setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, &option, sizeof(int));
 	if (result == -1) {
-		print_error_f("Failed to enable no-delay for socket. Error: " A_CYAN "%s\n", strerror(errno));
+		print_error_f("Failed to enable no-delay for socket. Error: " A_CYAN "%s", strerror(errno));
 		return false;
 	}
 	return true;
@@ -69,12 +70,12 @@ static void free_socket(int socket, bool call_shutdown) {
 	if (socket < 0) {
 		return;
 	}
-	printf("Closing connection to socket %i\n", socket);
+	print_info_f("Closing connection to socket %i", socket);
 	if (call_shutdown && shutdown(socket, SHUT_RDWR) == -1) {
-		print_error_f("Failed to shutdown socket. Error: " A_CYAN "%s\n", strerror(errno));
+		print_error_f("Failed to shutdown socket. Error: " A_CYAN "%s", strerror(errno));
 	}
 	if (close(socket) == -1) {
-		print_error_f("Failed to close socket. Error: " A_CYAN "%s\n", strerror(errno));
+		print_error_f("Failed to close socket. Error: " A_CYAN "%s", strerror(errno));
 	}
 }
 
@@ -87,7 +88,7 @@ void initialize_network() {
 	}
 	network.listener = socket(AF_INET, SOCK_STREAM, 0);
 	if (network.listener == -1) {
-		print_error_f("Failed to create listener socket. Error: " A_CYAN "%s\n", strerror(errno));
+		print_error_f("Failed to create listener socket. Error: " A_CYAN "%s", strerror(errno));
 		return;
 	}
 	if (!init_socket(network.listener)) {
@@ -99,12 +100,12 @@ void initialize_network() {
 	memset(network.address.sin_zero, 0, sizeof(network.address.sin_zero));
 	int result = bind(network.listener, (struct sockaddr*)&network.address, sizeof(network.address));
 	if (result == -1) {
-		print_error_f("Failed to bind listener socket to port " A_CYAN "%i" A_RED ". Error: " A_CYAN "%s\n", port, strerror(errno));
+		print_error_f("Failed to bind listener socket to port " A_CYAN "%i" A_RED ". Error: " A_CYAN "%s", port, strerror(errno));
 		return;
 	}
 	result = listen(network.listener, 16);
 	if (result == -1) {
-		fprintf(stderr, "Failed to listen to port %i. Error: %s\n", port, strerror(errno));
+		print_error_f("Failed to listen to port %i. Error: %s", port, strerror(errno));
 	}
 }
 
@@ -117,9 +118,9 @@ void accept_client() {
 	network.clients[client].socket = accept(network.listener, (struct sockaddr*)&network.address, (socklen_t*)&addrsize);
 	if (network.clients[client].socket == -1) {
 		if (errno != EWOULDBLOCK && errno != EAGAIN) {
-			print_error_f("Failed to accept client. Error: " A_CYAN "%s\n", strerror(errno));
+			print_error_f("Failed to accept client. Error: " A_CYAN "%s", strerror(errno));
 			if (errno == EINVAL) {
-				print_error("The listener socket is probably invalid. Restart the program in a minute.\n");
+				print_error("The listener socket is probably invalid. Restart the program in a minute.");
 				raise(SIGINT);
 				exit(0);
 			}
@@ -142,7 +143,7 @@ void read_from_client(int socket, char** buffer, size_t* size, size_t* allocated
 	ssize_t count = read(socket, *buffer + *size, wanted_size > allocated_left ? allocated_left : wanted_size);
 	if (count < 0) {
 		if (errno != EWOULDBLOCK && errno != EAGAIN) {
-			print_error_f("Failed to read from client. Error: " A_CYAN "%s\n", strerror(errno));
+			print_error_f("Failed to read from client. Error: " A_CYAN "%s", strerror(errno));
 		}
 		return;
 	}
@@ -169,7 +170,7 @@ bool socket_write_all(struct client_state* client, const char* buffer, size_t si
 			if (errno == EWOULDBLOCK || errno == EAGAIN) {
 				continue;
 			}
-			print_error_f("Failed to write to socket %i. Error: " A_CYAN "%s\n", client->socket, strerror(errno));
+			print_error_f("Failed to write to socket %i. Error: " A_CYAN "%s", client->socket, strerror(errno));
 			free_socket(client->socket, false);
 			client->socket = -1;
 			return false;
@@ -209,7 +210,7 @@ void read_client_request(struct client_state* client) {
 	if (client->has_headers) {
 		client->is_processing = http_read_body(client);
 	} else if (http_read_headers(client)) {
-		printf("Socket %i: " A_YELLOW "\"%s\"\n" A_RESET, client->socket, client->headers.resource);
+		print_info_f("Socket %i: " A_CYAN "\"%s\"", client->socket, client->headers.resource);
 		client->is_processing = (client->headers.content_length == 0);
 	} else {
 		client->is_processing = false;
@@ -224,7 +225,7 @@ void process_client_request(struct client_state* client) {
 	if (write_size > 32768) {
 		write_size = 32768;
 	}
-	printf("%lld Writing %zu bytes to socket %i\n", (long long)time(NULL), write_size, client->socket);
+	//print_info_f("%lld Writing %zu bytes to socket %i", (long long)time(NULL), write_size, client->socket);
 	if (socket_write_all(client, client->route.body + client->write_index, write_size)) {
 		client->write_index += write_size;
 		if (client->write_index >= client->write_end) {

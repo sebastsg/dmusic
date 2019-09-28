@@ -1,6 +1,5 @@
 #include "config.h"
 #include "format.h"
-#include "data.h"
 #include "install.h"
 #include "database.h"
 #include "network.h"
@@ -8,6 +7,8 @@
 #include "transcode.h"
 #include "files.h"
 #include "stack.h"
+#include "system.h"
+#include "track.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -16,12 +17,14 @@
 
 static void free_resources() {
 	free_network();
+	free_file_cache();
+	free_options_cache();
 	disconnect_database();
 	free_stack();
 }
 
 static void signal_interrupt_handler(int signal_num) {
-	puts("Closing dmusic\n");
+	print_info("Closing dmusic");
 	free_resources();
 	exit(0);
 }
@@ -62,7 +65,8 @@ int main(int argc, char** argv) {
 	}
 	initialize_network();
 	signal(SIGINT, signal_interrupt_handler);
-	load_memory_cache();
+	load_file_cache();
+	load_options_cache();
 	while (true) {
 		poll_network();
 	}

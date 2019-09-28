@@ -161,7 +161,7 @@ function onClickA(event) {
     }
 }
 
-function onPrepareForm(target) {
+function onImportForm(target) {
     target.setAttribute('disabled', true);
     let data = new FormData();
     data.append('name', document.querySelector('input[name=name]').value);
@@ -178,7 +178,7 @@ function onPrepareForm(target) {
             data.append('attachment-path', attachment.querySelector('input[name=path]').value);
         }
     }
-    for (let disc of document.querySelectorAll('.prepare-disc')) {
+    for (let disc of document.querySelectorAll('.import-disc')) {
         let tracks = 0;
         let headers = 3;
         for (let track of disc.querySelectorAll('tr')) {
@@ -195,7 +195,7 @@ function onPrepareForm(target) {
         data.append('disc-name', disc.querySelector('input[name=name]').value);
         data.append('disc-tracks', tracks);
     }
-    ajaxPost('/form/prepare', data, response => document.querySelector('main section').innerHTML = response);
+    ajaxPost('/form/import', data, response => document.querySelector('main section').innerHTML = response);
 }
 
 function onAttachGroupImage(target) {
@@ -229,8 +229,8 @@ function onClickRegisterSubmit(target) {
 
 function onClickButton(event) {
     let target = event.target;
-    if (target.classList.contains('submit-prepare')) {
-        onPrepareForm(target);
+    if (target.classList.contains('submit-import')) {
+        onImportForm(target);
     } else if (target.classList.contains('attach-group-image')) {
         event.preventDefault();
         onAttachGroupImage(target);

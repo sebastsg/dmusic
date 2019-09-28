@@ -1,9 +1,9 @@
 #include "transcode.h"
 #include "config.h"
-#include "data.h"
 #include "files.h"
 #include "database.h"
 #include "stack.h"
+#include "system.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +18,7 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 	sprintf(dest_path, "%s/%s", root_path, format);
 	if (mkdir(dest_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
 		if (errno != EEXIST) {
-			print_error_f("Failed to create directory: " A_CYAN "\"%s\"" A_RESET ". Error: " A_CYAN "%s\n", dest_path, strerror(errno));
+			print_error_f("Failed to create directory: " A_CYAN "\"%s\"" A_RESET ". Error: " A_CYAN "%s", dest_path, strerror(errno));
 			return;
 		}
 	}
@@ -33,7 +33,7 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 		}
 	}
 	if (!dir) {
-		print_error_f("Failed to read directory: " A_CYAN "%s\n", src_path);
+		print_error_f("Failed to read directory: " A_CYAN "%s", src_path);
 		return;
 	}
 	struct dirent* entry = NULL;
@@ -54,13 +54,12 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 			*(extension + 1) = '\0';
 		}
 		strcat(out, "mp3");
-		// -S     = silent mode
-		// -q 0   = "best" quality, slower transcoding - not using for now... but worth keeping in mind
+		// -q 0   = "best" quality, slower transcoding
 		// -b 320 = cbr 320kbps
 		// note: check out -x for when static audio is produced
 		char command[4800];
-		sprintf(command, "lame -S -b 320 \"%s\" \"%s\"", in, out);
-		printf("%s\n", command);
+		sprintf(command, "lame --silent -q 0 -b 320 \"%s\" \"%s\"", in, out);
+		print_info_f("%s", command);
 		system(command);
 	}
 	closedir(dir);
@@ -68,17 +67,17 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 
 void transcode_album_release(int album_release_id, const char* format) {
 	if (album_release_id <= 0) {
-		print_error_f("Invalid album release id: " A_CYAN "%i\n", album_release_id);
+		print_error_f("Invalid album release id: " A_CYAN "%i", album_release_id);
 		return;
 	}
 	if (strcmp(format, "mp3-320")) {
-		print_error("Can only transcode to 320 for now.\n");
+		print_error("Can only transcode to 320 for now.");
 		return;
 	}
 	const char* path = push_string(server_album_path(album_release_id));
 	DIR* dir = opendir(path);
 	if (!dir) {
-		print_error_f("Failed to read directory: " A_CYAN "%s\n", path);
+		print_error_f("Failed to read directory: " A_CYAN "%s", path);
 		pop_string();
 		return;
 	}

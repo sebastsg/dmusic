@@ -381,24 +381,24 @@ table tr:nth-child(odd) td {
     background: #191c1c;
 }
 
-table.prepare-album-details tr:first-child td input {
+table.import-album-details tr:first-child td input {
     width: 720px;
 }
 
-table.prepare-disc tr td:first-child {
+table.import-disc tr td:first-child {
     padding: 0;
 }
 
-table.prepare-disc tr td:first-child input {
+table.import-disc tr td:first-child input {
     min-width: auto;
     width: 48px;
 }
 
-table.prepare-disc tr td:nth-child(2) input {
+table.import-disc tr td:nth-child(2) input {
     width: 480px;
 }
 
-table.prepare-disc tr td:nth-child(3) {
+table.import-disc tr td:nth-child(3) {
     font-size: 12px;
 }
 
@@ -410,7 +410,7 @@ table.attachments tr td:first-child {
     width: 640px;
 }
 
-.submit-prepare-wrapper {
+.submit-import-wrapper {
     margin: 48px;
     padding: 32px;
     text-align: center;

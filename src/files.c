@@ -1,5 +1,5 @@
 #include "files.h"
-#include "data.h"
+#include "system.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,12 +10,12 @@
 
 char* read_file(const char* path, size_t* size) {
 	if (!path) {
-		print_error("Failed to read file. Path is NULL.\n");
+		print_error("Failed to read file. Path is NULL.");
 		return false;
 	}
 	FILE* file = fopen(path, "rb");
 	if (!file) {
-		print_error_f("Failed to open file %s for reading. Error: %s\n", path, strerror(errno));
+		print_error_f("Failed to open file %s for reading. Error: %s", path, strerror(errno));
 		return NULL;
 	}
 	fseek(file, 0, SEEK_END);
@@ -31,7 +31,7 @@ char* read_file(const char* path, size_t* size) {
 	if (fread(buffer, 1, file_size, file) != file_size) {
 		free(buffer);
 		fclose(file);
-		print_error_f("I/O error while reading file %s. Error: %s\n", path, strerror(errno));
+		print_error_f("I/O error while reading file %s. Error: %s", path, strerror(errno));
 		return NULL;
 	}
 	fclose(file);
@@ -44,18 +44,18 @@ char* read_file(const char* path, size_t* size) {
 
 bool write_file(const char* path, const char* data, size_t size) {
 	if (!path) {
-		print_error("Failed to write file. Path is NULL.\n");
+		print_error("Failed to write file. Path is NULL.");
 		return false;
 	}
 	FILE* file = fopen(path, "wb");
 	if (!file) {
-		print_error_f("Failed to open file %s for writing. Error: %s\n", path, strerror(errno));
+		print_error_f("Failed to open file %s for writing. Error: %s", path, strerror(errno));
 		return false;
 	}
 	size_t written = fwrite(data, 1, size, file);
 	fclose(file);
 	if (written != size) {
-		print_error_f("Failed to write %zu bytes to %s. %zu bytes were written. Error: %s\n", size, path, written, strerror(errno));
+		print_error_f("Failed to write %zu bytes to %s. %zu bytes were written. Error: %s", size, path, written, strerror(errno));
 	}
 	return written == size;
 }
@@ -73,7 +73,7 @@ bool directory_exists(const char* path) {
 bool create_directory(const char* path) {
 	bool success = mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != -1;
 	if (!success) {
-		print_error_f("Failed to create directory. Error: %s\n", strerror(errno));
+		print_error_f("Failed to create directory. Error: %s", strerror(errno));
 	}
 	return success;
 }

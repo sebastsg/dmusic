@@ -2,72 +2,116 @@
 #include "database.h"
 #include "config.h"
 #include "files.h"
+#include "system.h"
+#include "type.h"
 
-#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-static struct memory_cached_data memory_cache;
+struct cached_file {
+	char name[32];
+	char* body;
+	size_t size;
+};
 
-static void load_all_options() {
-	load_options(&memory_cache.languages, "language");
-	load_options(&memory_cache.countries, "country");
-	load_options(&memory_cache.roles, "role");
-	load_options(&memory_cache.album_types, "album_type");
-	load_options(&memory_cache.album_release_types, "album_release_type");
-	load_options(&memory_cache.audio_formats, "audio_format");
-}
+struct file_cache {
+	struct cached_file* files;
+	int count;
+	int allocated;
+};
 
-static void load_template(char** dest, const char* name) {
-	const char* path = server_html_path(name);
-	*dest = read_file(path, NULL);
-	if (!*dest) {
-		print_error_f("Failed to load template: %s\n", path);
-	}
-}
+struct cached_options {
+	char name[32];
+	struct select_options options;
+};
 
-static void load_file(char** dest, const char* name, size_t* size) {
+struct options_cache {
+	struct cached_options* types;
+	int count;
+	int allocated;
+};
+
+static struct file_cache files;
+static struct options_cache options;
+
+ char* cache_file(struct file_cache* cache, const char* name, size_t* size) {
+	struct cached_file* file = &cache->files[cache->count];
+	strcpy(file->name, name);
 	const char* path = server_root_path(name);
-	*dest = read_file(path, size);
-	if (!*dest) {
-		print_error_f("Failed to load file: %s\n", path);
+	file->body = read_file(path, &file->size);
+	if (file->body) {
+		print_info_f("Cached file: %s", path);
+	} else {
+		print_error_f("Failed to load file: %s", path);
 	}
+	if (size) {
+		*size = file->size;
+	}
+	cache->count++;
+	return file->body;
 }
 
-static void load_all_templates() {
-	load_template(&memory_cache.main_template, "main");
-	load_template(&memory_cache.session_track_template, "playlist_track");
-	load_template(&memory_cache.select_option_template, "select_option");
-	load_template(&memory_cache.group_thumb_template, "group_thumb");
-	load_template(&memory_cache.group_thumb_list_template, "groups");
-	load_template(&memory_cache.group_template, "group");
-	load_template(&memory_cache.tag_link_template, "tag_link");
-	load_template(&memory_cache.albums_template, "albums");
-	load_template(&memory_cache.album_template, "album");
-	load_template(&memory_cache.track_template, "track");
-	load_template(&memory_cache.disc_template, "disc");
-	load_template(&memory_cache.uploaded_albums_template, "uploaded_albums");
-	load_template(&memory_cache.uploaded_album_template, "uploaded_album");
-	load_template(&memory_cache.prepare_template, "prepare");
-	load_template(&memory_cache.prepare_attachment_template, "prepare_attachment");
-	load_template(&memory_cache.prepare_disc_template, "prepare_disc");
-	load_template(&memory_cache.prepare_track_template, "prepare_track");
-	load_template(&memory_cache.add_group_template, "add_group");
-	load_template(&memory_cache.search_template, "search");
-	load_template(&memory_cache.search_result_template, "search_result");
-	load_template(&memory_cache.login_template, "login");
-	load_template(&memory_cache.register_template, "register");
-	load_template(&memory_cache.profile_template, "profile");
-	load_template(&memory_cache.playlists_template, "playlists");
+void load_file_cache() {
+	files.allocated = 32;
+	files.count = 0;
+	files.files = (struct cached_file*)malloc(sizeof(struct cached_file) * files.allocated);
+	if (!files.files) {
+		print_error_f("Failed to allocate %i cached files.", files.allocated);
+		files.allocated = 0;
+		return;
+	}
+	print_info_f("Allocated %i cached files.", files.allocated);
 }
 
-void load_memory_cache() {
-	load_all_options();
-	load_all_templates();
-	load_file(&memory_cache.style_css, "html/style.css", NULL);
-	load_file(&memory_cache.main_js, "html/main.js", NULL);
-	load_file(&memory_cache.icon_png, "img/icon.png", &memory_cache.icon_png_size);
-	load_file(&memory_cache.bg_jpg, "img/bg.jpg", &memory_cache.bg_jpg_size);
+void free_file_cache() {
+	for (int i = 0; i < files.count; i++) {
+		free(files.files[i].body);
+	}
+	free(files.files);
+	memset(&files, 0, sizeof(files));
 }
 
-const struct memory_cached_data* mem_cache() {
-	return &memory_cache;
+char* get_cached_file(const char* name, size_t* size) {
+	for (int i = 0; i < files.count; i++) {
+		if (!strcmp(files.files[i].name, name)) {
+			if (size) {
+				*size = files.files[i].size;
+			}
+			return files.files[i].body;
+		}
+	}
+	return cache_file(&files, name, size);
+}
+
+void load_options_cache() {
+	options.allocated = 8;
+	options.count = 0;
+	options.types = (struct cached_options*)malloc(sizeof(struct cached_options) * options.allocated);
+	if (!options.types) {
+		print_error_f("Failed to allocate %i cached option types.", options.allocated);
+		options.allocated = 0;
+		return;
+	}
+	print_info_f("Allocated %i cached option types.", options.allocated);
+}
+
+void free_options_cache() {
+	for (int i = 0; i < options.count; i++) {
+		free(options.types[i].options.options);
+	}
+	free(options.types);
+	memset(&options, 0, sizeof(options));
+}
+
+const struct select_options* get_cached_options(const char* name) {
+	for (int i = 0; i < options.count; i++) {
+		if (!strcmp(options.types[i].name, name)) {
+			return &options.types[i].options;
+		}
+	}
+	strcpy(options.types[options.count].name, name);
+	load_options(&options.types[options.count].options, name);
+	print_info_f("Cached %s options", name);
+	options.count++;
+	return &options.types[options.count - 1].options;
 }

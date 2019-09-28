@@ -1,9 +1,9 @@
 #include "stack.h"
+#include "system.h"
 
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 struct memory_block {
 	char* data;
@@ -27,7 +27,7 @@ static void resize_string_stack(struct memory_block_list* stack, int margin) {
 		}
 		const int new_allocated = stack->allocated + margin;
 		struct memory_block* blocks = (struct memory_block*)realloc(stack->blocks, sizeof(struct memory_block) * new_allocated);
-		printf("Resized stack to %i blocks\n", new_allocated);
+		print_info_f("Resized stack to %i blocks", new_allocated);
 		if (blocks) {
 			stack->blocks = blocks;
 			memset(stack->blocks + stack->allocated, 0, sizeof(struct memory_block) * margin);
@@ -35,7 +35,7 @@ static void resize_string_stack(struct memory_block_list* stack, int margin) {
 		}
 	} else {
 		stack->blocks = (struct memory_block*)calloc(margin * 2, sizeof(struct memory_block));
-		printf("Allocated stack to %i blocks\n", margin * 2);
+		print_info_f("Allocated stack to %i blocks", margin * 2);
 		if (stack->blocks) {
 			stack->allocated = margin * 2;
 		}
@@ -51,10 +51,10 @@ void initialize_stack() {
 void free_stack() {
 	for (int i = 0; i < block_stack.allocated; i++) {
 		free(block_stack.blocks[i].data);
-		printf("Freed block %i\n", i);
+		print_info_f("Freed block %i", i);
 	}
 	free(block_stack.blocks);
-	printf("Freed block stack.\n");
+	print_info("Freed block stack.");
 	initialize_stack();
 }
 
@@ -68,7 +68,7 @@ const char* push_memory_block(const char* data, int size) {
 	if (block->data) {
 		if (size > block_stack.blocks[block_stack.next].size) {
 			char* new_data = (char*)realloc(block->data, size);
-			printf("Resized block %i to %i bytes\n", block_stack.next, size);
+			print_info_f("Resized block %i to %i bytes.", block_stack.next, size);
 			if (new_data) {
 				block->data = new_data;
 				block->size = size;
@@ -78,7 +78,7 @@ const char* push_memory_block(const char* data, int size) {
 		}
 	} else {
 		block->data = (char*)malloc(size);
-		printf("Allocated block %i to %i bytes\n", block_stack.next, size);
+		print_info_f("Allocated block %i to %i bytes.", block_stack.next, size);
 		if (!block->data) {
 			return "";
 		}

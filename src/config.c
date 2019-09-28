@@ -2,6 +2,7 @@
 #include "format.h"
 #include "files.h"
 #include "stack.h"
+#include "system.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -49,7 +50,7 @@ static void resolve_config_value(char* value, size_t size) {
 	while (i) {
 		char* j = strchr(i, ')');
 		if (!j) {
-			fprintf(stderr, "Invalid configuration.\n");
+			print_error("Invalid configuration.");
 			break;
 		}
 		int key_size = j - i - 2;
@@ -59,7 +60,7 @@ static void resolve_config_value(char* value, size_t size) {
 		}
 		struct config_property* property = find_property(key);
 		if (!property) {
-			fprintf(stderr, "Configuration property %s is not defined yet.\n", key);
+			print_error_f("Configuration property %s is not defined yet.", key);
 			break;
 		}
 		replace_substring(value, i, j + 1, size - (i - value), property->value);
@@ -79,7 +80,7 @@ void load_config() {
 	memset(config, 0, sizeof(config));
 	char* source = read_file("/etc/dmusic/dmusic.conf", NULL);
 	if (!source) {
-		printf("Unable to read config file: /etc/dmusic/dmusic.conf\n");
+		print_error("Unable to read config file: /etc/dmusic/dmusic.conf");
 		exit(1);
 		return;
 	}

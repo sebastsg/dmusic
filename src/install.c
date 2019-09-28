@@ -2,6 +2,7 @@
 #include "database.h"
 #include "config.h"
 #include "files.h"
+#include "system.h"
 
 #include <stdbool.h>
 #include <dirent.h>
@@ -20,7 +21,7 @@ void create_directories() {
 		get_property("path.videos")
 	};
 	for (int i = 0; i < 5; i++) {
-		printf("Creating directory: %s\n", directories[i]);
+		print_info_f("Creating directory: %s", directories[i]);
 		create_directory(directories[i]);
 	}
 }
@@ -34,7 +35,7 @@ void replace_database_functions() {
 	sprintf(path, "%s/db/functions", get_property("path.root"));
 	DIR* dir = opendir(path);
 	if (!dir) {
-		printf("Failed to read directory: %s\n", path);
+		print_error_f("Failed to read directory: %s", path);
 		exit(1);
 	}
 	struct dirent* entry = NULL;
@@ -42,7 +43,7 @@ void replace_database_functions() {
 		if (is_dirent_file(path, entry) && strstr(entry->d_name, ".sql")) {
 			strcpy(path, "functions/");
 			strcat(path, entry->d_name);
-			printf("Executing sql file: %s\n", path);
+			print_info_f("Executing sql file: %s", path);
 			execute_sql_file(path, false);
 		}
 	}
@@ -64,10 +65,10 @@ static void seed_table(const char* table) {
 	const char* path = server_seed_path(table);
 	char* csv = read_file(path, NULL);
 	if (!csv) {
-		printf("Seed file is missing: %s\n", path);
+		print_error_f("Seed file is missing: %s", path);
 		return;
 	}
-	printf("Seeding table %s\n", table);
+	print_info_f("Seeding table %s", table);
 	char* row = csv;
 	int fields = csv_num_fields(csv);
 	while (*row) {
@@ -80,7 +81,7 @@ static void seed_table(const char* table) {
 				params[i] = row;
 				row = end + 1;
 			} else {
-				fprintf(stderr, "Invalid number of fields in row.\n");
+				print_error("Invalid number of fields in row.");
 			}
 		}
 		end = strchr(row, '\n');

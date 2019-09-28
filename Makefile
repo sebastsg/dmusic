@@ -3,7 +3,49 @@ CFLAGS = -fsanitize=address -fsanitize=undefined -g -O0 -std=c18 -D_DEFAULT_SOUR
 LDFLAGS = -lasan -lubsan -lpq -lssl -lcrypto -lpthread -lpcre2-8
 SRCDIR = src
 OBJDIR = obj
-OBJECTS = $(addprefix $(OBJDIR)/, cache.o config.o data.o database.o files.o format.o http.o install.o main.o network.o prepare.o render.o route.o stack.o transcode.o)
+OBJECTS = $(addprefix $(OBJDIR)/, \
+ album.o\
+ analyze.o\
+ cache.o\
+ config.o\
+ database.o\
+ files.o\
+ format.o\
+ group.o\
+ http.o\
+ import.o\
+ install.o\
+ main.o\
+ network.o\
+ playlist.o\
+ regex.o\
+ render.o\
+ render_main.o\
+ render_tags.o\
+ route.o\
+ route_file.o\
+ route_form.o\
+ route_form_add_group.o\
+ route_form_add_session_track.o\
+ route_form_attach.o\
+ route_form_download_remote.o\
+ route_form_prepare.o\
+ route_form_upload.o\
+ route_image.o\
+ route_render.o\
+ route_render_main.o\
+ route_track.o\
+ search.o\
+ session.o\
+ session_track.o\
+ stack.o\
+ system.o\
+ track.o\
+ transcode.o\
+ type.o\
+ upload.o\
+ user.o\
+)
 
 all: $(OBJECTS)
 	$(CC) $(CFLAGS) $(OBJECTS) $(LDFLAGS) -o dmusic

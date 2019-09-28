@@ -1,6 +1,5 @@
 #include "format.h"
 #include "config.h"
-#include "data.h"
 #include "files.h"
 
 #include <string.h>
