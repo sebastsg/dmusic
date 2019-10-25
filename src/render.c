@@ -87,11 +87,9 @@ void set_parameter_int(struct render_buffer* buffer, const char* key, int value)
 	set_parameter(buffer, key, value_string);
 }
 
-char* render_resource(const char* resource) {
+char* render_resource_with_session(const char* page, const char* resource, const struct cached_session* session) {
 	struct render_buffer buffer;
 	init_render_buffer(&buffer, 4096);
-	char page[64];
-	resource = split_string(page, sizeof(page), resource, '/');
 	if (!strcmp(page, "groups")) {
 		render_group_list(&buffer);
 	} else if (!strcmp(page, "group")) {
@@ -126,7 +124,7 @@ char* render_resource(const char* resource) {
 		int from_num = atoi(num_str);
 		resource = split_string(num_str, sizeof(num_str), resource, '/');
 		int to_num = atoi(num_str);
-		render_session_tracks_database(&buffer, from_num, to_num);
+		render_session_tracks_database(&buffer, session, from_num, to_num);
 	} else if (!strcmp(page, "playlists")) {
 		append_buffer(&buffer, get_cached_file("html/playlists.html", NULL));
 		set_parameter(&buffer, "playlists", "No playlists.");
@@ -134,12 +132,31 @@ char* render_resource(const char* resource) {
 		render_add_group(&buffer);
 	} else if (!strcmp(page, "profile")) {
 		render_profile(&buffer);
-	} else if (!strcmp(page, "register")) {
-		render_register(&buffer);
-	} else if (!strcmp(page, "login")) {
-		render_login(&buffer);
 	} else {
 		print_error_f("Cannot render unknown page: %s", page);
 	}
 	return buffer.data;
+}
+
+char* render_resource_without_session(const char* page, const char* resource) {
+	struct render_buffer buffer;
+	init_render_buffer(&buffer, 4096);
+	if (!strcmp(page, "login")) {
+		render_login(&buffer);
+	} else if (!strcmp(page, "register")) {
+		render_register(&buffer);
+	} else {
+		print_error_f("Cannot render unknown page: %s", page);
+	}
+	return buffer.data;
+}
+
+char* render_resource(const char* resource, const struct cached_session* session) {
+	char page[64];
+	resource = split_string(page, sizeof(page), resource, '/');
+	if (session) {
+		return render_resource_with_session(page, resource, session);
+	} else {
+		return render_resource_without_session(page, resource);
+	}
 }

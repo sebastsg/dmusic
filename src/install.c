@@ -14,13 +14,16 @@
 
 void create_directories() {
 	const char* directories[] = {
+		get_property("path.cache"),
+		get_property("path.sessions"),
 		get_property("path.data"),
 		get_property("path.uploads"),
 		get_property("path.groups"),
 		get_property("path.albums"),
 		get_property("path.videos")
 	};
-	for (int i = 0; i < 5; i++) {
+	const size_t num_directories = sizeof(directories) / sizeof(const char*);
+	for (size_t i = 0; i < num_directories; i++) {
 		print_info_f("Creating directory: %s", directories[i]);
 		create_directory(directories[i]);
 	}

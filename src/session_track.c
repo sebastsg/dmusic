@@ -72,10 +72,10 @@ void render_session_tracks_array(struct render_buffer* buffer, const char* key, 
 	free(item_buffer.data);
 }
 
-void render_session_tracks_database(struct render_buffer* buffer, int from_num, int to_num) {
+void render_session_tracks_database(struct render_buffer* buffer, const struct cached_session* session, int from_num, int to_num) {
 	struct session_track_data* tracks = NULL;
 	int num_tracks = 0;
-	load_session_tracks(&tracks, &num_tracks, get_session_username());
+	load_session_tracks(&tracks, &num_tracks, session->name);
 	if (num_tracks > to_num || from_num > to_num) {
 		to_num = num_tracks;
 	}

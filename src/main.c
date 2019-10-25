@@ -17,8 +17,8 @@
 
 static void free_resources() {
 	free_network();
-	free_file_cache();
-	free_options_cache();
+	free_routes();
+	free_caches();
 	disconnect_database();
 	free_stack();
 }
@@ -63,10 +63,10 @@ int main(int argc, char** argv) {
 		free_stack();
 		return 0;
 	}
+	initialize_routes();
 	initialize_network();
 	signal(SIGINT, signal_interrupt_handler);
-	load_file_cache();
-	load_options_cache();
+	initialize_caches();
 	while (true) {
 		poll_network();
 	}

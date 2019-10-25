@@ -198,7 +198,7 @@ function onImportForm(target) {
     ajaxPost('/form/import', data, response => document.querySelector('main section').innerHTML = response);
 }
 
-function onAttachGroupImage(target) {
+function onAttachGroupImage() {
     let form = document.getElementById('attach_group_image_wrapper');
     let newRow = form.querySelector('tr').cloneNode(true);
     const cleanAttachForm = form => {
@@ -213,14 +213,14 @@ function onAttachGroupImage(target) {
     attachments.appendChild(newRow);
 }
 
-function onClickLoginSubmit(target) {
+function onClickLoginSubmit() {
     ajaxPost('/form/login', {
         name: document.getElementById('name').value,
         password: document.getElementById('password').value
     }, response => location.href = '/');
 }
 
-function onClickRegisterSubmit(target) {
+function onClickRegisterSubmit() {
     ajaxPost('/form/register', {
         name: document.getElementById('name').value,
         password: document.getElementById('password').value
@@ -233,11 +233,11 @@ function onClickButton(event) {
         onImportForm(target);
     } else if (target.classList.contains('attach-group-image')) {
         event.preventDefault();
-        onAttachGroupImage(target);
+        onAttachGroupImage();
     } else if (target.classList.contains('login-submit')) {
-        onClickLoginSubmit(target);
+        onClickLoginSubmit();
     } else if (target.classList.contains('register-submit')) {
-        onClickRegisterSubmit(target);
+        onClickRegisterSubmit();
     }
 }
 
@@ -257,7 +257,7 @@ function onClickLi(target) {
     }
 }
 
-document.addEventListener('click', function (event) {
+document.addEventListener('click', event => {
     let target = event.target;
     if (target.tagName === 'A') {
         onClickA(event);
@@ -273,7 +273,7 @@ function onUploadForm(target) {
     let onProgress = event => {
         let percent = 0;
         if (event.lengthComputable) {
-            let position = event.loaded || event.position;
+            const position = event.loaded || event.position;
             percent = Math.ceil(position / event.total * 100);
         }
         document.getElementById('prog').innerHTML = percent + '%';
@@ -293,7 +293,7 @@ function onAttachForm(target) {
 
 document.addEventListener('submit', event => {
     event.preventDefault();
-    const target = event.target;
+    let target = event.target;
     if (target.classList.contains('upload-form')) {
         onUploadForm(target);
     } else if (target.classList.contains('attach-form')) {
@@ -313,7 +313,7 @@ document.addEventListener('change', event => {
 });
 
 function appendFormData(data, names) {
-    for (let name of names) {
+    for (const name of names) {
         let input = document.querySelector('[name=' + name + ']');
         if (input !== null) {
             data.append(name, input.value);
@@ -322,7 +322,7 @@ function appendFormData(data, names) {
 }
 
 function appendFormDataArray(data, element, key, names) {
-    for (let name of names) {
+    for (const name of names) {
         let input = element.querySelector('[name=' + name + ']');
         if (input !== null) {
             data.append(key + '-' + name, input.value);

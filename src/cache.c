@@ -4,6 +4,7 @@
 #include "files.h"
 #include "system.h"
 #include "type.h"
+#include "generic.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +35,15 @@ struct options_cache {
 static struct file_cache files;
 static struct options_cache options;
 
- char* cache_file(struct file_cache* cache, const char* name, size_t* size) {
+char* cache_file(struct file_cache* cache, const char* name, size_t* size) {
+	enum resize_status status = resize_array((void**)&cache->files, sizeof(struct cached_file), &cache->allocated, cache->count + 1);
+	if (status == RESIZE_FAILED) {
+		print_error_f("Failed to allocate %i cached files.", files.allocated);
+		return NULL;
+	}
+	if (status == RESIZE_DONE) {
+		print_info_f("Allocated %i cached files.", files.allocated);
+	}
 	struct cached_file* file = &cache->files[cache->count];
 	strcpy(file->name, name);
 	const char* path = server_root_path(name);
@@ -51,24 +60,22 @@ static struct options_cache options;
 	return file->body;
 }
 
-void load_file_cache() {
-	files.allocated = 32;
-	files.count = 0;
-	files.files = (struct cached_file*)malloc(sizeof(struct cached_file) * files.allocated);
-	if (!files.files) {
-		print_error_f("Failed to allocate %i cached files.", files.allocated);
-		files.allocated = 0;
-		return;
-	}
-	print_info_f("Allocated %i cached files.", files.allocated);
+void initialize_caches() {
+	memset(&files, 0, sizeof(files));
+	memset(&options, 0, sizeof(options));
 }
 
-void free_file_cache() {
+void free_caches() {
 	for (int i = 0; i < files.count; i++) {
 		free(files.files[i].body);
 	}
 	free(files.files);
 	memset(&files, 0, sizeof(files));
+	for (int i = 0; i < options.count; i++) {
+		free(options.types[i].options.options);
+	}
+	free(options.types);
+	memset(&options, 0, sizeof(options));
 }
 
 char* get_cached_file(const char* name, size_t* size) {
@@ -83,31 +90,18 @@ char* get_cached_file(const char* name, size_t* size) {
 	return cache_file(&files, name, size);
 }
 
-void load_options_cache() {
-	options.allocated = 8;
-	options.count = 0;
-	options.types = (struct cached_options*)malloc(sizeof(struct cached_options) * options.allocated);
-	if (!options.types) {
-		print_error_f("Failed to allocate %i cached option types.", options.allocated);
-		options.allocated = 0;
-		return;
-	}
-	print_info_f("Allocated %i cached option types.", options.allocated);
-}
-
-void free_options_cache() {
-	for (int i = 0; i < options.count; i++) {
-		free(options.types[i].options.options);
-	}
-	free(options.types);
-	memset(&options, 0, sizeof(options));
-}
-
 const struct select_options* get_cached_options(const char* name) {
 	for (int i = 0; i < options.count; i++) {
 		if (!strcmp(options.types[i].name, name)) {
 			return &options.types[i].options;
 		}
+	}
+	enum resize_status status = resize_array((void**)&options.types, sizeof(struct cached_options), &options.allocated, options.count + 1);
+	if (status == RESIZE_FAILED) {
+		print_error_f("Failed to allocate %i cached option types.", options.allocated);
+		return NULL;
+	} else if (status == RESIZE_DONE) {
+		print_info_f("Allocated %i cached option types.", options.allocated);
 	}
 	strcpy(options.types[options.count].name, name);
 	load_options(&options.types[options.count].options, name);

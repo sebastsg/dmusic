@@ -60,14 +60,14 @@ static void http_read_range(char* dest, const char* src) {
 	}
 }
 
-static void http_read_session_cookie(char* dest, const char* src) {
+static void http_read_session_cookie(char* dest, size_t max_size, const char* src) {
 	const char* begin = strstr(src, "Cookie: DSESSION=");
 	if (begin) {
 		begin += strlen("Cookie: DSESSION=");
 		const char* end = strstr(begin, "\r\n");
 		if (end) {
 			size_t count = end - begin;
-			string_copy_substring(dest, begin, count >= 127 ? 127 : count);
+			string_copy_substring(dest, begin, count >= max_size ? max_size : count);
 		}
 	}
 }
@@ -220,17 +220,18 @@ bool http_read_headers(struct client_state* client) {
 		return false;
 	}
 	end += 4;
-	memset(&client->headers, 0, sizeof(struct http_headers));
-	http_read_method(client->headers.method, client->buffer);
-	http_read_resource(client->headers.resource, client->buffer);
-	http_read_content_type(client->headers.content_type, client->buffer);
-	http_read_content_length(&client->headers, client->buffer);
-	http_read_range(client->headers.range, client->buffer);
-	http_read_session_cookie(client->headers.session_cookie, client->buffer);
+	struct http_headers* headers = &client->headers;
+	memset(headers, 0, sizeof(struct http_headers));
+	http_read_method(headers->method, client->buffer);
+	http_read_resource(headers->resource, client->buffer);
+	http_read_content_type(headers->content_type, client->buffer);
+	http_read_content_length(headers, client->buffer);
+	http_read_range(headers->range, client->buffer);
+	http_read_session_cookie(headers->session_cookie, sizeof(headers->session_cookie) - 1, client->buffer);
 	if (strstr(client->buffer, "Connection: keep-alive")) {
-		strcpy(client->headers.connection, "keep-alive");
+		strcpy(headers->connection, "keep-alive");
 	} else {
-		strcpy(client->headers.connection, "close");
+		strcpy(headers->connection, "close");
 	}
 	client->has_headers = true;
 	size_t end_offset = end - client->buffer;
@@ -259,6 +260,11 @@ void http_write_headers(struct client_state* client, const struct http_headers* 
 	strcat(str, headers->connection);
 	strcat(str, "\r\nAccept-Ranges: bytes\r\nContent-Type: ");
 	strcat(str, headers->content_type);
+	if (headers->session_cookie[0] != '\0') {
+		strcat(str, "\r\nSet-Cookie: DSESSION=");
+		strcat(str, headers->session_cookie);
+		strcat(str, "; Path=/; Max-Age=2419200; HttpOnly");
+	}
 	char length_str[32];
 	sprintf(length_str, "\r\nContent-Length: %zu", headers->content_length);
 	strcat(str, length_str);

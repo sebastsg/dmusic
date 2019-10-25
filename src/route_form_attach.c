@@ -4,11 +4,13 @@
 #include "system.h"
 #include "config.h"
 #include "format.h"
+#include "render.h"
 
 #include <string.h>
 #include <stdlib.h>
 
-void route_form_attach(struct route_result* result, struct http_data* data) {
+void route_form_attach(struct route_parameters* parameters) {
+	struct http_data* data = &parameters->data;
 	const char* method = http_data_string(data, "method");
 	const char* folder = http_data_string(data, "folder");
 	if (!strcmp(method, "url")) {
@@ -27,7 +29,7 @@ void route_form_attach(struct route_result* result, struct http_data* data) {
 		if (write_file(server_uploaded_directory_file_path(folder, file_name), file_data, file_size)) {
 			char resource[1024];
 			sprintf(resource, "import_attachment/%s/%s", folder, file_name);
-			route_render(result, resource);
+			set_route_result_html(parameters->result, render_resource(resource, parameters->session));
 		}
 		free(file_data);
 	} else if (!strcmp(method, "file")) {
@@ -39,7 +41,7 @@ void route_form_attach(struct route_result* result, struct http_data* data) {
 		if (write_file(server_uploaded_directory_file_path(folder, file->filename), file->value, file->size)) {
 			char resource[1024];
 			sprintf(resource, "import_attachment/%s/%s", folder, file->filename);
-			route_render(result, resource);
+			set_route_result_html(parameters->result, render_resource(resource, parameters->session));
 		}
 	} else {
 		print_error_f("Invalid attach method: %s", method);

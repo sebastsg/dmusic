@@ -3,11 +3,6 @@
 
 #include <string.h>
 
-void route_render(struct route_result* result, const char* resource) {
-	result->body = render_resource(resource);
-	if (result->body) {
-		strcpy(result->type, "text/html");
-		result->size = strlen(result->body);
-		result->freeable = true;
-	}
+void route_render(struct route_parameters* parameters) {
+	set_route_result_html(parameters->result, render_resource(parameters->resource, parameters->session));
 }

@@ -10,6 +10,7 @@
 #include "cache.h"
 #include "format.h"
 #include "analyze.h"
+#include "generic.h"
 
 #include <ftw.h>
 #include <dirent.h>
@@ -20,24 +21,6 @@
 static void* nftw_user_data_1 = NULL;
 static void* nftw_user_data_2 = NULL;
 static void* nftw_user_data_3 = NULL;
-
-static void allocate_import_attachments(struct import_attachment_data** attachments, int* allocated_count, int required_count) {
-	if (*allocated_count >= required_count) {
-		return;
-	}
-	required_count *= 2;
-	const size_t new_size = sizeof(struct import_attachment_data) * required_count;
-	if (*attachments) {
-		struct import_attachment_data* new_attachments = realloc(*attachments, new_size);
-		if (!new_attachments) {
-			return;
-		}
-		*attachments = new_attachments;
-	} else {
-		*attachments = (struct import_attachment_data*)malloc(new_size);
-	}
-	*allocated_count = required_count;
-}
 
 static void free_import_attachments(struct import_attachment_data** attachments, int count) {
 	for (int i = 0; i < count; i++) {
@@ -50,24 +33,6 @@ static void free_import_attachments(struct import_attachment_data** attachments,
 	}
 	free(*attachments);
 	*attachments = NULL;
-}
-
-static void allocate_import_discs(struct import_disc_data** discs, int* allocated_count, int required_count) {
-	if (*allocated_count >= required_count) {
-		return;
-	}
-	required_count *= 2;
-	const size_t new_size = sizeof(struct import_disc_data) * required_count;
-	if (*discs) {
-		struct import_disc_data* new_discs = realloc(*discs, new_size);
-		if (!new_discs) {
-			return;
-		}
-		*discs = new_discs;
-	} else {
-		*discs = (struct import_disc_data*)malloc(new_size);
-	}
-	*allocated_count = required_count;
 }
 
 static void free_import_discs(struct import_disc_data** discs) {
@@ -105,7 +70,7 @@ static int nftw_guess_attachment(const char* path, const struct stat* stat_buffe
 	struct import_attachment_data** attachments = (struct import_attachment_data**)nftw_user_data_1;
 	int* num_attachments = (int*)nftw_user_data_2;
 	int* allocated_attachments = (int*)nftw_user_data_3;
-	allocate_import_attachments(attachments, allocated_attachments, *num_attachments + 1);
+	resize_array((void**)attachments, sizeof(struct import_attachment_data), allocated_attachments, *num_attachments + 1);
 	size_t uploads_path_size = strlen(get_property("path.uploads"));
 	const char* relative_path = (strlen(path) > uploads_path_size ? path + uploads_path_size : path);
 	load_import_attachment(&(*attachments)[*num_attachments], relative_path);
@@ -143,7 +108,7 @@ static int nftw_guess_track(const char* path, const struct stat* stat_buffer, in
 	struct import_disc_data** discs = (struct import_disc_data**)nftw_user_data_1;
 	int* num_discs = (int*)nftw_user_data_2;
 	int* allocated_discs = (int*)nftw_user_data_3;
-	allocate_import_discs(discs, allocated_discs, *num_discs + 1);
+	resize_array((void**)discs, sizeof(struct import_disc_data), allocated_discs, *num_discs + 1);
 	size_t uploads_path_size = strlen(get_property("path.uploads"));
 	const char* uploaded_name = strrchr(path, '/') + 1;
 	int disc_num = guess_disc_num(uploaded_name);

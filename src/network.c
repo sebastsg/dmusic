@@ -17,7 +17,8 @@
 #include <netinet/tcp.h>
 #include <unistd.h>
 
-#define DMUSIC_MAX_CLIENTS 1024
+#define DMUSIC_MAX_CLIENTS     1024
+#define DMUSIC_MAX_BUFFER_SIZE 32768
 
 struct network_state {
 	struct sockaddr_in address;
@@ -190,10 +191,12 @@ void finish_client_request(struct client_state* client) {
 
 void init_client_response(struct client_state* client) {
 	struct http_headers response_headers;
+	memset(&response_headers, 0, sizeof(struct http_headers));
 	strcpy(response_headers.connection, client->headers.connection);
 	process_route(&client->route, client->headers.resource, client->buffer, client->size);
 	response_headers.content_length = client->route.size;
 	strcpy(response_headers.content_type, client->route.type);
+	strcpy(response_headers.session_cookie, client->headers.session_cookie);
 	http_write_headers(client, &response_headers);
 	client->write_index = 0;
 	client->write_begin = 0;
@@ -210,7 +213,7 @@ void read_client_request(struct client_state* client) {
 	if (client->has_headers) {
 		client->is_processing = http_read_body(client);
 	} else if (http_read_headers(client)) {
-		print_info_f("Socket %i: " A_CYAN "\"%s\"", client->socket, client->headers.resource);
+		print_info_f("Socket %i: " A_CYAN "%s", client->socket, client->headers.resource);
 		client->is_processing = (client->headers.content_length == 0);
 	} else {
 		client->is_processing = false;
@@ -222,8 +225,8 @@ void read_client_request(struct client_state* client) {
 
 void process_client_request(struct client_state* client) {
 	size_t write_size = client->write_end - client->write_index;
-	if (write_size > 32768) {
-		write_size = 32768;
+	if (write_size > DMUSIC_MAX_BUFFER_SIZE) {
+		write_size = DMUSIC_MAX_BUFFER_SIZE;
 	}
 	//print_info_f("%lld Writing %zu bytes to socket %i", (long long)time(NULL), write_size, client->socket);
 	if (socket_write_all(client, client->route.body + client->write_index, write_size)) {

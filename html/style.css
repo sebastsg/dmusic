@@ -452,3 +452,23 @@ table.attachments tr td:first-child {
 .playlist-list {
     list-style: none;
 }
+
+.login {
+
+}
+
+.login h1 {
+
+}
+
+.login table {
+    border: none;
+}
+
+.login table tr td {
+    background: none;
+}
+
+.login table tr td:first-child {
+    text-align: right;
+}

@@ -2,6 +2,7 @@
 #include "database.h"
 #include "cache.h"
 #include "render.h"
+#include "system.h"
 
 #include <openssl/sha.h>
 
@@ -44,6 +45,7 @@ bool register_user(const char* name, const char* password) {
 	bool exists = PQntuples(result) > 0;
 	PQclear(result);
 	if (exists) {
+		print_info_f("User " A_CYAN "%s" A_YELLOW " is already registered.", name);
 		return false;
 	}
 	char hash[DMUSIC_HASH_STRING_SIZE];
@@ -52,6 +54,7 @@ bool register_user(const char* name, const char* password) {
 	make_sha256_hash(password, salt, hash);
 	const char* args[] = { name, hash, salt };
 	insert_row("user", false, 3, args);
+	print_info_f("Registered new user " A_CYAN "%s" A_YELLOW ".", name);
 	return true;
 }
 
@@ -64,6 +67,7 @@ bool login_user(const char* name, const char* password) {
 	char salt[DMUSIC_SALT_STRING_SIZE];
 	if (PQntuples(result) == 0) {
 		PQclear(result);
+		print_info_f("User " A_CYAN "%s" A_YELLOW " does not exist.", name);
 		return false;
 	}
 	strcpy(salt, PQgetvalue(result, 0, 0));
@@ -74,6 +78,11 @@ bool login_user(const char* name, const char* password) {
 	result = execute_sql("select \"name\" from \"user\" where \"name\" = $1 and \"password_hash\" = $2", params, 2);
 	bool exists = PQntuples(result) > 0;
 	PQclear(result);
+	if (exists) {
+		print_info_f("User " A_CYAN "%s" A_YELLOW " has logged in.", name);
+	} else {
+		print_info_f("Failed login attempt for user " A_CYAN "%s" A_YELLOW ".", name);
+	}
 	return exists;
 }
 
