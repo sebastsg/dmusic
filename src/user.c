@@ -75,7 +75,7 @@ bool login_user(const char* name, const char* password) {
 	char hash[DMUSIC_HASH_STRING_SIZE];
 	make_sha256_hash(password, salt, hash);
 	params[1] = hash;
-	result = execute_sql("select \"name\" from \"user\" where \"name\" = $1 and \"password_hash\" = $2", params, 2);
+	result = execute_sql("select \"name\" from \"user\" where \"is_enabled\" = '1' and \"name\" = $1 and \"password_hash\" = $2", params, 2);
 	bool exists = PQntuples(result) > 0;
 	PQclear(result);
 	if (exists) {

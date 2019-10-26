@@ -6,8 +6,7 @@
 
 void route_render_main(struct route_parameters* parameters) {
 	if (!parameters->session) {
-		parameters->result->body = get_cached_file("html/login.html", &parameters->result->size);
-		strcpy(parameters->result->type, "text/html");
+		set_route_result_html(parameters->result, render_resource(parameters->resource, NULL));
 		return;
 	}
 	if (strlen(parameters->resource) == 0) {

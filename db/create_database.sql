@@ -273,6 +273,7 @@ create table "user" (
     "salt"          varchar(96) not null,
     "stream_method" varchar(32) not null default 'stream',
     "is_admin"      int         not null default 0,
+    "is_enabled"    int         not null default 0,
     "created_at"    timestamp   not null default current_timestamp
 );
 

@@ -141,7 +141,7 @@ char* render_resource_with_session(const char* page, const char* resource, const
 char* render_resource_without_session(const char* page, const char* resource) {
 	struct render_buffer buffer;
 	init_render_buffer(&buffer, 4096);
-	if (!strcmp(page, "login")) {
+	if (page[0] == '\0' || !strcmp(page, "login")) {
 		render_login(&buffer);
 	} else if (!strcmp(page, "register")) {
 		render_register(&buffer);
