@@ -18,7 +18,7 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 	sprintf(dest_path, "%s/%s", root_path, format);
 	if (mkdir(dest_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
 		if (errno != EEXIST) {
-			print_error_f("Failed to create directory: " A_CYAN "\"%s\"" A_RESET ". Error: " A_CYAN "%s", dest_path, strerror(errno));
+			print_errno_f("Failed to create directory: " A_CYAN "\"%s\"" A_RESET ".", dest_path);
 			return;
 		}
 	}

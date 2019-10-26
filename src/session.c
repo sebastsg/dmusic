@@ -18,7 +18,7 @@ static bool load_session(struct cached_session* session, const char* id) {
 	size_t size = 0;
 	char* data = read_file(path, &size);
 	if (!data) {
-		print_error_f("Failed to load session %s. Error: %s.", id, strerror(errno));
+		print_errno_f("Failed to load session %s.", id);
 		return false;
 	}
 	strcpy(session->id, id);

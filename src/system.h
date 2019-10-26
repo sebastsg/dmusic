@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdio.h>
+#include <errno.h>
 
 #define A_RESET    "\x1B[0m"
 #define A_RED      "\x1B[31m"
@@ -16,6 +17,10 @@
 
 #ifndef LOG_CONFIG_PREPEND_SOURCE
 #define LOG_CONFIG_PREPEND_SOURCE 1
+#endif
+
+#ifndef LOG_CONFIG_VERBOSE
+#define LOG_CONFIG_VERBOSE 0
 #endif
 
 #if LOG_CONFIG_PREPEND_SOURCE
@@ -45,10 +50,20 @@
 #define LOG_ERROR(FORMAT)         fputs(LOG_BEGIN A_RED FORMAT LOG_END, stderr)
 #endif
 
-#define print_info_f(STR, ...)  LOG_INFO_F(STR, __VA_ARGS__)
-#define print_info(STR)         LOG_INFO(STR)
+#define print_info_f(STR, ...)    LOG_INFO_F(STR, __VA_ARGS__)
+#define print_info(STR)           LOG_INFO(STR)
 
-#define print_error_f(STR, ...) LOG_ERROR_F(STR, __VA_ARGS__)
-#define print_error(STR)        LOG_ERROR(STR)
+#define print_errno_f(STR, ...)   LOG_ERROR_F(STR A_RED " Error: " A_CYAN "%s", __VA_ARGS__, strerror(errno))
+#define print_errno(STR, ...)     LOG_ERROR_F(STR A_RED " Error: " A_CYAN "%s", strerror(errno))
+#define print_error_f(STR, ...)   LOG_ERROR_F(STR, __VA_ARGS__)
+#define print_error(STR)          LOG_ERROR(STR)
+
+#if LOG_CONFIG_VERBOSE
+#define print_verbose_f(STR, ...) LOG_INFO_F(STR, __VA_ARGS__)
+#define print_verbose(STR)        LOG_INFO(STR)
+#else
+#define print_verbose_f(STR, ...)
+#define print_verbose(STR)
+#endif
 
 char* system_output(const char* command, size_t* size);

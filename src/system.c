@@ -8,7 +8,7 @@
 char* system_output(const char* command, size_t* out_size) {
 	FILE* process = popen(command, "r");
 	if (!process) {
-		print_error_f("Failed to run \"%s\". Error: %s", command, strerror(errno));
+		print_errno_f("Failed to run \"%s\"", command);
 		return NULL;
 	}
 	size_t index = 0;

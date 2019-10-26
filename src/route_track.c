@@ -6,7 +6,7 @@
 
 void route_track(struct route_parameters* parameters) {
 	if (!parameters->session) {
-		print_info("Session is needed to stream track.");
+		print_error("Session is needed to stream track.");
 		return;
 	}
 	print_info_f("Range: " A_CYAN "%s", parameters->result->client->headers.range);

@@ -15,7 +15,7 @@ char* read_file(const char* path, size_t* size) {
 	}
 	FILE* file = fopen(path, "rb");
 	if (!file) {
-		print_error_f("Failed to open file %s for reading. Error: %s", path, strerror(errno));
+		print_errno_f("Failed to open file %s for reading.", path);
 		return NULL;
 	}
 	fseek(file, 0, SEEK_END);
@@ -31,7 +31,7 @@ char* read_file(const char* path, size_t* size) {
 	if (fread(buffer, 1, file_size, file) != file_size) {
 		free(buffer);
 		fclose(file);
-		print_error_f("I/O error while reading file %s. Error: %s", path, strerror(errno));
+		print_errno_f("I/O error while reading file %s.", path);
 		return NULL;
 	}
 	fclose(file);
@@ -49,13 +49,13 @@ bool write_file(const char* path, const char* data, size_t size) {
 	}
 	FILE* file = fopen(path, "wb");
 	if (!file) {
-		print_error_f("Failed to open file %s for writing. Error: %s", path, strerror(errno));
+		print_errno_f("Failed to open file %s for writing.", path);
 		return false;
 	}
 	size_t written = fwrite(data, 1, size, file);
 	fclose(file);
 	if (written != size) {
-		print_error_f("Failed to write %zu bytes to %s. %zu bytes were written. Error: %s", size, path, written, strerror(errno));
+		print_errno_f("Failed to write %zu bytes to %s. %zu bytes were written.", size, path, written);
 	}
 	return written == size;
 }
@@ -73,7 +73,7 @@ bool directory_exists(const char* path) {
 bool create_directory(const char* path) {
 	bool success = mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != -1;
 	if (!success) {
-		print_error_f("Failed to create directory. Error: %s", strerror(errno));
+		print_errno("Failed to create directory.");
 	}
 	return success;
 }

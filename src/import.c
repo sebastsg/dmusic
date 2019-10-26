@@ -85,7 +85,7 @@ static void guess_attachments(struct import_attachment_data** attachments, int* 
 	nftw_user_data_2 = num_attachments;
 	nftw_user_data_3 = allocated_attachments;
 	if (nftw(full_path, nftw_guess_attachment, 20, 0) == -1) {
-		print_error_f("\"%s\" error occured while importing attachments: %s\n", strerror(errno), full_path);
+		print_errno_f("Error occured while importing attachments: %s.", full_path);
 	}
 	pop_string();
 }
@@ -145,7 +145,7 @@ static void guess_tracks(struct import_disc_data** discs, int* num_discs, int* a
 	nftw_user_data_2 = num_discs;
 	nftw_user_data_3 = allocated_discs;
 	if (nftw(full_path, nftw_guess_track, 20, 0) == -1) {
-		print_error_f("Error (%s) occured while importing tracks: " A_CYAN "%s", strerror(errno), full_path);
+		print_errno_f("Error occured while importing tracks: " A_CYAN "%s" A_RED ".", full_path);
 	}
 	pop_string();
 	for (int i = 0; i < *num_discs; i++) {
