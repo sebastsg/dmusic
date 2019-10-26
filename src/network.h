@@ -23,5 +23,5 @@ struct client_state {
 void initialize_network();
 void poll_network();
 void read_from_client(int socket, char** buffer, size_t* size, size_t* allocated, size_t max_size);
-bool socket_write_all(struct client_state* client, const char* buffer, size_t size);
+size_t socket_write_all(struct client_state* client, const char* buffer, size_t size);
 void free_network();

@@ -269,7 +269,11 @@ void http_write_headers(struct client_state* client, const struct http_headers* 
 	sprintf(length_str, "\r\nContent-Length: %zu", headers->content_length);
 	strcat(str, length_str);
 	strcat(str, "\r\n\r\n");
-	socket_write_all(client, str, 0);
+	const size_t length = strlen(str);
+	size_t written = 0;
+	while (length > written) {
+		written += socket_write_all(client, str + written, length - written);
+	}
 }
 
 // todo: make two arrays to compare instead

@@ -158,9 +158,9 @@ void read_from_client(int socket, char** buffer, size_t* size, size_t* allocated
 	}
 }
 
-bool socket_write_all(struct client_state* client, const char* buffer, size_t size) {
+size_t socket_write_all(struct client_state* client, const char* buffer, size_t size) {
 	if (client->socket < 0 || !buffer) {
-		return false;
+		return 0;
 	}
 	size_t written = 0;
 	size = size > 0 ? size : strlen(buffer);
@@ -168,16 +168,16 @@ bool socket_write_all(struct client_state* client, const char* buffer, size_t si
 		ssize_t count = send(client->socket, buffer + written, size - written, MSG_NOSIGNAL);
 		if (count < 0) {
 			if (errno == EWOULDBLOCK || errno == EAGAIN) {
-				continue;
+				return written;
 			}
 			print_errno_f("Failed to write to socket %i.", client->socket);
 			free_socket(client->socket, false);
 			client->socket = -1;
-			return false;
+			return written;
 		}
 		written += count;
 	}
-	return true;
+	return written;
 }
 
 void finish_client_request(struct client_state* client) {
@@ -227,9 +227,9 @@ void process_client_request(struct client_state* client) {
 	if (write_size > DMUSIC_MAX_BUFFER_SIZE) {
 		write_size = DMUSIC_MAX_BUFFER_SIZE;
 	}
-	print_verbose_f("%lld Writing %zu bytes to socket %i", (long long)time(NULL), write_size, client->socket);
-	if (socket_write_all(client, client->route.body + client->write_index, write_size)) {
-		client->write_index += write_size;
+	size_t written = socket_write_all(client, client->route.body + client->write_index, write_size);
+	if (written > 0) {
+		client->write_index += written;
 		if (client->write_index >= client->write_end) {
 			finish_client_request(client);
 		}
