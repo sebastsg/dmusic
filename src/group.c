@@ -7,6 +7,7 @@
 #include "type.h"
 #include "config.h"
 #include "format.h"
+#include "files.h"
 #include "stack.h"
 
 #include <stdlib.h>
@@ -29,6 +30,19 @@ void render_add_group(struct render_buffer* buffer) {
 	free(select_buffer.data);
 }
 
+void render_group_tags(struct render_buffer* buffer, int id) {
+	struct tag_data* tags = NULL;
+	int num_tags = 0;
+	load_group_tags(&tags, &num_tags, id);
+	assign_buffer(buffer, "{{ tags }}");
+	render_tags(buffer, "tags", tags, num_tags);
+	if (true) {
+		append_buffer(buffer, get_cached_file("html/edit_group_tags_button.html", NULL));
+		set_parameter_int(buffer, "group", id);
+	}
+	free(tags);
+}
+
 void render_group(struct render_buffer* buffer, int id) {
 	struct group_data group;
 	load_group(&group, id);
@@ -36,6 +50,12 @@ void render_group(struct render_buffer* buffer, int id) {
 		assign_buffer(buffer, get_cached_file("html/group.html", NULL));
 		set_parameter(buffer, "name", group.name);
 		render_tags(buffer, "tags", group.tags, group.num_tags);
+		if (true) {
+			set_parameter(buffer, "edit_tags", get_cached_file("html/edit_group_tags_button.html", NULL));
+			set_parameter_int(buffer, "group", id);
+		} else {
+			set_parameter(buffer, "edit_tags", "");
+		}
 		struct render_buffer album_list_buffer;
 		init_render_buffer(&album_list_buffer, 2048);
 		const struct select_options* album_types = get_cached_options("album_type");
@@ -54,6 +74,32 @@ void render_group(struct render_buffer* buffer, int id) {
 	free(group.tracks);
 }
 
+void render_edit_group_tags(struct render_buffer* buffer, int id) {
+	struct tag_data* tags = NULL;
+	int num_tags = 0;
+	load_group_tags(&tags, &num_tags, id);
+	struct render_buffer tags_buffer;
+	init_render_buffer(&tags_buffer, 1024);
+	for (int i = 0; i < num_tags; i++) {
+		append_buffer(&tags_buffer, get_cached_file("html/tag_edit_row.html", NULL));
+		set_parameter_int(&tags_buffer, "group", id);
+		set_parameter(&tags_buffer, "tag", tags[i].name);
+		set_parameter(&tags_buffer, "tag", tags[i].name);
+	}
+	assign_buffer(buffer, get_cached_file("html/edit_group_tags.html", NULL));
+	set_parameter(buffer, "tags", tags_buffer.data);
+	struct search_data search;
+	strcpy(search.name, "tag");
+	strcpy(search.type, "tag");
+	*search.value = '\0';
+	*search.text = '\0';
+	render_search(buffer, "search", &search);
+	set_parameter_int(buffer, "group", id);
+	set_parameter_int(buffer, "group", id);
+	free(tags);
+	free(tags_buffer.data);
+}
+
 void render_group_thumb(struct render_buffer* buffer, const char* key, int id, const char* name, const char* image) {
 	set_parameter(buffer, key, get_cached_file("html/group_thumb.html", NULL));
 	set_parameter_int(buffer, "id", id);
@@ -68,7 +114,7 @@ void render_group_thumb_list(struct render_buffer* buffer, struct group_thumb_da
 		append_buffer(&item_buffer, "{{ thumb }}");
 		render_group_thumb(&item_buffer, "thumb", thumbs[i].id, thumbs[i].name, thumbs[i].image);
 	}
-	strcpy(buffer->data, get_cached_file("html/groups.html", NULL));
+	assign_buffer(buffer, get_cached_file("html/groups.html", NULL));
 	set_parameter(buffer, "thumbs", item_buffer.data);
 	free(item_buffer.data);
 }
@@ -123,11 +169,15 @@ void load_group_name(char* dest, int id) {
 	PQclear(result);
 }
 
-void load_group_tags(struct tag_data** tags, int* num_tags, int id) {
+PGresult* pg_load_group_tags(int group_id) {
 	char id_str[32];
-	sprintf(id_str, "%i", id);
+	sprintf(id_str, "%i", group_id);
 	const char* params[] = { id_str };
-	PGresult* result = call_procedure("select * from get_group_tags", params, 1);
+	return call_procedure("select * from get_group_tags", params, 1);
+}
+
+void load_group_tags(struct tag_data** tags, int* num_tags, int id) {
+	PGresult* result = pg_load_group_tags(id);
 	*num_tags = PQntuples(result);
 	*tags = (struct tag_data*)malloc(*num_tags * sizeof(struct tag_data));
 	if (*tags) {
@@ -188,4 +238,53 @@ void load_group(struct group_data* group, int id) {
 	load_group_tags(&group->tags, &group->num_tags, id);
 	load_group_albums(&group->albums, &group->num_albums, id);
 	load_group_tracks(&group->tracks, &group->num_tracks, id);
+}
+
+int create_group(const char* country, const char* name, const char* website, const char* description) {
+	const char* params[] = { country, name, website, description };
+	int group_id = insert_row("group", true, 4, params);
+	if (group_id > 0) {
+		create_directory(server_group_path(group_id));
+	}
+	return group_id;
+}
+
+void create_group_tags(int group_id, const char* comma_separated_tags) {
+	char group_id_str[32];
+	snprintf(group_id_str, sizeof(group_id_str), "%i", group_id);
+	int priority = 1;
+	PGresult* result = pg_load_group_tags(group_id);
+	if (result) {
+		const int count = PQntuples(result);
+		if (count > 0) {
+			priority += atoi(PQgetvalue(result, count - 1, 1));
+		}
+		PQclear(result);
+	}
+	char tag[128];
+	while (comma_separated_tags = split_string(tag, sizeof(tag), comma_separated_tags, ',')) {
+		char priority_str[32];
+		sprintf(priority_str, "%i", priority);
+		trim_ends(tag, " \t");
+		const char* params[] = { group_id_str, tag, priority_str };
+		insert_row("group_tag", false, 3, params);
+		priority++;
+	}
+}
+
+void delete_group_tag(int group_id, const char* tag) {
+	char group_id_str[32];
+	snprintf(group_id_str, sizeof(group_id_str), "%i", group_id);
+	const char* params[] = { group_id_str, tag };
+	PGresult* result = execute_sql("delete from \"group_tag\" where \"group_id\" = $1 and \"tag_name\" = $2", params, 2);
+	PQclear(result);
+}
+
+void create_group_member(int group_id, int person_id, const char* role, const char* started_at, const char* ended_at) {
+	char group_id_str[32];
+	snprintf(group_id_str, sizeof(group_id_str), "%i", group_id);
+	char person_id_str[32];
+	snprintf(person_id_str, sizeof(person_id_str), "%i", person_id);
+	const char* person_params[] = { group_id_str, person_id_str, role, started_at, ended_at };
+	insert_row("group_member", false, 5, person_params);
 }

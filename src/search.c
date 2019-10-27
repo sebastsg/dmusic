@@ -8,7 +8,7 @@
 #include <string.h>
 
 void load_search_results(struct search_result_data** search_results, int* count, const char* type, const char* query) {
-	if (strcmp(type, "country") && strcmp(type, "groups") && strcmp(type, "person")) {
+	if (strcmp(type, "country") && strcmp(type, "groups") && strcmp(type, "person") && strcmp(type, "tag")) {
 		print_error_f("Invalid search type: " A_CYAN "%s", type);
 		return;
 	}

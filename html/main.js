@@ -213,18 +213,43 @@ function onAttachGroupImage() {
     attachments.appendChild(newRow);
 }
 
-function onClickLoginSubmit() {
+function onLoginSubmit() {
     ajaxPost('/form/login', {
         name: document.getElementById('name').value,
         password: document.getElementById('password').value
     }, response => location.href = '/');
 }
 
-function onClickRegisterSubmit() {
+function onRegisterSubmit() {
     ajaxPost('/form/register', {
         name: document.getElementById('name').value,
         password: document.getElementById('password').value
     }, response => location.href = '/');
+}
+
+function onEditGroupTags(group, destination) {
+    ajaxGet('/render/group-tags/' + group + '/edit', response => destination.innerHTML = response);
+}
+
+function onDoneEditingGroupTags(group, destination) {
+    ajaxGet('/render/group-tags/' + group, response => destination.innerHTML = response);
+}
+
+function onDeleteGroupTag(target) {
+    ajaxPost('/form/delete-group-tag', {
+        group: target.dataset.group,
+        tag: target.dataset.tag
+    });
+    target.parentNode.remove();
+}
+
+function onAddGroupTag(target) {
+    let input = target.parentNode.querySelector('input[name=tag]').nextElementSibling;
+    ajaxPost('/form/add-group-tag', {
+        group: target.dataset.group,
+        tag: input.value
+    }, response => document.getElementById('group_tags_being_edited').innerHTML += response);
+    input.value = '';
 }
 
 function onClickButton(event) {
@@ -235,9 +260,17 @@ function onClickButton(event) {
         event.preventDefault();
         onAttachGroupImage();
     } else if (target.classList.contains('login-submit')) {
-        onClickLoginSubmit();
+        onLoginSubmit();
     } else if (target.classList.contains('register-submit')) {
-        onClickRegisterSubmit();
+        onRegisterSubmit();
+    } else if (target.classList.contains('edit-group-tags')) {
+        onEditGroupTags(target.dataset.group, target.parentNode);
+    } else if (target.classList.contains('done-editing-group-tags')) {
+        onDoneEditingGroupTags(target.dataset.group, target.parentNode);
+    } else if (target.classList.contains('delete-group-tag')) {
+        onDeleteGroupTag(target);
+    } else if (target.classList.contains('add-group-tag')) {
+        onAddGroupTag(target);
     }
 }
 
@@ -348,7 +381,7 @@ document.addEventListener('input', event => {
             let query = encodeURIComponent(target.value);
             ajaxGet('/render' + target.dataset.search + '/' + query, response => {
                 result.innerHTML = response;
-                result.style.display = 'block'; // fade in?
+                result.style.display = 'block';
             });
         }
     }

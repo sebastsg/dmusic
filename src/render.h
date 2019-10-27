@@ -20,5 +20,7 @@ void append_buffer(struct render_buffer* buffer, const char* str);
 void set_parameter(struct render_buffer* buffer, const char* key, const char* value);
 void set_parameter_int(struct render_buffer* buffer, const char* key, int value);
 
+int get_int_argument(const char** resource);
+
 void render_tags(struct render_buffer* buffer, const char* key, struct tag_data* tags, int num_tags);
 void render_main(struct render_buffer* buffer, const char* resource, const struct cached_session* session);

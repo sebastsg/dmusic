@@ -87,19 +87,35 @@ void set_parameter_int(struct render_buffer* buffer, const char* key, int value)
 	set_parameter(buffer, key, value_string);
 }
 
+int get_int_argument(const char** resource) {
+	char value[32];
+	*resource = split_string(value, sizeof(value), *resource, '/');
+	return atoi(value);
+}
+
 char* render_resource_with_session(const char* page, const char* resource, const struct cached_session* session) {
 	struct render_buffer buffer;
 	init_render_buffer(&buffer, 4096);
 	if (!strcmp(page, "groups")) {
 		render_group_list(&buffer);
 	} else if (!strcmp(page, "group")) {
-		char group_id_str[32];
-		resource = split_string(group_id_str, sizeof(group_id_str), resource, '/');
-		int id = atoi(group_id_str);
+		const int id = get_int_argument(&resource);
 		if (id == 0) {
 			return buffer.data;
 		}
 		render_group(&buffer, id);
+	} else if (!strcmp(page, "group-tags")) {
+		const int id = get_int_argument(&resource);
+		if (id == 0) {
+			return buffer.data;
+		}
+		char edit[16];
+		resource = split_string(edit, sizeof(edit), resource, '/');
+		if (!strcmp(edit, "edit")) {
+			render_edit_group_tags(&buffer, id);
+		} else {
+			render_group_tags(&buffer, id);
+		}
 	} else if (!strcmp(page, "search")) {
 		char type[32];
 		char query[512];
@@ -119,11 +135,8 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		resource = split_string(filename, sizeof(filename), resource, '/');
 		render_import_attachment(&buffer, directory, filename);
 	} else if (!strcmp(page, "session_tracks")) {
-		char num_str[32];
-		resource = split_string(num_str, sizeof(num_str), resource, '/');
-		int from_num = atoi(num_str);
-		resource = split_string(num_str, sizeof(num_str), resource, '/');
-		int to_num = atoi(num_str);
+		const int from_num = get_int_argument(&resource);
+		const int to_num = get_int_argument(&resource);
 		render_session_tracks_database(&buffer, session, from_num, to_num);
 	} else if (!strcmp(page, "playlists")) {
 		append_buffer(&buffer, get_cached_file("html/playlists.html", NULL));

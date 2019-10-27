@@ -1,10 +1,13 @@
 #pragma once
 
+#include <stdbool.h>
+
 #define SESSION_ID_SIZE 15
 
 struct cached_session {
 	char id[SESSION_ID_SIZE + 1];
 	char name[32];
+	bool admin;
 };
 
 void initialize_sessions();

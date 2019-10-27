@@ -5,43 +5,11 @@
 #include "config.h"
 #include "files.h"
 #include "format.h"
+#include "group.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-int create_group(const char* country, const char* name, const char* website, const char* description) {
-	const char* params[] = { country, name, website, description };
-	int group_id = insert_row("group", true, 4, params);
-	if (group_id > 0) {
-		create_directory(server_group_path(group_id));
-	}
-	return group_id;
-}
-
-void create_group_tags(int group_id, const char* comma_separated_tags) {
-	char group_id_str[32];
-	snprintf(group_id_str, sizeof(group_id_str), "%i", group_id);
-	int priority = 1;
-	char tag[128];
-	while (comma_separated_tags = split_string(tag, sizeof(tag), comma_separated_tags, ',')) {
-		char priority_str[32];
-		sprintf(priority_str, "%i", priority);
-		trim_ends(tag, " \t");
-		const char* params[] = { group_id_str, tag, priority_str };
-		insert_row("group_tag", false, 3, params);
-		priority++;
-	}
-}
-
-void create_group_member(int group_id, int person_id, const char* role, const char* started_at, const char* ended_at) {
-	char group_id_str[32];
-	snprintf(group_id_str, sizeof(group_id_str), "%i", group_id);
-	char person_id_str[32];
-	snprintf(person_id_str, sizeof(person_id_str), "%i", person_id);
-	const char* person_params[] = { group_id_str, person_id_str, role, started_at, ended_at };
-	insert_row("group_member", false, 5, person_params);
-}
 
 void create_group_members(int group_id, struct http_data* data) {
 	int num_people = http_data_parameter_array_size(data, "person-id");

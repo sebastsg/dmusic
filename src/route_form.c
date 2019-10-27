@@ -34,6 +34,10 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 			strcpy(format, "mp3-320");
 		}
 		transcode_album_release(atoi(album_release_id), format);
+	} else if (!strcmp(form, "add-group-tag")) {
+		route_form_add_group_tag(parameters->result, &parameters->data);
+	} else if (!strcmp(form, "delete-group-tag")) {
+		route_form_delete_group_tag(parameters->result, &parameters->data);
 	}
 }
 
