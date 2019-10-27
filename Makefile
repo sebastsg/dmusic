@@ -31,8 +31,8 @@ OBJECTS = $(addprefix $(OBJDIR)/, \
  route_form_attach.o\
  route_form_download_remote.o\
  route_form_edit_group_tags.o\
+ route_form_import.o\
  route_form_login.o\
- route_form_prepare.o\
  route_form_register.o\
  route_form_upload.o\
  route_image.o\
