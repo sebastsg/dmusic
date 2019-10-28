@@ -406,3 +406,10 @@ document.addEventListener('click', event => {
         input.value = target.innerHTML;
     }
 });
+
+document.addEventListener('keyup', event => {
+    const A = 65;
+    if (event.ctrlKey && event.altKey && event.which == A) {
+        ajaxPost('/form/toggle-edit-mode', {}, () => location.reload());
+    }
+});

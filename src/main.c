@@ -35,12 +35,14 @@ static bool process_command(int argc, char** argv) {
 		if (!strcmp(cmd, "--install")) {
 			create_directories();
 			install_database();
-			replace_database_functions();
+			run_sql_in_directory("functions");
+			run_sql_in_directory("procedures");
 			seed_database();
 		} else if (!strcmp(cmd, "--seed")) {
 			seed_database();
 		} else if (!strcmp(cmd, "--replace-functions")) {
-			replace_database_functions();
+			run_sql_in_directory("functions");
+			run_sql_in_directory("procedures");
 		} else if (!strcmp(cmd, "--update-track-durations")) {
 			update_all_track_durations();
 		} else if (!strcmp(cmd, "--transcode")) {

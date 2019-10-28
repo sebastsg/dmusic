@@ -2,5 +2,5 @@
 
 void create_directories();
 void install_database();
-void replace_database_functions();
+void run_sql_in_directory(const char* directory);
 void seed_database();

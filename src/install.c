@@ -33,9 +33,9 @@ void install_database() {
 	execute_sql_file("create_database.sql", true);
 }
 
-void replace_database_functions() {
+void run_sql_in_directory(const char* directory) {
 	char path[512];
-	sprintf(path, "%s/db/functions", get_property("path.root"));
+	sprintf(path, "%s/db/%s", get_property("path.root"), directory);
 	DIR* dir = opendir(path);
 	if (!dir) {
 		print_error_f("Failed to read directory: %s", path);
@@ -44,7 +44,8 @@ void replace_database_functions() {
 	struct dirent* entry = NULL;
 	while (entry = readdir(dir)) {
 		if (is_dirent_file(path, entry) && strstr(entry->d_name, ".sql")) {
-			strcpy(path, "functions/");
+			strcpy(path, directory);
+			strcat(path, "/");
 			strcat(path, entry->d_name);
 			print_info_f("Executing sql file: %s", path);
 			execute_sql_file(path, false);

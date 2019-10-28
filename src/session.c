@@ -3,6 +3,7 @@
 #include "system.h"
 #include "files.h"
 #include "config.h"
+#include "database.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -81,11 +82,32 @@ void free_sessions() {
 	allocated_sessions = 0;
 }
 
+void update_session_state(struct cached_session* session) {
+	memset(session->privileges, 0, sizeof(bool) * TOTAL_PRIVILEGES);
+	memset(session->preferences, 0, sizeof(int) * TOTAL_PREFERENCES);
+	const char* params[] = { session->name };
+	PGresult* result = execute_sql("select \"privilege\" from \"user_privilege\" where \"user_name\" = $1", params, 1);
+	const int num_privileges = PQntuples(result);
+	for (int i = 0; i < num_privileges; i++) {
+		const int privilege = atoi(PQgetvalue(result, i, 0));
+		session->privileges[privilege] = true;
+	}
+	PQclear(result);
+	result = execute_sql("select \"type\", \"preference\" from \"user_preference\" where \"user_name\" = $1", params, 1);
+	const int num_preferences = PQntuples(result);
+	for (int i = 0; i < num_preferences; i++) {
+		const int type = atoi(PQgetvalue(result, i, 0));
+		session->preferences[type] = atoi(PQgetvalue(result, i, 1));
+	}
+	PQclear(result);
+}
+
 const struct cached_session* create_session(const char* name) {
 	resize_array((void**)&sessions, sizeof(struct cached_session), &allocated_sessions, loaded_sessions + 1);
 	struct cached_session* session = &sessions[loaded_sessions];
 	generate_session_id(session->id);
 	strcpy(session->name, name);
+	update_session_state(session);
 	print_info_f("Created session %i: " A_CYAN "%s" A_YELLOW " for " A_CYAN "%s", loaded_sessions, session->id, name);
 	loaded_sessions++;
 	return session;
@@ -112,4 +134,20 @@ struct cached_session* open_session(const char* id) {
 
 void close_session(const char* id) {
 	save_session(id);
+}
+
+bool has_privilege(const struct cached_session* session, int privilege) {
+	return session->privileges[privilege];
+}
+
+int get_preference(const struct cached_session* session, int preference) {
+	return session->preferences[preference];
+}
+
+bool is_preferred(const struct cached_session* session, int preference, int value) {
+	return get_preference(session, preference) == value;
+}
+
+void toggle_preference(struct cached_session* session, int preference, int if_this, int then_that) {
+	session->preferences[preference] = is_preferred(session, preference, if_this) ? then_that : if_this;
 }

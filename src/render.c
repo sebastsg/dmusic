@@ -103,7 +103,9 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		if (id == 0) {
 			return buffer.data;
 		}
-		render_group(&buffer, id);
+		const bool is_editing = get_preference(session, PREFERENCE_EDIT_MODE) == EDIT_MODE_ON;
+		const bool edit_group_tags = is_editing && has_privilege(session, PRIVILEGE_EDIT_GROUP_TAGS);
+		render_group(&buffer, id, edit_group_tags);
 	} else if (!strcmp(page, "group-tags")) {
 		const int id = get_int_argument(&resource);
 		if (id == 0) {

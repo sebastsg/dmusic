@@ -10,6 +10,17 @@
 #include <string.h>
 #include <stdlib.h>
 
+void route_form_toggle_edit_mode(struct cached_session* session) {
+	toggle_preference(session, PREFERENCE_EDIT_MODE, EDIT_MODE_ON, EDIT_MODE_OFF);
+	char preference[16];
+	sprintf(preference, "%i", get_preference(session, PREFERENCE_EDIT_MODE));
+	char type[16];
+	sprintf(type, "%i", PREFERENCE_EDIT_MODE);
+	const char* params[] = { session->name, type, preference };
+	PGresult* result = call_procedure("call update_user_preference", params, 3);
+	PQclear(result);
+}
+
 void route_form_with_session(const char* form, struct route_parameters* parameters) {
 	if (!strcmp(form, "addgroup")) {
 		route_form_add_group(&parameters->data);
@@ -38,6 +49,8 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 		route_form_add_group_tag(parameters->result, &parameters->data);
 	} else if (!strcmp(form, "delete-group-tag")) {
 		route_form_delete_group_tag(parameters->result, &parameters->data);
+	} else if (!strcmp(form, "toggle-edit-mode")) {
+		route_form_toggle_edit_mode(parameters->session);
 	}
 }
 

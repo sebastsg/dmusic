@@ -43,14 +43,14 @@ void render_group_tags(struct render_buffer* buffer, int id) {
 	free(tags);
 }
 
-void render_group(struct render_buffer* buffer, int id) {
+void render_group(struct render_buffer* buffer, int id, bool edit_tags) {
 	struct group_data group;
 	load_group(&group, id);
 	if (strlen(group.name) > 0) {
 		assign_buffer(buffer, get_cached_file("html/group.html", NULL));
 		set_parameter(buffer, "name", group.name);
 		render_tags(buffer, "tags", group.tags, group.num_tags);
-		if (true) {
+		if (edit_tags) {
 			set_parameter(buffer, "edit_tags", get_cached_file("html/edit_group_tags_button.html", NULL));
 			set_parameter_int(buffer, "group", id);
 		} else {

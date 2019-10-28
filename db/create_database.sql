@@ -272,9 +272,30 @@ create table "user" (
     "password_hash" varchar(96) not null,
     "salt"          varchar(96) not null,
     "stream_method" varchar(32) not null default 'stream',
-    "is_admin"      int         not null default 0,
-    "is_enabled"    int         not null default 0,
     "created_at"    timestamp   not null default current_timestamp
+);
+
+create table "user_privilege" (
+    "user_name" varchar(32) not null,
+    "privilege" int         not null,
+
+    constraint  fk_user_privilege_user
+    foreign key ("user_name") references "user" ("name"),
+
+    constraint  pk_user_privilege
+    primary key ("user_name", "privilege")
+);
+
+create table "user_preference" (
+    "user_name"  varchar(32) not null,
+    "type"       int         not null,
+    "preference" int         not null,
+
+    constraint  fk_user_preference_user
+    foreign key ("user_name") references "user" ("name"),
+
+    constraint  pk_user_preference
+    primary key ("user_name", "type")
 );
 
 create table "playlist" (

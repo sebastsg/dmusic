@@ -2,6 +2,8 @@
 
 #include "search.h"
 
+#include <stdbool.h>
+
 struct album_data;
 struct track_data;
 
@@ -32,7 +34,7 @@ struct add_group_data {
 
 void render_add_group(struct render_buffer* buffer);
 void render_group_list(struct render_buffer* buffer);
-void render_group(struct render_buffer* buffer, int id);
+void render_group(struct render_buffer* buffer, int id, bool edit_tags);
 void render_group_tags(struct render_buffer* buffer, int id);
 void render_edit_group_tags(struct render_buffer* buffer, int id);
 void load_add_group(struct add_group_data* add);
