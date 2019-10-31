@@ -23,17 +23,27 @@ void route_form_toggle_edit_mode(struct cached_session* session) {
 
 void route_form_with_session(const char* form, struct route_parameters* parameters) {
 	if (!strcmp(form, "addgroup")) {
-		route_form_add_group(&parameters->data);
+		if (has_privilege(parameters->session, PRIVILEGE_ADD_GROUP)) {
+			route_form_add_group(&parameters->data);
+		}
 	} else if (!strcmp(form, "upload")) {
-		route_form_upload(&parameters->data);
+		if (has_privilege(parameters->session, PRIVILEGE_UPLOAD_ALBUM)) {
+			route_form_upload(&parameters->data);
+		}
 	} else if (!strcmp(form, "import")) {
-		route_form_import(&parameters->data);
+		if (has_privilege(parameters->session, PRIVILEGE_IMPORT_ALBUM)) {
+			route_form_import(&parameters->data);
+		}
 	} else if (!strcmp(form, "attach")) {
-		route_form_attach(parameters);
+		if (has_privilege(parameters->session, PRIVILEGE_IMPORT_ALBUM)) {
+			route_form_attach(parameters);
+		}
 	} else if (!strcmp(form, "addsessiontrack")) {
 		route_form_add_session_track(parameters);
 	} else if (!strcmp(form, "downloadremote")) {
-		route_form_download_remote(&parameters->data);
+		if (has_privilege(parameters->session, PRIVILEGE_UPLOAD_ALBUM)) {
+			route_form_download_remote(&parameters->data);
+		}
 	} else if (!strcmp(form, "clear-session-playlist")) {
 		delete_session_tracks(parameters->session->name);
 	} else if (!strcmp(form, "transcode")) {
@@ -46,9 +56,13 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 		}
 		transcode_album_release(atoi(album_release_id), format);
 	} else if (!strcmp(form, "add-group-tag")) {
-		route_form_add_group_tag(parameters->result, &parameters->data);
+		if (has_privilege(parameters->session, PRIVILEGE_EDIT_GROUP_TAGS)) {
+			route_form_add_group_tag(parameters->result, &parameters->data);
+		}
 	} else if (!strcmp(form, "delete-group-tag")) {
-		route_form_delete_group_tag(parameters->result, &parameters->data);
+		if (has_privilege(parameters->session, PRIVILEGE_EDIT_GROUP_TAGS)) {
+			route_form_delete_group_tag(parameters->result, &parameters->data);
+		}
 	} else if (!strcmp(form, "toggle-edit-mode")) {
 		route_form_toggle_edit_mode(parameters->session);
 	}

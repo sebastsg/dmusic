@@ -125,17 +125,23 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		resource = split_string(query, sizeof(query), resource, '/');
 		render_search_query(&buffer, type, query);
 	} else if (!strcmp(page, "upload")) {
-		render_upload(&buffer);
+		if (has_privilege(session, PRIVILEGE_UPLOAD_ALBUM)) {
+			render_upload(&buffer);
+		}
 	} else if (!strcmp(page, "import")) {
-		char prefix[1024];
-		resource = split_string(prefix, sizeof(prefix), resource, '/');
-		render_import(&buffer, prefix);
+		if (has_privilege(session, PRIVILEGE_IMPORT_ALBUM)) {
+			char prefix[1024];
+			resource = split_string(prefix, sizeof(prefix), resource, '/');
+			render_import(&buffer, prefix);
+		}
 	} else if (!strcmp(page, "import_attachment")) {
-		char directory[512];
-		char filename[512];
-		resource = split_string(directory, sizeof(directory), resource, '/');
-		resource = split_string(filename, sizeof(filename), resource, '/');
-		render_import_attachment(&buffer, directory, filename);
+		if (has_privilege(session, PRIVILEGE_IMPORT_ALBUM)) {
+			char directory[512];
+			char filename[512];
+			resource = split_string(directory, sizeof(directory), resource, '/');
+			resource = split_string(filename, sizeof(filename), resource, '/');
+			render_import_attachment(&buffer, directory, filename);
+		}
 	} else if (!strcmp(page, "session_tracks")) {
 		const int from_num = get_int_argument(&resource);
 		const int to_num = get_int_argument(&resource);
@@ -144,7 +150,9 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		append_buffer(&buffer, get_cached_file("html/playlists.html", NULL));
 		set_parameter(&buffer, "playlists", "No playlists.");
 	} else if (!strcmp(page, "add_group")) {
-		render_add_group(&buffer);
+		if (has_privilege(session, PRIVILEGE_ADD_GROUP)) {
+			render_add_group(&buffer);
+		}
 	} else if (!strcmp(page, "profile")) {
 		render_profile(&buffer);
 	} else {
