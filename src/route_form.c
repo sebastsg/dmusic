@@ -26,7 +26,7 @@ void route_form_logout(struct cached_session* session) {
 }
 
 void route_form_with_session(const char* form, struct route_parameters* parameters) {
-	if (!strcmp(form, "addgroup")) {
+	if (!strcmp(form, "add-group")) {
 		if (has_privilege(parameters->session, PRIVILEGE_ADD_GROUP)) {
 			route_form_add_group(&parameters->data);
 		}
@@ -42,9 +42,9 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 		if (has_privilege(parameters->session, PRIVILEGE_IMPORT_ALBUM)) {
 			route_form_attach(parameters);
 		}
-	} else if (!strcmp(form, "addsessiontrack")) {
+	} else if (!strcmp(form, "add-session-track")) {
 		route_form_add_session_track(parameters);
-	} else if (!strcmp(form, "downloadremote")) {
+	} else if (!strcmp(form, "download-remote")) {
 		if (has_privilege(parameters->session, PRIVILEGE_UPLOAD_ALBUM)) {
 			route_form_download_remote(&parameters->data);
 		}

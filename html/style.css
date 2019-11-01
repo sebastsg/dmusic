@@ -75,21 +75,24 @@ hr {
     border-color: #505050;
 }
 
-input, .form-button, textarea {
-    background: #202020;
+select, input, .form-button, textarea {
+    background: #26282a;
     color: #c0c0c0;
-    border: 1px solid #1f2022;
-    font-size: 16px;
-    padding: 8px;
+    border: 1px solid #404040;
     outline: none;
+    font-size: 16px;
 }
 
-input:hover, .form-button:hover, textarea:hover {
-    
+select {
+    padding: 4px;
 }
 
-input:focus, .form-button:focus, textarea:focus {
-    
+input, .form-button, textarea {
+    padding: 8px;
+}
+
+select:focus, input:focus, .form-button:focus, textarea:focus {
+    border: 1px solid #555;
 }
 
 input[type=text], input[type=number], input[type=url], input[type=file], input[type=search] {
@@ -111,15 +114,6 @@ input[type=checkbox], input[type=radio] {
     width: 20px;
     height: 20px;
     -webkit-filter: invert(0.935) hue-rotate(150deg);
-}
-
-select {
-    background: #0c0c0c;
-    color: #505050;
-    border: 1px solid #202020;
-    font-size: 16px;
-    padding: 4px;
-    outline: none;
 }
 
 header {
@@ -376,7 +370,7 @@ table tr th {
 }
 
 table tr td {
-    background: #1f2022;
+    background: #151517;
 }
 
 table tr td img {
@@ -384,7 +378,7 @@ table tr td img {
 }
 
 table tr:nth-child(odd) td {
-    background: #191c1c;
+    background: #18191b;
 }
 
 table.import-album-details tr:first-child td input {

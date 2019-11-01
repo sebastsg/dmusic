@@ -19,20 +19,6 @@ static void save_session(struct cached_session* session) {
 	insert_row("user_session", false, 2, params);
 }
 
-static bool load_session(struct cached_session* session, const char* id) {
-	const char* params[] = { id };
-	PGresult* result = execute_sql("select \"user_name\" from \"user_session\" where \"id\" = $1 and \"expires_at\" > current_timestamp", params, 1);
-	const bool exists = PQntuples(result) == 1;
-	if (exists) {
-		strcpy(session->id, id);
-		strcpy(session->name, PQgetvalue(result, 0, 0));
-	} else {
-		print_error_f("Illegal request to load session %s, which does not exist.", id);
-	}
-	PQclear(result);
-	return exists;
-}
-
 static void generate_session_id(char* id) {
 	for (int i = 0; i < SESSION_ID_SIZE; i++) {
 		sprintf(id + i, rand() % 2 == 0 ? "%x" : "%X", (unsigned char)(rand() % 16));
@@ -86,6 +72,21 @@ void update_session_state(struct cached_session* session) {
 		session->preferences[type] = atoi(PQgetvalue(result, i, 1));
 	}
 	PQclear(result);
+}
+
+static bool load_session(struct cached_session* session, const char* id) {
+	const char* params[] = { id };
+	PGresult* result = execute_sql("select \"user_name\" from \"user_session\" where \"id\" = $1 and \"expires_at\" > current_timestamp", params, 1);
+	const bool exists = PQntuples(result) == 1;
+	if (exists) {
+		strcpy(session->id, id);
+		strcpy(session->name, PQgetvalue(result, 0, 0));
+		update_session_state(session);
+	} else {
+		print_error_f("Illegal request to load session %s, which does not exist.", id);
+	}
+	PQclear(result);
+	return exists;
 }
 
 const struct cached_session* create_session(const char* name) {

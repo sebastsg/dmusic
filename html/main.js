@@ -79,7 +79,7 @@ function hasAnyClass(element, classNames) {
 }
 
 function addToPlaylist(album, disc, track) {
-    ajaxPost('/form/addsessiontrack', {
+    ajaxPost('/form/add-session-track', {
         album: album,
         disc: disc,
         track: track
@@ -125,7 +125,7 @@ function onAddGroupForm(target) {
         data.append('image-file', file);
         data.append('image-description', image.querySelector('textarea[name=imagedescription]').value);
     }
-    ajaxPost('/form/addgroup', data, response => document.querySelector('main section').innerHTML = response);
+    ajaxPost('/form/add-group', data, response => document.querySelector('main section').innerHTML = response);
 }
 
 function onClickA(event) {
@@ -275,7 +275,7 @@ function onClickButton(event) {
         onDeleteGroupTag(target);
     } else if (target.classList.contains('add-group-tag')) {
         onAddGroupTag(target);
-    } else if (target.classList.contains('logout')) {
+    } else if (target.classList.contains('logout-submit')) {
         onLogout();
     }
 }
@@ -291,7 +291,7 @@ function onClickLi(target) {
         target.classList.add('active');
         playTrack(target.dataset.album, target.dataset.disc, target.dataset.track);
     } else if (list.classList.contains('remote-directory-list')) {
-        ajaxPost('/form/downloadremote', { directory: target.innerHTML });
+        ajaxPost('/form/download-remote', { directory: target.innerHTML });
         target.innerHTML = '';
     }
 }
