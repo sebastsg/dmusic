@@ -271,8 +271,20 @@ create table "user" (
     "name"          varchar(32) not null primary key,
     "password_hash" varchar(96) not null,
     "salt"          varchar(96) not null,
-    "stream_method" varchar(32) not null default 'stream',
     "created_at"    timestamp   not null default current_timestamp
+);
+
+create table "user_session" (
+    "user_name"  varchar(32) not null,
+    "id"         varchar(32) not null unique,
+    "expires_at" timestamp   not null default current_timestamp + interval '2 months',
+    "created_at" timestamp   not null default current_timestamp,
+
+    constraint  fk_user_session_user
+    foreign key ("user_name") references "user" ("name"),
+
+    constraint  pk_user_session
+    primary key ("user_name", "id")
 );
 
 create table "user_privilege" (

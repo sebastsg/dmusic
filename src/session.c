@@ -10,29 +10,22 @@
 #include <stdbool.h>
 #include <errno.h>
 
+static void save_session(struct cached_session* session) {
+	const char* params[] = { session->name, session->id };
+	insert_row("user_session", false, 2, params);
+}
+
 static bool load_session(struct cached_session* session, const char* id) {
-	const char* path = server_session_path(id);
-	if (!file_exists(path)) {
+	const char* params[] = { id };
+	PGresult* result = execute_sql("select \"user_name\" from \"user_session\" where \"id\" = $1 and \"expires_at\" > current_timestamp", params, 1);
+	const bool exists = PQntuples(result) == 1;
+	if (exists) {
+		strcpy(session->name, PQgetvalue(result, 0, 0));
+	} else {
 		print_error_f("Illegal request to load session %s, which does not exist.", id);
-		return false;
 	}
-	size_t size = 0;
-	char* data = read_file(path, &size);
-	if (!data) {
-		print_errno_f("Failed to load session %s.", id);
-		return false;
-	}
-	strcpy(session->id, id);
-	char* begin = data;
-	char* end = strchr(data, '\n');
-	if (!end) {
-		print_error_f("Username was not found in session %s.", id);
-		return false;
-	}
-	*end = '\0';
-	strcpy(session->name, begin);
-	begin = end + 1;
-	return true;
+	PQclear(result);
+	return exists;
 }
 
 static void generate_session_id(char* id) {
@@ -53,19 +46,6 @@ static struct cached_session* find_session(const char* id) {
 	}
 	print_info_f("Did not find session " A_CYAN "%s", id);
 	return NULL;
-}
-
-static bool save_session(const char* id) {
-	struct cached_session* session = find_session(id);
-	if (!session) {
-		return false;
-	}
-	const char* path = server_session_path(id);
-	char data[128];
-	strcpy(data, session->name);
-	strcat(data, "\n");
-	write_file(path, data, strlen(data));
-	return true;
 }
 
 void initialize_sessions() {
@@ -108,6 +88,7 @@ const struct cached_session* create_session(const char* name) {
 	generate_session_id(session->id);
 	strcpy(session->name, name);
 	update_session_state(session);
+	save_session(session);
 	print_info_f("Created session %i: " A_CYAN "%s" A_YELLOW " for " A_CYAN "%s", loaded_sessions, session->id, name);
 	loaded_sessions++;
 	return session;
@@ -132,8 +113,11 @@ struct cached_session* open_session(const char* id) {
 	}
 }
 
-void close_session(const char* id) {
-	save_session(id);
+void delete_session(const char* id) {
+	struct cached_session* session = find_session(id);
+	if (session) {
+		
+	}
 }
 
 bool has_privilege(const struct cached_session* session, int privilege) {

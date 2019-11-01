@@ -16,7 +16,7 @@ void free_sessions();
 
 const struct cached_session* create_session(const char* name);
 struct cached_session* open_session(const char* id);
-void close_session(const char* id);
+void delete_session(const char* id);
 
 bool has_privilege(const struct cached_session* session, int privilege);
 int get_preference(const struct cached_session* session, int preference);

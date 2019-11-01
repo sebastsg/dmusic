@@ -145,10 +145,6 @@ const char* server_root_path(const char* path) {
 	return write_temporary_string("%s/%s", get_property("path.root"), path);
 }
 
-const char* server_session_path(const char* id) {
-	return write_temporary_string("%s/sessions/%s", get_property("path.root"), id);
-}
-
 const char* server_seed_path(const char* name) {
 	return write_temporary_string("%s/db/seed/%s.csv", get_property("path.root"), name);
 }

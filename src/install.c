@@ -15,7 +15,6 @@
 void create_directories() {
 	const char* directories[] = {
 		get_property("path.cache"),
-		get_property("path.sessions"),
 		get_property("path.data"),
 		get_property("path.uploads"),
 		get_property("path.groups"),

@@ -4,7 +4,6 @@ void load_config();
 const char* get_property(const char* key);
 
 const char* server_root_path(const char* path);
-const char* server_session_path(const char* id);
 const char* server_seed_path(const char* name);
 const char* server_sql_path(const char* name);
 const char* server_html_path(const char* name);
