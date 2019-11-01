@@ -414,7 +414,19 @@ document.addEventListener('click', event => {
 });
 
 document.addEventListener('keyup', event => {
+    const Del = 46;
     const A = 65;
+    let playlist = document.querySelector('#playlist ul');
+    if (event.which === Del && !playlist.classList.contains('is-deleting-track')) {
+        let hovered = playlist.querySelector('li:hover');
+        if (hovered !== null) {
+            playlist.classList.add('is-deleting-track');
+            ajaxPost('/form/delete-session-track', {
+                num: Array.from(playlist.children).indexOf(hovered) + 1
+            }, () => playlist.classList.remove('is-deleting-track'));
+            hovered.remove();
+        }
+    }
     if (event.ctrlKey && event.altKey && event.which == A) {
         ajaxPost('/form/toggle-edit-mode', {}, () => location.reload());
     }

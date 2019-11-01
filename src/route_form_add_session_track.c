@@ -51,3 +51,13 @@ void route_form_add_session_track(struct route_parameters* parameters) {
 	parameters->resource = resource;
 	route_render(parameters);
 }
+
+void route_form_delete_session_track(struct route_parameters* parameters) {
+	const char* num = http_data_string(&parameters->data, "num");
+	if (*num) {
+		const char* params[] = { parameters->session->name, num };
+		PQclear(call_procedure("call delete_session_track", params, 2));
+	} else {
+		print_error("Index must be specified when deleting a session track");
+	}
+}

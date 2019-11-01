@@ -44,6 +44,8 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 		}
 	} else if (!strcmp(form, "add-session-track")) {
 		route_form_add_session_track(parameters);
+	} else if (!strcmp(form, "delete-session-track")) {
+		route_form_delete_session_track(parameters);
 	} else if (!strcmp(form, "download-remote")) {
 		if (has_privilege(parameters->session, PRIVILEGE_UPLOAD_ALBUM)) {
 			route_form_download_remote(&parameters->data);
