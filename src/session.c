@@ -10,6 +10,10 @@
 #include <stdbool.h>
 #include <errno.h>
 
+static void delete_expired_sessions() {
+	PQclear(execute_sql("delete from \"user_session\" where \"expires_at\" < current_timestamp", NULL, 0));
+}
+
 static void save_session(struct cached_session* session) {
 	const char* params[] = { session->name, session->id };
 	insert_row("user_session", false, 2, params);
@@ -20,6 +24,7 @@ static bool load_session(struct cached_session* session, const char* id) {
 	PGresult* result = execute_sql("select \"user_name\" from \"user_session\" where \"id\" = $1 and \"expires_at\" > current_timestamp", params, 1);
 	const bool exists = PQntuples(result) == 1;
 	if (exists) {
+		strcpy(session->id, id);
 		strcpy(session->name, PQgetvalue(result, 0, 0));
 	} else {
 		print_error_f("Illegal request to load session %s, which does not exist.", id);
@@ -60,6 +65,7 @@ void free_sessions() {
 	sessions = NULL;
 	loaded_sessions = 0;
 	allocated_sessions = 0;
+	delete_expired_sessions();
 }
 
 void update_session_state(struct cached_session* session) {
@@ -84,7 +90,16 @@ void update_session_state(struct cached_session* session) {
 
 const struct cached_session* create_session(const char* name) {
 	resize_array((void**)&sessions, sizeof(struct cached_session), &allocated_sessions, loaded_sessions + 1);
-	struct cached_session* session = &sessions[loaded_sessions];
+	struct cached_session* session = NULL;
+	for (int i = 0; i < loaded_sessions; i++) {
+		if (strlen(sessions[i].id) == 0) {
+			session = &sessions[i];
+			break;
+		}
+	}
+	if (!session) {
+		session = &sessions[loaded_sessions];
+	}
 	generate_session_id(session->id);
 	strcpy(session->name, name);
 	update_session_state(session);
@@ -113,11 +128,12 @@ struct cached_session* open_session(const char* id) {
 	}
 }
 
-void delete_session(const char* id) {
-	struct cached_session* session = find_session(id);
-	if (session) {
-		
-	}
+void delete_session(struct cached_session* session) {
+	print_info_f("Deleting session " A_CYAN "%s.", session->id);
+	const char* params[] = { session->id };
+	PGresult* result = execute_sql("delete from \"user_session\" where \"id\" = $1", params, 1);
+	PQclear(result);
+	session->id[0] = '\0';
 }
 
 bool has_privilege(const struct cached_session* session, int privilege) {

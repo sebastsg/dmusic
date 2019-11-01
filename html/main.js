@@ -252,6 +252,10 @@ function onAddGroupTag(target) {
     input.value = '';
 }
 
+function onLogout() {
+    ajaxPost('/form/logout', {}, () => location.replace('/'));
+}
+
 function onClickButton(event) {
     let target = event.target;
     if (target.classList.contains('submit-import')) {
@@ -271,6 +275,8 @@ function onClickButton(event) {
         onDeleteGroupTag(target);
     } else if (target.classList.contains('add-group-tag')) {
         onAddGroupTag(target);
+    } else if (target.classList.contains('logout')) {
+        onLogout();
     }
 }
 

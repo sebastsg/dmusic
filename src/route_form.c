@@ -21,6 +21,10 @@ void route_form_toggle_edit_mode(struct cached_session* session) {
 	PQclear(result);
 }
 
+void route_form_logout(struct cached_session* session) {
+	delete_session(session);
+}
+
 void route_form_with_session(const char* form, struct route_parameters* parameters) {
 	if (!strcmp(form, "addgroup")) {
 		if (has_privilege(parameters->session, PRIVILEGE_ADD_GROUP)) {
@@ -65,6 +69,8 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 		}
 	} else if (!strcmp(form, "toggle-edit-mode")) {
 		route_form_toggle_edit_mode(parameters->session);
+	} else if (!strcmp(form, "logout")) {
+		route_form_logout(parameters->session);
 	}
 }
 
