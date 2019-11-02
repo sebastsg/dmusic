@@ -1,6 +1,15 @@
 CC = gcc-8
-CFLAGS = -fsanitize=address -fsanitize=undefined -g -O0 -std=c18 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-parentheses -Wno-unused-parameter
+
+ifeq ($(origin debug), undefined)
+	CFLAGS = -O3
+else
+	CFLAGS = -fsanitize=address -fsanitize=undefined -g -Og
+endif
+
+CFLAGS += -std=c18 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-parentheses -Wno-unused-parameter -Wno-unused-result -Wno-format-truncation -Wno-restrict
+
 LDFLAGS = -lasan -lubsan -lpq -lssl -lcrypto -lpthread -lpcre2-8
+
 SRCDIR = src
 OBJDIR = obj
 OBJECTS = $(addprefix $(OBJDIR)/, \
