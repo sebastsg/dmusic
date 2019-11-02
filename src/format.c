@@ -120,8 +120,7 @@ const char* find_file_extension(const char* path) {
 	char buffer[256];
 	const int extensions = NUM_ARRAY_ELEMENTS(image_extensions, char*);
 	for (int i = 0; i < extensions; i++) {
-		strcpy(buffer, path);
-		strcat(buffer, image_extensions[i]);
+		snprintf(buffer, sizeof(buffer), "%s%s", path, image_extensions[i]);
 		if (file_exists(buffer)) {
 			return image_extensions[i];
 		}

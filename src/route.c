@@ -30,14 +30,14 @@ struct route_handler_list {
 	int allocated;
 };
 
-static struct route_handler_list handler_list;
+static struct route_handler_list routes;
 
 void route_uploaded(struct route_parameters* parameters) {
-	if (!parameters->session) {
+	if (parameters->session) {
+		route_file(parameters->result, server_uploaded_file_path(parameters->resource));
+	} else {
 		print_info("Session required to view uploaded files.");
-		return;
 	}
-	route_file(parameters->result, server_uploaded_file_path(parameters->resource));
 }
 
 void route_main_js(struct route_parameters* parameters) {
@@ -56,20 +56,20 @@ void route_icon_png(struct route_parameters* parameters) {
 }
 
 void add_route(const char* name, route_handler_function function) {
-	enum resize_status status = resize_array((void**)&handler_list.handlers, sizeof(struct route_handler), &handler_list.allocated, handler_list.count + 1);
+	enum resize_status status = resize_array((void**)&routes.handlers, sizeof(struct route_handler), &routes.allocated, routes.count + 1);
 	if (status == RESIZE_FAILED) {
-		print_error_f("Failed to add %s to route handler list Resize failed.", name);
+		print_error_f("Failed to add %s to route handler list. Resize failed.", name);
 		return;
 	}
-	struct route_handler* handler = &handler_list.handlers[handler_list.count];
+	struct route_handler* handler = &routes.handlers[routes.count];
 	handler->function = function;
 	strcpy(handler->name, name);
-	handler_list.count++;
+	routes.count++;
 }
 
 void initialize_routes() {
-	memset(&handler_list, 0, sizeof(handler_list));
-	resize_array((void**)&handler_list.handlers, sizeof(struct route_handler), &handler_list.count, 16);
+	memset(&routes, 0, sizeof(routes));
+	resize_array((void**)&routes.handlers, sizeof(struct route_handler), &routes.allocated, 16);
 	add_route("img", route_image);
 	add_route("render", route_render);
 	add_route("track", route_track);
@@ -82,8 +82,8 @@ void initialize_routes() {
 }
 
 void free_routes() {
-	free(handler_list.handlers);
-	memset(&handler_list, 0, sizeof(handler_list));
+	free(routes.handlers);
+	memset(&routes, 0, sizeof(routes));
 }
 
 // todo: this function should be removed after some refactoring
@@ -104,10 +104,9 @@ void process_route(struct route_result* result, const char* resource, char* body
 	parameters.resource = split_string(route_name, sizeof(route_name), resource, '/');
 	parameters.body = body;
 	parameters.size = size;
-	for (int i = 0; i < handler_list.count; i++) {
-		if (!strcmp(handler_list.handlers[i].name, route_name)) {
-			print_info_f("Route: %s.", route_name);
-			handler_list.handlers[i].function(&parameters);
+	for (int i = 0; i < routes.count; i++) {
+		if (!strcmp(routes.handlers[i].name, route_name)) {
+			routes.handlers[i].function(&parameters);
 			return;
 		}
 	}

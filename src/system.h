@@ -54,7 +54,7 @@
 #define print_info(STR)           LOG_INFO(STR)
 
 #define print_errno_f(STR, ...)   LOG_ERROR_F(STR A_RED " Error: " A_CYAN "%s", __VA_ARGS__, strerror(errno))
-#define print_errno(STR, ...)     LOG_ERROR_F(STR A_RED " Error: " A_CYAN "%s", strerror(errno))
+#define print_errno(STR)          LOG_ERROR_F(STR A_RED " Error: " A_CYAN "%s", strerror(errno))
 #define print_error_f(STR, ...)   LOG_ERROR_F(STR, __VA_ARGS__)
 #define print_error(STR)          LOG_ERROR(STR)
 

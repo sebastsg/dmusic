@@ -171,7 +171,7 @@ char* guess_album_name(char* dest, const char* name) {
 	}
 
 	// Remove noise words:
-	static const char* noise_words[] = {
+	static const char* const noise_words[] = {
 		"V0", "v0", "CD V0", "V2", "v2", "CD V2",
 		"WEB 128", "CD 128", "128k", "128K", "128",
 		"WEB 192", "CD 192", "192k", "192K", "192",
