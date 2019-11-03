@@ -52,14 +52,11 @@ static int next_free_client_index() {
 }
 
 static bool init_socket(int socket) {
-	int result = fcntl(socket, F_SETFL, O_NONBLOCK);
-	if (result == -1) {
+	if (fcntl(socket, F_SETFL, O_NONBLOCK) == -1) {
 		print_errno("Failed to set socket to non-blocking.");
 		return false;
 	}
-	int option = 1;
-	result = setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, &option, sizeof(int));
-	if (result == -1) {
+	if (setsockopt(socket, IPPROTO_TCP, TCP_NODELAY, &(int){ 1 }, sizeof(int)) == -1) {
 		print_errno("Failed to enable no-delay for socket.");
 		return false;
 	}
@@ -79,8 +76,28 @@ static void free_socket(int socket, bool call_shutdown) {
 	}
 }
 
+static void allow_listener_socket_to_reuse_address() {
+	print_info("Allowing reuse of address and port.");
+	if (setsockopt(network.listener, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) == -1) {
+		print_errno("Failed to allow reuse of address.");
+	}
+	if (setsockopt(network.listener, SOL_SOCKET, SO_REUSEPORT, &(int){ 1 }, sizeof(int)) == -1) {
+		print_errno("Failed to allow reuse of port.");
+	}
+}
+
+static bool bind_listener_socket(bool allow_reuse) {
+	if (allow_reuse) {
+		allow_listener_socket_to_reuse_address();
+	}
+	if (bind(network.listener, (struct sockaddr*)&network.address, sizeof(network.address)) == -1) {
+		print_errno_f("Failed to bind to port " A_CYAN "%i" A_RED ".", ntohs(network.address.sin_port));
+		return false;
+	}
+	return true;
+}
+
 void initialize_network() {
-	int port = atoi(get_property("server.port"));
 	memset(network.clients, 0, sizeof(struct client_state) * DMUSIC_MAX_CLIENTS);
 	for (int i = 0; i < DMUSIC_MAX_CLIENTS; i++) {
 		network.clients[i].socket = -1;
@@ -96,16 +113,13 @@ void initialize_network() {
 	}
 	network.address.sin_family = AF_INET;
 	network.address.sin_addr.s_addr = INADDR_ANY;
+	int port = atoi(get_property("server.port"));
 	network.address.sin_port = htons(port);
 	memset(network.address.sin_zero, 0, sizeof(network.address.sin_zero));
-	int result = bind(network.listener, (struct sockaddr*)&network.address, sizeof(network.address));
-	if (result == -1) {
-		print_errno_f("Failed to bind listener socket to port " A_CYAN "%i" A_RED ".", port);
-		return;
-	}
-	result = listen(network.listener, 16);
-	if (result == -1) {
-		print_errno_f("Failed to listen to port %i.", port);
+	if (bind_listener_socket(true)) {
+		if (listen(network.listener, 16) == -1) {
+			print_errno_f("Failed to listen to port %i.", port);
+		}
 	}
 }
 

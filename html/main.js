@@ -298,7 +298,12 @@ function onClickLi(target) {
 
 document.addEventListener('click', event => {
     let target = event.target;
-    if (target.tagName === 'A') {
+    if (target.tagName === 'DIV') {
+        if (target.parentNode.classList.contains('thumbnail')) {
+            event.preventDefault();
+            onInternalLinkClick(target.parentNode);
+        }
+    } else if (target.tagName === 'A') {
         onClickA(event);
     } else if (target.tagName === 'LI') {
         onClickLi(target);

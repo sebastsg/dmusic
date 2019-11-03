@@ -2,6 +2,10 @@
 #include "render.h"
 #include "cache.h"
 #include "track.h"
+#include "database.h"
+#include "format.h"
+#include "config.h"
+#include "stack.h"
 
 #include <string.h>
 #include <stdlib.h>

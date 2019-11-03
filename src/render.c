@@ -12,6 +12,7 @@
 #include "import.h"
 #include "user.h"
 #include "upload.h"
+#include "thumbnail.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -96,8 +97,13 @@ int get_int_argument(const char** resource) {
 char* render_resource_with_session(const char* page, const char* resource, const struct cached_session* session) {
 	struct render_buffer buffer;
 	init_render_buffer(&buffer, 4096);
-	if (!strcmp(page, "groups")) {
-		render_group_list(&buffer);
+	if (!strcmp(page, "recent")) {
+		assign_buffer(&buffer, get_cached_file("html/recent.html", NULL));
+		render_recent_group_thumbnails(&buffer);
+		render_recent_album_thumbnails(&buffer);
+	} else if (!strcmp(page, "groups")) {
+		assign_buffer(&buffer, get_cached_file("html/groups.html", NULL));
+		render_all_group_thumbnails(&buffer);
 	} else if (!strcmp(page, "group")) {
 		const int id = get_int_argument(&resource);
 		if (id == 0) {

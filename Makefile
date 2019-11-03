@@ -54,6 +54,7 @@ OBJECTS = $(addprefix $(OBJDIR)/, \
  session_track.o\
  stack.o\
  system.o\
+ thumbnail.o\
  track.o\
  transcode.o\
  type.o\

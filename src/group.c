@@ -100,36 +100,6 @@ void render_edit_group_tags(struct render_buffer* buffer, int id) {
 	free(tags_buffer.data);
 }
 
-void render_group_thumb(struct render_buffer* buffer, const char* key, int id, const char* name, const char* image) {
-	set_parameter(buffer, key, get_cached_file("html/group_thumb.html", NULL));
-	set_parameter_int(buffer, "id", id);
-	set_parameter(buffer, "image", image);
-	set_parameter(buffer, "name", name);
-}
-
-void render_group_thumb_list(struct render_buffer* buffer, struct group_thumb_data* thumbs, int num_thumbs) {
-	struct render_buffer item_buffer;
-	init_render_buffer(&item_buffer, 512);
-	for (int i = 0; i < num_thumbs; i++) {
-		append_buffer(&item_buffer, "{{ thumb }}");
-		render_group_thumb(&item_buffer, "thumb", thumbs[i].id, thumbs[i].name, thumbs[i].image);
-	}
-	assign_buffer(buffer, get_cached_file("html/groups.html", NULL));
-	set_parameter(buffer, "thumbs", item_buffer.data);
-	free(item_buffer.data);
-}
-
-void render_group_list(struct render_buffer* buffer) {
-	struct group_thumb_data* thumbs = NULL;
-	int num_thumbs = 0;
-	load_group_thumbs(&thumbs, &num_thumbs);
-	render_group_thumb_list(buffer, thumbs, num_thumbs);
-	for (int i = 0; i < num_thumbs; i++) {
-		free(thumbs[i].image);
-	}
-	free(thumbs);
-}
-
 void load_add_group(struct add_group_data* add) {
 	strcpy(add->country.name, "country");
 	strcpy(add->country.type, "country");
@@ -139,21 +109,6 @@ void load_add_group(struct add_group_data* add) {
 	strcpy(add->person.type, "person");
 	strcpy(add->person.value, "0");
 	strcpy(add->person.text, "");
-}
-
-void load_group_thumbs(struct group_thumb_data** thumbs, int* num_thumbs) {
-	PGresult* result = execute_sql("select \"id\", name from \"group\"", NULL, 0);
-	*num_thumbs = PQntuples(result);
-	*thumbs = (struct group_thumb_data*)malloc(*num_thumbs * sizeof(struct group_thumb_data));
-	if (*thumbs) {
-		for (int i = 0; i < *num_thumbs; i++) {
-			struct group_thumb_data* thumb = &(*thumbs)[i];
-			thumb->id = atoi(PQgetvalue(result, i, 0));
-			strcpy(thumb->name, PQgetvalue(result, i, 1));
-			thumb->image = copy_string(client_group_image_path(thumb->id, 1));
-		}
-	}
-	PQclear(result);
 }
 
 void load_group_name(char* dest, int id) {

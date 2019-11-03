@@ -143,8 +143,16 @@ header nav {
 
 header nav a {
     display: inline-block;
-    padding: 12px;
+    padding: 12px 12px 6px 12px;
     margin-top: 6px;
+    font-style: italic;
+}
+
+header nav span {
+    user-select: none;
+    font-size: 20px;
+    color: #666;
+    margin: 0 12px 0 12px;
 }
 
 header nav a:last-child {
@@ -204,38 +212,53 @@ main section {
     background: rgba(0, 0, 0, 0.8);
 }
 
-.group-thumb {
+.thumbnail {
     position: relative;
     float: left;
     background-size: cover;
     top: 0px;
     left: 0px;
-    width: 380px;
-    height: 190px;
     line-height: 1.3em;
     font-size: 18px;
 }
 
-.group-thumb div {
+.thumbnail div {
     position: absolute;
-    width: 380px;
-    height: 190px;
     background: rgba(0, 0, 0, 0.5);
 }
 
-.group-thumb div span {
+.thumbnail div span {
     display: inline-block;
     margin: 16px;
     padding: 8px;
     color: rgba(255, 255, 255, 0.75);
+    cursor: pointer;
 }
 
-.group-thumb:hover div {
+.thumbnail:hover div {
     background: rgba(0, 0, 0, 0.25);
 }
 
-.group-thumb:hover div span {
-    background: rgba(0, 0, 0, 0.25);
+.thumbnail:hover div span {
+    background: rgba(0, 0, 0, 0.3);
+    color: #aad2ff;
+}
+
+.group-thumbnail, .group-thumbnail div {
+    width: 380px;
+    height: 190px;
+}
+
+.album-thumbnail, .album-thumbnail div {
+    width: 190px;
+    height: 190px;
+}
+
+.album-thumbnail div span {
+    color: transparent;
+}
+
+.album-thumbnail:hover div span {
     color: #aad2ff;
 }
 
