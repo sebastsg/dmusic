@@ -388,12 +388,19 @@ document.addEventListener('input', event => {
     let target = event.target;
     if (target.tagName === 'INPUT') {
         if (target.getAttribute('type') === 'search') {
-            let result = target.nextElementSibling;
             let query = encodeURIComponent(target.value);
-            ajaxGet('/render' + target.dataset.search + '/' + query, response => {
-                result.innerHTML = response;
-                result.style.display = 'block';
-            });
+            if (target.dataset.render.length === 0) {
+                let destination = target.nextElementSibling;
+                ajaxGet('/render/search/' + target.dataset.type + '/' + query, response => {
+                    destination.innerHTML = response;
+                    destination.style.display = 'block';
+                });
+            } else {
+                let destination = document.querySelector(target.dataset.results);
+                ajaxGet('/render/expanded-search/' + target.dataset.type + '/' + query, response => {
+                    destination.innerHTML = response
+                });
+            }
         }
     }
 });

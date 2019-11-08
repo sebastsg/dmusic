@@ -28,7 +28,7 @@ void route_form_attach(struct route_parameters* parameters) {
 		char* file_data = download_http_file(url, &file_size);
 		if (write_file(server_uploaded_directory_file_path(folder, file_name), file_data, file_size)) {
 			char resource[1024];
-			sprintf(resource, "import_attachment/%s/%s", folder, file_name);
+			sprintf(resource, "import-attachment/%s/%s", folder, file_name);
 			set_route_result_html(parameters->result, render_resource(resource, parameters->session));
 		}
 		free(file_data);
@@ -40,7 +40,7 @@ void route_form_attach(struct route_parameters* parameters) {
 		}
 		if (write_file(server_uploaded_directory_file_path(folder, file->filename), file->value, file->size)) {
 			char resource[1024];
-			sprintf(resource, "import_attachment/%s/%s", folder, file->filename);
+			sprintf(resource, "import-attachment/%s/%s", folder, file->filename);
 			set_route_result_html(parameters->result, render_resource(resource, parameters->session));
 		}
 	} else {

@@ -94,10 +94,24 @@ int get_int_argument(const char** resource) {
 	return atoi(value);
 }
 
+void render_explore(struct render_buffer* buffer) {
+	struct search_data search;
+	strcpy(search.name, "explore");
+	strcpy(search.type, "explore");
+	strcpy(search.value, "");
+	strcpy(search.text, "");
+	strcpy(search.render, "explore/results");
+	strcpy(search.results, "#explore_results");
+	render_search(buffer, "search", &search);
+}
+
 char* render_resource_with_session(const char* page, const char* resource, const struct cached_session* session) {
 	struct render_buffer buffer;
 	init_render_buffer(&buffer, 4096);
-	if (!strcmp(page, "recent")) {
+	if (!strcmp(page, "explore")) {
+		assign_buffer(&buffer, get_cached_file("html/explore.html", NULL));
+		render_explore(&buffer);
+	} else if (!strcmp(page, "recent")) {
 		assign_buffer(&buffer, get_cached_file("html/recent.html", NULL));
 		render_recent_group_thumbnails(&buffer);
 		render_recent_album_thumbnails(&buffer);
@@ -130,6 +144,15 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		resource = split_string(type, sizeof(type), resource, '/');
 		resource = split_string(query, sizeof(query), resource, '/');
 		render_search_query(&buffer, type, query);
+	} else if (!strcmp(page, "expanded-search")) {
+		char type[32];
+		char query[512];
+		resource = split_string(type, sizeof(type), resource, '/');
+		resource = split_string(query, sizeof(query), resource, '/');
+		if (!strcmp(type, "explore")) {
+			assign_buffer(&buffer, "{{ group-thumbs }}");
+			render_group_thumbnails_from_search(&buffer, type, query);
+		}
 	} else if (!strcmp(page, "upload")) {
 		if (has_privilege(session, PRIVILEGE_UPLOAD_ALBUM)) {
 			render_upload(&buffer);
@@ -140,7 +163,7 @@ char* render_resource_with_session(const char* page, const char* resource, const
 			resource = split_string(prefix, sizeof(prefix), resource, '/');
 			render_import(&buffer, prefix);
 		}
-	} else if (!strcmp(page, "import_attachment")) {
+	} else if (!strcmp(page, "import-attachment")) {
 		if (has_privilege(session, PRIVILEGE_IMPORT_ALBUM)) {
 			char directory[512];
 			char filename[512];

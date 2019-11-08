@@ -1,5 +1,6 @@
 <span class="search-wrapper">
     <input type="hidden" name="{{ name }}" value="{{ value }}">
-    <input type="search" data-search="/search/{{ type }}" value="{{ text }}" autocomplete="off">
+    <input type="search" autocomplete="off" value="{{ text }}" data-type="{{ type }}" data-render="{{ render }}"
+        data-results="{{ results }}">
     <ul></ul>
 </span>

@@ -11,7 +11,7 @@
 #include <ctype.h>
 
 struct group_guess_search {
-	struct search_result_data search;
+	struct search_result search;
 	int count;
 };
 
@@ -25,7 +25,7 @@ void guess_group_name(char* value, char* text, const char* filename) {
 	const char* filename_it = filename;
 	while (filename_it = split_string(word, 256, filename_it, ' ')) {
 		trim_ends(word, " \t");
-		struct search_result_data* group_searches = NULL;
+		struct search_result* group_searches = NULL;
 		int group_search_count = 0;
 		load_search_results(&group_searches, &group_search_count, "groups", word);
 		for (int i = 0; i < group_search_count; i++) {

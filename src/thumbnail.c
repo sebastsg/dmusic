@@ -4,6 +4,7 @@
 #include "stack.h"
 #include "render.h"
 #include "cache.h"
+#include "search.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -48,6 +49,18 @@ void load_recent_album_thumbs(struct thumbnail** thumbs, int* num_thumbs) {
 	PGresult* result = execute_sql("select \"id\", \"name\" from \"album\" order by \"id\" desc limit 12", NULL, 0);
 	load_thumbnails_from_rows(thumbs, num_thumbs, result, client_album_image_path);
 	PQclear(result);
+}
+
+void load_group_thumbs_from_search(struct thumbnail** thumbs, const struct search_result* results, int count) {
+	*thumbs = (struct thumbnail*)malloc(count * sizeof(struct thumbnail));
+	if (*thumbs) {
+		for (int i = 0; i < count; i++) {
+			struct thumbnail* thumb = &(*thumbs)[i];
+			thumb->id = atoi(results[i].value);
+			strcpy(thumb->name, results[i].text);
+			thumb->image = copy_string(client_group_image_path(thumb->id, 1));
+		}
+	}
 }
 
 struct render_buffer render_thumbnail_list(struct thumbnail* thumbs, int num_thumbs, const char* type) {
@@ -96,4 +109,20 @@ void render_recent_album_thumbnails(struct render_buffer* buffer) {
 		free(thumbs[i].image);
 	}
 	free(thumbs);
+}
+
+void render_group_thumbnails_from_search(struct render_buffer* buffer, const char* type, const char* query) {
+	struct thumbnail* thumbs = NULL;
+	int num_thumbs = 0;
+	struct search_result* results = NULL;
+	load_search_results(&results, &num_thumbs, "groups", query);
+	load_group_thumbs_from_search(&thumbs, results, num_thumbs);
+	struct render_buffer list_buffer = render_thumbnail_list(thumbs, num_thumbs, "group");
+	set_parameter(buffer, "group-thumbs", list_buffer.data);
+	free(list_buffer.data);
+	for (int i = 0; i < num_thumbs; i++) {
+		free(thumbs[i].image);
+	}
+	free(thumbs);
+	free(results);
 }

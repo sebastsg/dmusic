@@ -101,6 +101,7 @@ void render_edit_group_tags(struct render_buffer* buffer, int id) {
 }
 
 void load_add_group(struct add_group_data* add) {
+	memset(add, 0, sizeof(struct add_group_data));
 	strcpy(add->country.name, "country");
 	strcpy(add->country.type, "country");
 	strcpy(add->country.value, "--");
