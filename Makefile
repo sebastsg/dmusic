@@ -7,7 +7,7 @@ else
 	LDFLAGS = -lasan -lubsan
 endif
 
-CFLAGS += -std=c18 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-parentheses -Wno-unused-parameter -Wno-unused-result -Wno-format-truncation -Wno-restrict
+CFLAGS += -std=c18 -D_DEFAULT_SOURCE -Wall -Wextra -Wno-parentheses -Wno-unused-parameter -Wno-unused-result -Wno-format-truncation
 
 LDFLAGS += -lpq -lssl -lcrypto -lpthread -lpcre2-8
 

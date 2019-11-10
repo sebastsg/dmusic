@@ -197,15 +197,8 @@ void load_import(struct import_data* import, const char* prefix) {
 	}
 
 	guess_tracks(&import->discs, &import->num_discs, &import->allocated_discs, path);
-	// todo: sort tracks on the discs by their number.
-	/*for (int i = 0; i < *num_discs; i++) {
-		std::sort(discs[i].tracks, discs[i].tracks, [](const auto& left, const auto& right) {
-			return left.num < right.num;
-		});
-	}*/
-
 	guess_attachments(&import->attachments, &import->num_attachments, &import->allocated_attachments, path);
-	guess_album_type(import->album_type, 10); //todo: num_tracks
+	guess_album_type(import->album_type, import->num_discs > 0 ? import->discs[0].num_tracks : 0);
 	strcpy(import->album_release_type, "original"); // todo: guess
 	guess_audio_format(import->audio_format, import->filename);
 }
@@ -340,7 +333,6 @@ void render_import_disc(struct render_buffer* buffer, const char* key, struct im
 		set_parameter(&tracks_buffer, "path", disc->tracks[i].path);
 		set_parameter(&tracks_buffer, "fixed", disc->tracks[i].fixed);
 		set_parameter(&tracks_buffer, "uploaded", disc->tracks[i].uploaded);
-		set_parameter(&tracks_buffer, "extension", disc->tracks[i].extension);
 	}
 	set_parameter(buffer, "tracks", tracks_buffer.data);
 	free(tracks_buffer.data);

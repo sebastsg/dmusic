@@ -184,7 +184,13 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		}
 	} else if (!strcmp(page, "profile")) {
 		render_profile(&buffer);
-	} else {
+	} else if (!strcmp(page, "import-disc")) {
+		assign_buffer(&buffer, get_cached_file("html/import_disc.html", NULL));
+		const int num = get_int_argument(&resource);
+		set_parameter_int(&buffer, "num", num);
+		set_parameter(&buffer, "name", "");
+		set_parameter(&buffer, "tracks", "");
+	}  else {
 		print_error_f("Cannot render unknown page: %s", page);
 	}
 	return buffer.data;

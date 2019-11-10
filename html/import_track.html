@@ -1,6 +1,8 @@
 <tr>
     <td>
-        <input type="number" value="{{ num }}" name="num" autocomplete="off">
+        <button class="move-import-track-up">&#9650;</button>
+        <button class="move-import-track-down">&#9660;</button>
+        <input type="number" value="{{ num }}" name="num" disabled>
         <input type="hidden" value="{{ path }}" name="path">
     </td>
     <td>
@@ -8,8 +10,5 @@
     </td>
     <td>
         {{ uploaded }}
-    </td>
-    <td>
-        {{ extension }}
     </td>
 </tr>

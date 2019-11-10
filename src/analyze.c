@@ -5,6 +5,8 @@
 #include "search.h"
 #include "type.h"
 
+#include "system.h"
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -83,7 +85,8 @@ void guess_audio_format(char* format, const char* filename) {
 
 // todo: clean up this function
 int guess_targets(const char* filename, struct select_options* targets) {
-	if (is_extension_audio(filename)) {
+	const char* extension = strrchr(filename, '.');
+	if (is_extension_audio(extension)) {
 		return -1;
 	}
 	targets->count = 0;
@@ -92,13 +95,13 @@ int guess_targets(const char* filename, struct select_options* targets) {
 		return -1;
 	}
 	int selected = 0;
-	if (is_extension_image(filename)) {
+	if (is_extension_image(extension)) {
 		targets->count = 4;
 		strcpy(targets->options[0].code, "cover");
 		strcpy(targets->options[1].code, "back");
 		strcpy(targets->options[2].code, "cd");
 		strcpy(targets->options[3].code, "booklet");
-	} else if (strstr(filename, ".pdf")) {
+	} else if (!strcmp(extension, ".pdf")) {
 		targets->count = 1;
 		strcpy(targets->options[0].code, "booklet");
 	}
@@ -123,7 +126,8 @@ int guess_targets(const char* filename, struct select_options* targets) {
 }
 
 const char* guess_target(const char* name) {
-	if (is_extension_image(name)) {
+	const char* extension = strrchr(name, '.');
+	if (is_extension_image(extension)) {
 		if (strstr(name, "cover") || strstr(name, "folder")) {
 			return "cover";
 		}
@@ -183,7 +187,8 @@ char* guess_album_name(char* dest, const char* name) {
 	for (int i = 0; i < NUM_ARRAY_ELEMENTS(noise_words, const char*); i++) {
 		char* it = NULL;
 		while (it = strstr(dest, noise_words[i])) {
-			strcpy(it, it + strlen(noise_words[i]));
+			const char* source = it + strlen(noise_words[i]);
+			memmove(it, source, strlen(source) + 1);
 		}
 	}
 

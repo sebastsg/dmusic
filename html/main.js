@@ -162,7 +162,6 @@ function onClickA(event) {
 }
 
 function onImportForm(target) {
-    target.setAttribute('disabled', true);
     let data = new FormData();
     data.append('name', document.querySelector('input[name=name]').value);
     data.append('released-at', document.querySelector('input[name=released_at]').value);
@@ -181,12 +180,19 @@ function onImportForm(target) {
     for (let disc of document.querySelectorAll('.import-disc')) {
         let tracks = 0;
         let headers = 3;
+        let addedTrackNums = [];
         for (let track of disc.querySelectorAll('tr')) {
             if (headers > 0) {
                 headers--;
                 continue;
             }
-            data.append('track-num', track.querySelector('input[name=num]').value);
+            const trackNum = track.querySelector('input[name=num]').value;
+            if (addedTrackNums.includes(trackNum)) {
+                alert('Track numbers are invalid.');
+                return;
+            }
+            addedTrackNums.push(trackNum);
+            data.append('track-num', trackNum);
             data.append('track-name', track.querySelector('input[name=name]').value);
             data.append('track-path', track.querySelector('input[name=path]').value);
             tracks++;
@@ -196,6 +202,7 @@ function onImportForm(target) {
         data.append('disc-tracks', tracks);
     }
     ajaxPost('/form/import', data, response => document.querySelector('main section').innerHTML = response);
+    target.setAttribute('disabled', '');
 }
 
 function onAttachGroupImage() {
@@ -252,6 +259,53 @@ function onAddGroupTag(target) {
     input.value = '';
 }
 
+function onAddImportDisc() {
+    ajaxGet('/render/import-disc', response => document.getElementById('import_discs').innerHTML += response);
+}
+
+function updateImportTrackNums() {
+    let discs = document.getElementsByClassName('import-disc');
+    for (let discNum = 1; discNum <= discs.length; discNum++) {
+        let disc = discs[discNum - 1];
+        let tracks = disc.tBodies[0].rows;
+        for (let trackNum = 1; trackNum <= tracks.length; trackNum++) {
+            tracks[trackNum - 1].querySelector('input[name=num]').value = trackNum;
+        }
+        disc.tHead.querySelector('input[name=num]').value = discNum;
+    }
+}
+
+function moveImportTrack(track, otherTrack, otherDisc, fallbackDisc) {
+    if (otherTrack !== null) {
+        const rowHtml = track.innerHTML;
+        track.innerHTML = otherTrack.innerHTML;
+        otherTrack.innerHTML = rowHtml;
+    } else {
+        if (otherDisc !== null) {
+            otherDisc.tBodies[0].innerHTML += track.innerHTML;
+            track.remove();
+        } else if (fallbackDisc !== null) {
+            fallbackDisc.tBodies[0].innerHTML += track.innerHTML;
+            track.remove();
+        }
+    }
+    updateImportTrackNums();
+}
+
+function moveImportTrackUp(track) {
+    let previousTrack = track.previousElementSibling;
+    let previousDisc = track.parentNode.parentNode.previousElementSibling;
+    let nextDisc = track.parentNode.parentNode.nextElementSibling;
+    moveImportTrack(track, previousTrack, previousDisc, nextDisc);
+}
+
+function moveImportTrackDown(track) {
+    let nextTrack = track.nextElementSibling;
+    let previousDisc = track.parentNode.parentNode.previousElementSibling;
+    let nextDisc = track.parentNode.parentNode.nextElementSibling;
+    moveImportTrack(track, nextTrack, nextDisc, previousDisc);
+}
+
 function onLogout() {
     ajaxPost('/form/logout', {}, () => location.replace('/'));
 }
@@ -277,6 +331,12 @@ function onClickButton(event) {
         onAddGroupTag(target);
     } else if (target.classList.contains('logout-submit')) {
         onLogout();
+    } else if (target.classList.contains('add-import-disc')) {
+        onAddImportDisc();
+    } else if (target.classList.contains('move-import-track-up')) {
+        moveImportTrackUp(target.parentNode.parentNode);
+    } else if (target.classList.contains('move-import-track-down')) {
+        moveImportTrackDown(target.parentNode.parentNode);
     }
 }
 
@@ -291,7 +351,7 @@ function onClickLi(target) {
         target.classList.add('active');
         playTrack(target.dataset.album, target.dataset.disc, target.dataset.track);
     } else if (list.classList.contains('remote-directory-list')) {
-        ajaxPost('/form/download-remote', { directory: target.innerHTML });
+        ajaxPost('/form/download-remote', { directory: target.innerText });
         target.innerHTML = '';
     }
 }
