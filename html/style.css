@@ -33,6 +33,11 @@ a:hover, a.active, button:hover, button:active {
     color: #aad2ff;
 }
 
+a:disabled, button:disabled {
+    color: #c0c0c0;
+    cursor: default;
+}
+
 button {
     cursor: pointer;
     border: none;
@@ -54,8 +59,6 @@ button {
 .form-button:disabled {
     background: #808080;
     border: 1px solid #505050;
-    color: #c0c0c0;
-    cursor: default;
 }
 
 h1, h2, h3, h4, h5, h6, p, span, i {
@@ -353,26 +356,6 @@ main section {
 
 .uploads li:nth-child(odd) {
     background: #191c1c;
-}
-
-.remote-directory-list {
-    list-style: none;
-    padding: 8px;
-}
-
-.remote-directory-list li {
-    padding: 4px;
-    color: #808080;
-    background: #1f2022;
-}
-
-.remote-directory-list li:nth-child(odd) {
-    background: #191c1c;
-}
-
-.remote-directory-list li:hover {
-    cursor: pointer;
-    color: #aad2ff;
 }
 
 table {

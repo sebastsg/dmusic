@@ -5,6 +5,8 @@
 #include "files.h"
 #include "config.h"
 #include "format.h"
+#include "database.h"
+#include "import.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -64,6 +66,7 @@ void render_upload(struct render_buffer* buffer) {
 		append_buffer(&uploads_buffer, get_cached_file("html/import_album.html", NULL));
 		set_parameter(&uploads_buffer, "prefix", upload.uploads[i].prefix);
 		set_parameter(&uploads_buffer, "name", upload.uploads[i].name);
+		set_parameter(&uploads_buffer, "prefix", upload.uploads[i].prefix);
 	}
 	set_parameter(buffer, "uploads", uploads_buffer.data);
 	render_sftp_ls(buffer);
@@ -74,22 +77,50 @@ void render_upload(struct render_buffer* buffer) {
 void render_sftp_ls(struct render_buffer* buffer) {
 	char ftp_command[2048];
 	sprintf(ftp_command, "%s/ls_ftp.sh %s %s", get_property("path.root"), get_property("ftp.user"), get_property("ftp.host"));
-	char* result = system_output(ftp_command, NULL);
-	if (!result) {
+	char* output = system_output(ftp_command, NULL);
+	if (!output) {
 		return;
 	}
-	struct render_buffer directories_buffer;
-	init_render_buffer(&directories_buffer, 2048);
+	struct render_buffer entry_buffer;
+	init_render_buffer(&entry_buffer, 2048);
 	char line[1024];
-	const char* it = result;
+	const char* it = output;
+	PGresult* result = execute_sql("select \"name\" from \"hidden_remote_entry\"", NULL, 0);
+	const int hidden_count = PQntuples(result);
 	while (it = split_string(line, 1024, it, '\n')) {
 		if (!strchr(line, '>')) {
-			append_buffer(&directories_buffer, "<li>");
-			append_buffer(&directories_buffer, line);
-			append_buffer(&directories_buffer, "</li>");
+			trim_ends(line, " \t\r\n");
+			bool hidden = false;
+			for (int hidden_index = 0; hidden_index < hidden_count; hidden_index++) {
+				if (!strcmp(line, PQgetvalue(result, hidden_index, 0))) {
+					hidden = true;
+					break;
+				}
+			}
+			if (!hidden) {
+				append_buffer(&entry_buffer, get_cached_file("html/download_remote_entry.html", NULL));
+				set_parameter(&entry_buffer, "name", line);
+			}
 		}
 	}
-	set_parameter(buffer, "directories", directories_buffer.data);
-	free(directories_buffer.data);
-	free(result);
+	PQclear(result);
+	set_parameter(buffer, "remote-entries", entry_buffer.data);
+	free(entry_buffer.data);
+	free(output);
+}
+
+void delete_upload(const char* prefix) {
+	if (strlen(prefix) == 0) {
+		return;
+	}
+	char directory[512];
+	if (!find_upload_path_by_prefix(directory, prefix)) {
+		print_error_f("Did not find upload path based on prefix " A_CYAN "%s", prefix);
+		return;
+	}
+	const char* path = server_uploaded_file_path(directory);
+	char command[1024];
+	snprintf(command, sizeof(command), "rm -R \"%s\"", path);
+	print_info_f("Executing command: %s", command);
+	system(command);
 }

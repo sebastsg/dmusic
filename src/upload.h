@@ -15,3 +15,4 @@ struct upload_data {
 void load_upload(struct upload_data* upload);
 void render_upload(struct render_buffer* buffer);
 void render_sftp_ls(struct render_buffer* buffer);
+void delete_upload(const char* prefix);

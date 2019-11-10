@@ -17,14 +17,18 @@
 </div>
 <hr>
 <div>
-    <h1>Local albums</h1>
-    <ul class="uploads">
-        {{ uploads }}
-    </ul>
+    <h1>Ready to be imported</h1>
+    <table class="uploads">
+        <tbody>
+            {{ uploads }}
+        </tbody>
+    </table>
 </div>
 <div>
     <h1>Remote albums</h1>
-    <ul class="remote-directory-list">
-        {{ directories }}
-    </ul>
+    <table class="remote-directory-list">
+        <tbody>
+            {{ remote-entries }}
+        </tbody>
+    </table>
 </div>

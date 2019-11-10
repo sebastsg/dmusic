@@ -392,3 +392,7 @@ create table "album_release_format" (
     constraint  pk_album_release_format
     primary key ("album_release_id", "audio_format_code")
 );
+
+create table "hidden_remote_entry" (
+    "name" varchar(256) not null primary key
+);

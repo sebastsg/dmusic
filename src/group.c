@@ -51,10 +51,11 @@ void render_group(struct render_buffer* buffer, int id, bool edit_tags) {
 		set_parameter(buffer, "name", group.name);
 		render_tags(buffer, "tags", group.tags, group.num_tags);
 		if (edit_tags) {
-			set_parameter(buffer, "edit_tags", get_cached_file("html/edit_group_tags_button.html", NULL));
+			const char* button = get_cached_file("html/edit_group_tags_button.html", NULL);
+			set_parameter(buffer, "edit-tags", button);
 			set_parameter_int(buffer, "group", id);
 		} else {
-			set_parameter(buffer, "edit_tags", "");
+			set_parameter(buffer, "edit-tags", "");
 		}
 		struct render_buffer album_list_buffer;
 		init_render_buffer(&album_list_buffer, 2048);

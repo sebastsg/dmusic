@@ -8,8 +8,8 @@
 #include <string.h>
 
 void route_form_download_remote(struct http_data* data) {
-	const char* directory = http_data_string(data, "directory");
-	if (strlen(directory) == 0) {
+	const char* entry = http_data_string(data, "entry");
+	if (strlen(entry) == 0) {
 		return;
 	}
 	const char* user = get_property("ftp.user");
@@ -17,7 +17,7 @@ void route_form_download_remote(struct http_data* data) {
 	const char* root_dir = get_property("path.root");
 	const char* uploads_dir = get_property("path.uploads");
 	char dir[1024];
-	strcpy(dir, directory);
+	strcpy(dir, entry);
 	trim_ends(dir, " \t\r\n");
 	char command[4096];
 	sprintf(command, "%s/get_ftp.sh %s %s \"%s\" \"%s\"", root_dir, user, host, uploads_dir, dir);

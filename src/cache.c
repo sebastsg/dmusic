@@ -10,7 +10,7 @@
 #include <string.h>
 
 struct cached_file {
-	char name[32];
+	char name[64];
 	char* body;
 	size_t size;
 };
@@ -45,7 +45,7 @@ char* cache_file(struct file_cache* cache, const char* name, size_t* size) {
 		print_info_f("Allocated %i cached files.", files.allocated);
 	}
 	struct cached_file* file = &cache->files[cache->count];
-	strcpy(file->name, name);
+	snprintf(file->name, sizeof(file->name), "%s", name);
 	const char* path = server_root_path(name);
 	file->body = read_file(path, &file->size);
 	if (file->body) {

@@ -50,6 +50,7 @@ struct import_data {
 
 void load_import_attachment(struct import_attachment_data* attachment, const char* path);
 void load_import(struct import_data* import, const char* prefix);
+bool find_upload_path_by_prefix(char* dest, const char* prefix);
 void render_import(struct render_buffer* buffer, const char* prefix);
 void render_import_attachments(struct render_buffer* buffer, struct import_attachment_data* attachments, int count);
 void render_import_attachment(struct render_buffer* buffer, const char* directory, const char* filename);

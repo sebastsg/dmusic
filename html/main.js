@@ -310,6 +310,26 @@ function onLogout() {
     ajaxPost('/form/logout', {}, () => location.replace('/'));
 }
 
+function onDownloadRemoteEntry(target) {
+    ajaxPost('/form/download-remote-entry', { name: target.parentNode.previousElementSibling.innerText }, () => {
+        target.style.color = 'green';
+    });
+    target.setAttribute('disabled', '');
+}
+
+function onHideRemoteEntry(target) {
+    ajaxPost('/form/hide-remote-entry', { name: target.parentNode.previousElementSibling.innerText }, () => {
+        target.previousElementSibling.setAttribute('disabled', '');
+    });
+    target.setAttribute('disabled', '');
+}
+
+function onDeleteUpload(target) {
+    ajaxPost('/form/delete-upload', { prefix: target.dataset.prefix });
+    target.setAttribute('disabled', '');
+    target.parentNode.previousElementSibling.children[0].setAttribute('disabled', '');
+}
+
 function onClickButton(event) {
     let target = event.target;
     if (target.classList.contains('submit-import')) {
@@ -337,6 +357,12 @@ function onClickButton(event) {
         moveImportTrackUp(target.parentNode.parentNode);
     } else if (target.classList.contains('move-import-track-down')) {
         moveImportTrackDown(target.parentNode.parentNode);
+    } else if (target.classList.contains('download-remote-entry')) {
+        onDownloadRemoteEntry(target);
+    } else if (target.classList.contains('hide-remote-entry')) {
+        onHideRemoteEntry(target);
+    } else if (target.classList.contains('delete-upload')) {
+        onDeleteUpload(target);
     }
 }
 
@@ -350,9 +376,6 @@ function onClickLi(target) {
         removeClassFromAll(list.children, 'active');
         target.classList.add('active');
         playTrack(target.dataset.album, target.dataset.disc, target.dataset.track);
-    } else if (list.classList.contains('remote-directory-list')) {
-        ajaxPost('/form/download-remote', { directory: target.innerText });
-        target.innerHTML = '';
     }
 }
 

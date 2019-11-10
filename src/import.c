@@ -153,7 +153,7 @@ static void guess_tracks(struct import_disc_data** discs, int* num_discs, int* a
 	}
 }
 
-static bool find_upload_path_by_prefix(char* dest, const char* prefix) {
+bool find_upload_path_by_prefix(char* dest, const char* prefix) {
 	*dest = '\0';
 	const char* uploads = get_property("path.uploads");
 	DIR* dir = opendir(uploads);

@@ -6,6 +6,7 @@
 #include "database.h"
 #include "format.h"
 #include "session_track.h"
+#include "upload.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -46,7 +47,7 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 		route_form_add_session_track(parameters);
 	} else if (!strcmp(form, "delete-session-track")) {
 		route_form_delete_session_track(parameters);
-	} else if (!strcmp(form, "download-remote")) {
+	} else if (!strcmp(form, "download-remote-entry")) {
 		if (has_privilege(parameters->session, PRIVILEGE_UPLOAD_ALBUM)) {
 			route_form_download_remote(&parameters->data);
 		}
@@ -73,6 +74,15 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 		route_form_toggle_edit_mode(parameters->session);
 	} else if (!strcmp(form, "logout")) {
 		route_form_logout(parameters->session);
+	} else if (!strcmp(form, "hide-remote-entry")) {
+		const char* name = http_data_string(&parameters->data, "name");
+		if (strlen(name) > 0) {
+			const char* params[] = { name };
+			insert_row("hidden_remote_entry", false, 1, params);
+		}
+	} else if (!strcmp(form, "delete-upload")) {
+		const char* prefix = http_data_string(&parameters->data, "prefix");
+		delete_upload(prefix);
 	}
 }
 
