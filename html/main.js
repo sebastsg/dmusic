@@ -330,6 +330,14 @@ function onDeleteUpload(target) {
     target.parentNode.previousElementSibling.children[0].setAttribute('disabled', '');
 }
 
+function onToggleFavourite(target) {
+    target.setAttribute('disabled', '');
+    ajaxPost('/form/toggle-favourite-group', { group: target.dataset.group }, response => {
+        target.removeAttribute('disabled');
+        target.innerHTML = response;
+    });
+}
+
 function onClickButton(event) {
     let target = event.target;
     if (target.classList.contains('submit-import')) {
@@ -363,6 +371,8 @@ function onClickButton(event) {
         onHideRemoteEntry(target);
     } else if (target.classList.contains('delete-upload')) {
         onDeleteUpload(target);
+    } else if (target.classList.contains('toggle-favourite')) {
+        onToggleFavourite(target);
     }
 }
 

@@ -27,7 +27,7 @@ struct add_group_data {
 };
 
 void render_add_group(struct render_buffer* buffer);
-void render_group(struct render_buffer* buffer, int id, bool edit_tags);
+void render_group(struct render_buffer* buffer, int id, bool edit_tags, bool favourited);
 void render_group_tags(struct render_buffer* buffer, int id);
 void render_edit_group_tags(struct render_buffer* buffer, int id);
 void load_add_group(struct add_group_data* add);
@@ -40,3 +40,7 @@ int create_group(const char* country, const char* name, const char* website, con
 void create_group_tags(int group_id, const char* comma_separated_tags);
 void delete_group_tag(int group_id, const char* tag);
 void create_group_member(int group_id, int person_id, const char* role, const char* started_at, const char* ended_at);
+bool is_group_favourited(const char* user_name, int group_id);
+int get_next_group_favourite_num(const char* user_name);
+void add_group_favourite(const char* user_name, int group_id);
+void remove_group_favourite(const char* user_name, int group_id);

@@ -63,6 +63,13 @@ void load_group_thumbs_from_search(struct thumbnail** thumbs, const struct searc
 	}
 }
 
+void load_favourite_group_thumbs(struct thumbnail** thumbs, int* num_thumbs, const char* user_name) {
+	const char* params[] = { user_name };
+	PGresult* result = call_procedure("select * from get_favourite_groups", params, 1);
+	load_thumbnails_from_rows(thumbs, num_thumbs, result, client_group_image_path);
+	PQclear(result);
+}
+
 struct render_buffer render_thumbnail_list(struct thumbnail* thumbs, int num_thumbs, const char* type) {
 	struct render_buffer buffer;
 	init_render_buffer(&buffer, 512);
@@ -125,4 +132,17 @@ void render_group_thumbnails_from_search(struct render_buffer* buffer, const cha
 	}
 	free(thumbs);
 	free(results);
+}
+
+void render_favourite_group_thumbnails(struct render_buffer* buffer, const char* user_name) {
+	struct thumbnail* thumbs = NULL;
+	int num_thumbs = 0;
+	load_favourite_group_thumbs(&thumbs, &num_thumbs, user_name);
+	struct render_buffer list_buffer = render_thumbnail_list(thumbs, num_thumbs, "group");
+	set_parameter(buffer, "group-thumbs", list_buffer.data);
+	free(list_buffer.data);
+	for (int i = 0; i < num_thumbs; i++) {
+		free(thumbs[i].image);
+	}
+	free(thumbs);
 }

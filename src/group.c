@@ -43,17 +43,19 @@ void render_group_tags(struct render_buffer* buffer, int id) {
 	free(tags);
 }
 
-void render_group(struct render_buffer* buffer, int id, bool edit_tags) {
+void render_group(struct render_buffer* buffer, int id, bool edit_tags, bool favourited) {
 	struct group_data group;
 	load_group(&group, id);
 	if (strlen(group.name) > 0) {
 		assign_buffer(buffer, get_cached_file("html/group.html", NULL));
 		set_parameter(buffer, "name", group.name);
+		set_parameter_int(buffer, "group-id", id);
+		set_parameter(buffer, "favourited", favourited ? "&#9733;" : "&#9734;");
 		render_tags(buffer, "tags", group.tags, group.num_tags);
 		if (edit_tags) {
 			const char* button = get_cached_file("html/edit_group_tags_button.html", NULL);
 			set_parameter(buffer, "edit-tags", button);
-			set_parameter_int(buffer, "group", id);
+			set_parameter_int(buffer, "group-id", id);
 		} else {
 			set_parameter(buffer, "edit-tags", "");
 		}
@@ -244,4 +246,43 @@ void create_group_member(int group_id, int person_id, const char* role, const ch
 	snprintf(person_id_str, sizeof(person_id_str), "%i", person_id);
 	const char* person_params[] = { group_id_str, person_id_str, role, started_at, ended_at };
 	insert_row("group_member", false, 5, person_params);
+}
+
+bool is_group_favourited(const char* user_name, int group_id) {
+	char group_id_str[32];
+	snprintf(group_id_str, sizeof(group_id_str), "%i", group_id);
+	const char* params[] = { user_name, group_id_str };
+	PGresult* result = execute_sql("select \"num\" from \"favourite_group\" where \"user_name\" = $1 and \"group_id\" = $2", params, 2);
+	const bool favourited = PQntuples(result) != 0;
+	PQclear(result);
+	return favourited;
+}
+
+int get_next_group_favourite_num(const char* user_name) {
+	const char* params[] = { user_name };
+	PGresult* result = execute_sql("select max(\"num\") from \"favourite_group\" where \"user_name\" = $1", params, 1);
+	int total = 0;
+	if (PQntuples(result) == 1) {
+		total = atoi(PQgetvalue(result, 0, 0));
+	}
+	PQclear(result);
+	return total + 1;
+}
+
+void add_group_favourite(const char* user_name, int group_id) {
+	char group_id_str[32];
+	snprintf(group_id_str, sizeof(group_id_str), "%i", group_id);
+	char num_str[32];
+	const int next_num = get_next_group_favourite_num(user_name);
+	snprintf(num_str, sizeof(num_str), "%i", next_num);
+	const char* params[] = { user_name, group_id_str, num_str };
+	insert_row("favourite_group", false, 3, params);
+}
+
+void remove_group_favourite(const char* user_name, int group_id) {
+	char group_id_str[32];
+	snprintf(group_id_str, sizeof(group_id_str), "%i", group_id);
+	const char* params[] = { user_name, group_id_str };
+	PGresult* result = execute_sql("delete from \"favourite_group\" where \"user_name\" = $1 and \"group_id\" = $2", params, 2);
+	PQclear(result);
 }

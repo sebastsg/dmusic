@@ -51,6 +51,7 @@ void route_form_add_session_track(struct route_parameters* parameters);
 void route_form_delete_session_track(struct route_parameters* parameters);
 void route_form_add_group_tag(struct route_result* result, struct http_data* data);
 void route_form_delete_group_tag(struct route_result* result, struct http_data* data);
+void toggle_favourite_group(struct route_parameters* parameters, int group_id);
 
 void route_form_login(struct route_result* result, struct http_data* data);
 void route_form_register(struct http_data* data);

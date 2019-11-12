@@ -497,3 +497,7 @@ table.attachments tr td:first-child {
 .add-group-tag, .done-editing-group-tags {
     margin-left: 16px;
 }
+
+.toggle-favourite {
+    float: right;
+}

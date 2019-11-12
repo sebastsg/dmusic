@@ -8,7 +8,7 @@
 #include <string.h>
 
 void route_form_download_remote(struct http_data* data) {
-	const char* entry = http_data_string(data, "entry");
+	const char* entry = http_data_string(data, "name");
 	if (strlen(entry) == 0) {
 		return;
 	}

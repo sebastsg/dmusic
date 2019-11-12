@@ -7,6 +7,8 @@
 #include "format.h"
 #include "session_track.h"
 #include "upload.h"
+#include "group.h"
+#include "stack.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -24,6 +26,16 @@ void route_form_toggle_edit_mode(struct cached_session* session) {
 
 void route_form_logout(struct cached_session* session) {
 	delete_session(session);
+}
+
+void toggle_favourite_group(struct route_parameters* parameters, int group_id) {
+	if (is_group_favourited(parameters->session->name, group_id)) {
+		remove_group_favourite(parameters->session->name, group_id);
+		set_route_result_html(parameters->result, copy_string("&#9734;"));
+	} else {
+		add_group_favourite(parameters->session->name, group_id);
+		set_route_result_html(parameters->result, copy_string("&#9733;"));
+	}
 }
 
 void route_form_with_session(const char* form, struct route_parameters* parameters) {
@@ -83,6 +95,11 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 	} else if (!strcmp(form, "delete-upload")) {
 		const char* prefix = http_data_string(&parameters->data, "prefix");
 		delete_upload(prefix);
+	} else if (!strcmp(form, "toggle-favourite-group")) {
+		const int group_id = atoi(http_data_string(&parameters->data, "group"));
+		if (group_id != 0) {
+			toggle_favourite_group(parameters, group_id);
+		}
 	}
 }
 

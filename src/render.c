@@ -115,6 +115,9 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		assign_buffer(&buffer, get_cached_file("html/recent.html", NULL));
 		render_recent_group_thumbnails(&buffer);
 		render_recent_album_thumbnails(&buffer);
+	} else if (!strcmp(page, "favourites")) {
+		assign_buffer(&buffer, get_cached_file("html/favourites.html", NULL));
+		render_favourite_group_thumbnails(&buffer, session->name);
 	} else if (!strcmp(page, "groups")) {
 		assign_buffer(&buffer, get_cached_file("html/groups.html", NULL));
 		render_all_group_thumbnails(&buffer);
@@ -125,7 +128,8 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		}
 		const bool is_editing = get_preference(session, PREFERENCE_EDIT_MODE) == EDIT_MODE_ON;
 		const bool edit_group_tags = is_editing && has_privilege(session, PRIVILEGE_EDIT_GROUP_TAGS);
-		render_group(&buffer, id, edit_group_tags);
+		const bool favourited = is_group_favourited(session->name, id); // todo: cache favourites in session?
+		render_group(&buffer, id, edit_group_tags, favourited);
 	} else if (!strcmp(page, "group-tags")) {
 		const int id = get_int_argument(&resource);
 		if (id == 0) {
