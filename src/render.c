@@ -143,6 +143,8 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		load_album_release(&album, album_release_id);
 		load_album_tracks(&tracks, &num_tracks, album_release_id);
 		render_album(&buffer, &album, tracks, num_tracks);
+		free(tracks);
+		free(album.image);
 	} else if (!strcmp(page, "group-tags")) {
 		const int id = get_int_argument(&resource);
 		if (id == 0) {

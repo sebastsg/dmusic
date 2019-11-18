@@ -306,4 +306,3 @@ int guess_disc_num(const char* track_name) {
 	}
 	return 1;
 }
-

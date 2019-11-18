@@ -60,13 +60,12 @@ void load_import_attachment(struct import_attachment_data* attachment, const cha
  */
 static int nftw_guess_attachment(const char* path, const struct stat* stat_buffer, int flag, struct FTW* ftw_buffer) {
 	if (flag != FTW_F) {
-		printf("Skipping invalid entry. Not a file: %s\n", path);
 		return 0;
 	}
 	if (is_extension_audio(strrchr(path, '.'))) {
-		printf("Skipping invalid attachment file. Is audio: %s\n", path);
 		return 0;
 	}
+	print_info_f("Attachment file: %s", path);
 	struct import_attachment_data** attachments = (struct import_attachment_data**)nftw_user_data_1;
 	int* num_attachments = (int*)nftw_user_data_2;
 	int* allocated_attachments = (int*)nftw_user_data_3;
@@ -97,14 +96,12 @@ static void guess_attachments(struct import_attachment_data** attachments, int* 
  */
 static int nftw_guess_track(const char* path, const struct stat* stat_buffer, int flag, struct FTW* ftw_buffer) {
 	if (flag != FTW_F) {
-		printf("Skipping invalid entry. Not a file: %s\n", path);
 		return 0;
 	}
 	if (!is_extension_audio(strrchr(path, '.'))) {
-		printf("Skipping invalid track file. Not audio: %s\n", path);
 		return 0;
 	}
-	printf("Found track file: %s\n", path);
+	print_info_f("Track file: %s", path);
 	struct import_disc_data** discs = (struct import_disc_data**)nftw_user_data_1;
 	int* num_discs = (int*)nftw_user_data_2;
 	int* allocated_discs = (int*)nftw_user_data_3;
