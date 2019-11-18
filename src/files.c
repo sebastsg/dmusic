@@ -2,20 +2,26 @@
 #include "system.h"
 
 #include <stdlib.h>
-#include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
 
-char* read_file(const char* path, size_t* size) {
+FILE* open_file(const char* path, const char* mode) {
 	if (!path) {
-		print_error("Failed to read file. Path is NULL.");
-		return false;
+		print_error("Path is NULL.");
+		return NULL;
 	}
-	FILE* file = fopen(path, "rb");
+	FILE* file = fopen(path, mode);
 	if (!file) {
-		print_errno_f("Failed to open file %s for reading.", path);
+		print_errno_f("Failed to open file %s.", path);
+	}
+	return file;
+}
+
+char* read_file(const char* path, size_t* size) {
+	FILE* file = open_file(path, "rb");
+	if (!file) {
 		return NULL;
 	}
 	fseek(file, 0, SEEK_END);
@@ -43,13 +49,8 @@ char* read_file(const char* path, size_t* size) {
 }
 
 bool write_file(const char* path, const char* data, size_t size) {
-	if (!path) {
-		print_error("Failed to write file. Path is NULL.");
-		return false;
-	}
-	FILE* file = fopen(path, "wb");
+	FILE* file = open_file(path, "wb");
 	if (!file) {
-		print_errno_f("Failed to open file %s for writing.", path);
 		return false;
 	}
 	size_t written = fwrite(data, 1, size, file);

@@ -61,3 +61,7 @@ char* string_copy_substring(char* dest, const char* src, size_t count);
  * Returns decoded @url.
  */
 char* url_decode(char* url);
+
+char* json_decode_string(char* string);
+
+void string_replace(char* buffer, size_t size, const char* search, const char* replacement);

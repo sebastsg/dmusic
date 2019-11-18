@@ -1,8 +1,11 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
 
 struct select_options;
+
+const char* guess_file_extension(const char* data, size_t size);
 
 void guess_group_name(char* value, char* text, const char* filename);
 void guess_album_type(char* type, int num_tracks);

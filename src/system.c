@@ -6,6 +6,7 @@
 #include <errno.h>
 
 char* system_output(const char* command, size_t* out_size) {
+	print_info_f(A_GREEN "%s", command);
 	FILE* process = popen(command, "r");
 	if (!process) {
 		print_errno_f("Failed to run \"%s\"", command);

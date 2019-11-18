@@ -43,7 +43,7 @@ void load_album_tracks(struct track_data** tracks, int* count, int album_release
 	char album_release_id_str[32];
 	sprintf(album_release_id_str, "%i", album_release_id);
 	const char* params[] = { album_release_id_str };
-	PGresult* result = execute_sql("select \"disc_num\", \"num\", \"name\" from \"track\" where \"album_release_id\" = $1", params, 1);
+	PGresult* result = call_procedure("select * from get_album_release_tracks", params, 1);
 	*count = PQntuples(result);
 	if (*count == 0) {
 		print_error_f("Did not find any tracks for album release %i", album_release_id);
@@ -55,12 +55,11 @@ void load_album_tracks(struct track_data** tracks, int* count, int album_release
 			track->album_release_id = album_release_id;
 			track->disc_num = atoi(PQgetvalue(result, i, 0));
 			track->num = atoi(PQgetvalue(result, i, 1));
-			strcpy(track->name, PQgetvalue(result, i, 2));
+			strcpy(track->name, PQgetvalue(result, i, 3));
 		}
 	}
 	PQclear(result);
 }
-
 
 void update_track_duration(int album_release_id, int disc_num, int track_num) {
 	char format[16];

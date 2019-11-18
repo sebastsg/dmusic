@@ -69,11 +69,11 @@ void route_form_import(struct http_data* data) {
 			char copy_command[2048];
 			snprintf(copy_command, 2048, "cp -p \"%s\" \"%s\"", track_src_path, track_dest_path);
 			pop_string();
-			print_info_f("Executing command: %s", copy_command);
+			print_info_f("%s", copy_command);
 			system(copy_command);
 			char soxi_command[1024];
 			sprintf(soxi_command, "soxi -D \"%s\"", track_dest_path);
-			print_info_f("Executing command: %s", soxi_command);
+			print_info_f("%s", soxi_command);
 			char* soxi_out = system_output(soxi_command, NULL);
 			char seconds[32]; // in case of error, this will just be 0
 			sprintf(seconds, "%i", atoi(soxi_out));
@@ -98,7 +98,7 @@ void route_form_import(struct http_data* data) {
 		sprintf(attachment_dest_path, "%s/%i%s", album_dir, i + 1, extension ? extension : "");
 		char copy_command[1200];
 		sprintf(copy_command, "cp -p \"%s\" \"%s\"", attachment_src_path, attachment_dest_path);
-		print_info_f("Executing command: %s", copy_command);
+		print_info_f("%s", copy_command);
 		system(copy_command);
 	}
 	pop_string();

@@ -311,14 +311,14 @@ function onLogout() {
 }
 
 function onDownloadRemoteEntry(target) {
-    ajaxPost('/form/download-remote-entry', { name: target.parentNode.previousElementSibling.innerText }, () => {
+    ajaxPost('/form/download-remote-entry', { name: target.parentNode.dataset.name }, () => {
         target.style.color = 'green';
     });
     target.setAttribute('disabled', '');
 }
 
 function onHideRemoteEntry(target) {
-    ajaxPost('/form/hide-remote-entry', { name: target.parentNode.previousElementSibling.innerText }, () => {
+    ajaxPost('/form/hide-remote-entry', { name: target.parentNode.dataset.name }, () => {
         target.previousElementSibling.setAttribute('disabled', '');
     });
     target.setAttribute('disabled', '');
@@ -335,6 +335,14 @@ function onToggleFavourite(target) {
     ajaxPost('/form/toggle-favourite-group', { group: target.dataset.group }, response => {
         target.removeAttribute('disabled');
         target.innerHTML = response;
+    });
+}
+
+function onLoadRemoteEntries(target) {
+    target.setAttribute('disabled', '');
+    ajaxGet('/render/remote-entries', response => {
+        document.getElementById('remote_entries').innerHTML = response;
+        target.removeAttribute('disabled');
     });
 }
 
@@ -373,6 +381,8 @@ function onClickButton(event) {
         onDeleteUpload(target);
     } else if (target.classList.contains('toggle-favourite')) {
         onToggleFavourite(target);
+    } else if (target.classList.contains('load-remote-entries')) {
+        onLoadRemoteEntries(target);
     }
 }
 

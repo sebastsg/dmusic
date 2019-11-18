@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "system.h"
+
 static const char* image_extensions[] = { "jpg", "png", "jpeg", "gif", "webp", "bmp" };
 static const char* audio_extensions[] = { "flac", "mp3", "m4a", "wav", "ogg" };
 
@@ -134,6 +136,80 @@ char* string_copy_substring(char* dest, const char* src, size_t count) {
 	return dest;
 }
 
+static bool read_hex_digit(char* destination, char value) {
+	const bool lower = (value >= 'a' && value <= 'f');
+	const bool upper = (value >= 'A' && value <= 'F');
+	const bool digit = (value >= '0' && value <= '9');
+	*destination = value - (digit ? '0' : (upper ? 'A' : 'a') - 10);
+	return lower || upper || digit;
+}
+
+static char* read_hex_byte(char* destination, char** data) {
+	char bytes[2];
+	const bool first = read_hex_digit(&bytes[0], *(*data)++);
+	const bool second = read_hex_digit(&bytes[1], *(*data)++);
+	if (first && second) {
+		*destination = 16 * bytes[0] + bytes[1];
+		return destination + 1;
+	} else {
+		return destination;
+	}
+}
+
+static void ucs2_decode(int value, char** buffer) {
+	if (value < 0x80) {
+		*(*buffer)++ = value;
+	} else if (value < 0x800) {
+		*(*buffer)++ = (value >> 6) | 0xC0;
+		*(*buffer)++ = (value & 0x3F) | 0x80;
+	} else if (value < 0xFFFF) {
+		*(*buffer)++ = (value >> 12) | 0xE0;
+		*(*buffer)++ = ((value >> 6) & 0x3F) | 0x80;
+		*(*buffer)++ = (value & 0x3F) | 0x80;
+	} else if (value <= 0x1FFFFF) {
+		*(*buffer)++ = 0xF0 | (value >> 18);
+		*(*buffer)++ = 0x80 | ((value >> 12) & 0x3F);
+		*(*buffer)++ = 0x80 | ((value >> 6) & 0x3F);
+		*(*buffer)++ = 0x80 | (value & 0x3F);
+	}
+}
+
+static short read_hex_short(char** destination, char** data) {
+	char a, b, c, d;
+	const bool first = read_hex_digit(&a, *(*data)++);
+	const bool second = read_hex_digit(&b, *(*data)++);
+	const bool third = read_hex_digit(&c, *(*data)++);
+	const bool fourth = read_hex_digit(&d, *(*data)++);
+	if (first && second && third && fourth) {
+		char* digit = *destination;
+		*digit = (a << 4) | b;
+		digit++;
+		*digit = (c << 4) | d;
+		return *digit;
+	}
+	return 0;
+}
+
+char* json_decode_string(char* string) {
+	char* begin = string;
+	char* end = string + strlen(string);
+	char* dest = string;
+	while (end > string) {
+		if (*string == '\\' && *(string + 1) == 'u') {
+			if (string + 5 > end) {
+				break;
+			}
+			string += 2;
+			short value = read_hex_short(&dest, &string);
+			ucs2_decode(value, &dest);
+		} else {
+			*(dest++) = *(string++);
+		}
+	}
+	*dest = '\0';
+	return begin;
+}
+
 char* url_decode(char* url) {
 	char* begin = url;
 	char* end = url + strlen(url);
@@ -147,18 +223,26 @@ char* url_decode(char* url) {
 			break;
 		}
 		++url;
-		bool hex_1 = (*url >= 'A' && *url <= 'F');
-		bool dec_1 = (*url >= '0' && *url <= '9');
-		char value_1 = *url - (dec_1 ? '0' : 'A' - 10);
-		++url;
-		bool hex_2 = (*url >= 'A' && *url <= 'F');
-		bool dec_2 = (*url >= '0' && *url <= '9');
-		char value_2 = *url - (dec_2 ? '0' : 'A' - 10);
-		++url;
-		if ((hex_1 || dec_1) && (hex_2 || dec_2)) {
-			*(dest++) = 16 * value_1 + value_2;
-		}
+		dest = read_hex_byte(dest, &url);
 	}
 	*dest = '\0';
 	return begin;
+}
+
+void string_replace(char* buffer, size_t size, const char* search, const char* replacement) {
+	const size_t search_size = strlen(search);
+	const size_t replacement_size = strlen(replacement);
+	const size_t increment_size = search_size > replacement_size ? search_size : replacement_size;
+	char* it = buffer;
+	while (it = strstr(it, search)) {
+		const size_t offset = it - buffer;
+		if (offset + increment_size >= size) {
+			break;
+		}
+		memmove(it + replacement_size, it + search_size, size - offset - increment_size);
+		for (size_t i = 0; i < replacement_size; i++) {
+			it[i] = replacement[i];
+		}
+		it += increment_size;
+	}
 }

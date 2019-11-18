@@ -19,6 +19,7 @@ void route_form_download_remote(struct http_data* data) {
 	char dir[1024];
 	strcpy(dir, entry);
 	trim_ends(dir, " \t\r\n");
+	string_replace(dir, sizeof(dir), "$", "\\$");
 	char command[4096];
 	sprintf(command, "%s/get_ftp.sh %s %s \"%s\" \"%s\"", root_dir, user, host, uploads_dir, dir);
 	char* result = system_output(command, NULL);

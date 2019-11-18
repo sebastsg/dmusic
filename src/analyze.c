@@ -4,6 +4,7 @@
 #include "database.h"
 #include "search.h"
 #include "type.h"
+#include "files.h"
 
 #include "system.h"
 
@@ -16,6 +17,39 @@ struct group_guess_search {
 	struct search_result search;
 	int count;
 };
+
+static bool is_jpg_header(const unsigned char* data) {
+	return data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF;
+}
+
+static bool is_png_header(const unsigned char* data) {
+	return data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47
+		&& data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A;
+}
+
+static bool is_gif_header(const char* data) {
+	return !strncmp(data, "GIF89a", 6);
+}
+
+static bool is_pdf_header(const char* data) {
+	return !strncmp(data, "%PDF-", 5);
+}
+
+const char* guess_file_extension(const char* data, size_t size) {
+	if (size < 10) {
+		return NULL;
+	} else if (is_jpg_header((unsigned char*)data)) {
+		return "jpg";
+	} else if (is_png_header((unsigned char*)data)) {
+		return "png";
+	} else if (is_gif_header(data)) {
+		return "gif";
+	} else if (is_pdf_header(data)) {
+		return "pdf";
+	} else {
+		return NULL;
+	}
+}
 
 void guess_group_name(char* value, char* text, const char* filename) {
 	struct group_guess_search* searches = (struct group_guess_search*)malloc(sizeof(struct group_guess_search) * 100);
@@ -95,7 +129,7 @@ int guess_targets(const char* filename, struct select_options* targets) {
 		return -1;
 	}
 	int selected = 0;
-	if (is_extension_image(extension)) {
+	if (!extension || is_extension_image(extension)) {
 		targets->count = 4;
 		strcpy(targets->options[0].code, "cover");
 		strcpy(targets->options[1].code, "back");

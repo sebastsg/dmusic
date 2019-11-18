@@ -141,7 +141,7 @@ void load_group_tags(struct tag_data** tags, int* num_tags, int id) {
 	*tags = (struct tag_data*)malloc(*num_tags * sizeof(struct tag_data));
 	if (*tags) {
 		for (int i = 0; i < *num_tags; i++) {
-			strcpy((*tags)[i].name, PQgetvalue(result, i, 0));
+			snprintf((*tags)[i].name, 64, "%s", PQgetvalue(result, i, 0));
 		}
 	}
 	PQclear(result);
@@ -175,18 +175,13 @@ void load_group_albums(struct album_data** albums, int* num_albums, int group_id
 	*albums = (struct album_data*)malloc(*num_albums * sizeof(struct album_data));
 	if (*albums) {
 		for (int i = 0; i < *num_albums; i++) {
-			struct album_data* album = &(*albums)[i];
-			album->id = atoi(PQgetvalue(result, i, 0));
-			album->album_release_id = atoi(PQgetvalue(result, i, 4));
-			format_time(album->released_at, 16, "%Y", (time_t)atoi(PQgetvalue(result, i, 7)));
-			strcpy(album->name, PQgetvalue(result, i, 1));
-			strcpy(album->album_type_code, PQgetvalue(result, i, 2));
-			int cover_num = (PQgetisnull(result, i, 3) ? 0 : atoi(PQgetvalue(result, i, 3)));
-			if (cover_num != 0) {
-				album->image = copy_string(client_album_image_path(album->album_release_id, cover_num));
-			} else {
-				album->image = copy_string("/img/missing.png");
-			}
+			const int album_id = atoi(PQgetvalue(result, i, 0));
+			const int album_release_id = atoi(PQgetvalue(result, i, 4));
+			const char* released_at = PQgetvalue(result, i, 7);
+			const char* name = PQgetvalue(result, i, 1);
+			const char* type = PQgetvalue(result, i, 2);
+			const int cover = PQgetisnull(result, i, 3) ? 0 : atoi(PQgetvalue(result, i, 3));
+			initialize_album(&(*albums)[i], album_id, album_release_id, released_at, name, type, cover);
 		}
 	}
 	PQclear(result);

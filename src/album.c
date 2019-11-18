@@ -74,3 +74,34 @@ bool render_disc(struct render_buffer* buffer, int album_release_id, int disc_nu
 	free(tracks_buffer.data);
 	return tracks_added > 0;
 }
+
+void initialize_album(struct album_data* album, int album_id, int album_release_id, const char* released_at, const char* name, const char* type, int cover) {
+	album->id = album_id;
+	album->album_release_id = album_release_id;
+	format_time(album->released_at, 16, "%Y", (time_t)atoi(released_at));
+	snprintf(album->name, 128, "%s", name);
+	snprintf(album->album_type_code, 64, "%s", type);
+	if (cover != 0) {
+		album->image = copy_string(client_album_image_path(album->album_release_id, cover));
+	} else {
+		album->image = copy_string("/img/missing.png");
+	}
+}
+
+void load_album_release(struct album_data* album, int album_release_id) {
+	memset(album, 0, sizeof(struct album_data));
+	char album_release_id_str[32];
+	snprintf(album_release_id_str, 32, "%i", album_release_id);
+	const char* params[] = { album_release_id_str };
+	PGresult* result = call_procedure("select * from get_album_release", params, 1);
+	if (PQntuples(result) > 0) {
+		const int album_id = atoi(PQgetvalue(result, 0, 0));
+		const int album_release_id = atoi(PQgetvalue(result, 0, 4));
+		const char* released_at = PQgetvalue(result, 0, 7);
+		const char* name = PQgetvalue(result, 0, 1);
+		const char* type = PQgetvalue(result, 0, 2);
+		const int cover = PQgetisnull(result, 0, 3) ? 0 : atoi(PQgetvalue(result, 0, 3));
+		initialize_album(album, album_id, album_release_id, released_at, name, type, cover);
+	}
+	PQclear(result);
+}

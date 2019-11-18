@@ -13,6 +13,8 @@
 #include "user.h"
 #include "upload.h"
 #include "thumbnail.h"
+#include "album.h"
+#include "track.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -130,6 +132,17 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		const bool edit_group_tags = is_editing && has_privilege(session, PRIVILEGE_EDIT_GROUP_TAGS);
 		const bool favourited = is_group_favourited(session->name, id); // todo: cache favourites in session?
 		render_group(&buffer, id, edit_group_tags, favourited);
+	} else if (!strcmp(page, "album")) {
+		const int album_release_id = get_int_argument(&resource);
+		if (album_release_id == 0) {
+			return buffer.data;
+		}
+		struct album_data album;
+		struct track_data* tracks = NULL;
+		int num_tracks = 0;
+		load_album_release(&album, album_release_id);
+		load_album_tracks(&tracks, &num_tracks, album_release_id);
+		render_album(&buffer, &album, tracks, num_tracks);
 	} else if (!strcmp(page, "group-tags")) {
 		const int id = get_int_argument(&resource);
 		if (id == 0) {
@@ -160,6 +173,10 @@ char* render_resource_with_session(const char* page, const char* resource, const
 	} else if (!strcmp(page, "upload")) {
 		if (has_privilege(session, PRIVILEGE_UPLOAD_ALBUM)) {
 			render_upload(&buffer);
+		}
+	} else if (!strcmp(page, "remote-entries")) {
+		if (has_privilege(session, PRIVILEGE_UPLOAD_ALBUM)) {
+			render_remote_entries(&buffer);
 		}
 	} else if (!strcmp(page, "import")) {
 		if (has_privilege(session, PRIVILEGE_IMPORT_ALBUM)) {

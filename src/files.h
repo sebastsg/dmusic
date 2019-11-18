@@ -1,9 +1,11 @@
 #pragma once
 
+#include <stdio.h>
 #include <stddef.h>
 #include <stdbool.h>
 #include <dirent.h>
 
+FILE* open_file(const char* path, const char* mode);
 char* read_file(const char* path, size_t* size);
 bool write_file(const char* path, const char* data, size_t size);
 bool file_exists(const char* path);
