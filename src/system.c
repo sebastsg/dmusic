@@ -39,3 +39,8 @@ char* system_output(const char* command, size_t* out_size) {
 	buffer[index] = '\0';
 	return buffer;
 }
+
+void system_execute(const char* command) {
+	print_info_f(A_GREEN "%s", command);
+	system(command);
+}

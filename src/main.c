@@ -5,6 +5,7 @@
 #include "network.h"
 #include "cache.h"
 #include "transcode.h"
+#include "threads.h"
 #include "files.h"
 #include "stack.h"
 #include "system.h"
@@ -20,6 +21,7 @@ static void free_resources() {
 	free_routes();
 	free_caches();
 	disconnect_database();
+	free_threads();
 	free_stack();
 }
 
@@ -57,6 +59,7 @@ static bool process_command(int argc, char** argv) {
 
 int main(int argc, char** argv) {
 	srand(time(NULL));
+	initialize_threads();
 	initialize_stack();
 	load_config();
 	connect_database();
@@ -71,6 +74,7 @@ int main(int argc, char** argv) {
 	initialize_caches();
 	while (true) {
 		poll_network();
+		update_threads();
 	}
 	free_resources();
 	return 0;

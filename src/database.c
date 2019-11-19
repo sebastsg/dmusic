@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static PGconn* session = NULL;
+static _Thread_local PGconn* session = NULL;
 
 void connect_database() {
 	if (session) {

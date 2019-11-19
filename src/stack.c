@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 struct memory_block {
 	char* data;
@@ -15,6 +16,14 @@ struct memory_block_list {
 	int allocated;
 	int next;
 };
+
+struct string_buffer {
+	char* value;
+	size_t size;
+};
+
+static _Thread_local struct memory_block_list block_stack;
+static _Thread_local struct string_buffer temporary_string;
 
 static bool is_memory_block_list_full(const struct memory_block_list* stack) {
 	return stack->next >= stack->allocated;
@@ -42,10 +51,9 @@ static void resize_string_stack(struct memory_block_list* stack, int margin) {
 	}
 }
 
-static struct memory_block_list block_stack;
-
 void initialize_stack() {
 	memset(&block_stack, 0, sizeof(struct memory_block_list));
+	memset(&temporary_string, 0, sizeof(struct string_buffer));
 }
 
 void free_stack() {
@@ -55,10 +63,10 @@ void free_stack() {
 	}
 	free(block_stack.blocks);
 	print_info("Freed block stack.");
-	initialize_stack();
+	free(temporary_string.value);
 }
 
-const char* push_memory_block(const char* data, int size) {
+char* push_memory_block(const char* data, int size, int copy_size) {
 	resize_string_stack(&block_stack, 1);
 	if (is_memory_block_list_full(&block_stack)) {
 		return "";
@@ -84,14 +92,32 @@ const char* push_memory_block(const char* data, int size) {
 		}
 		block_stack.blocks[block_stack.next].size = size;
 	}
-	memcpy(block->data, data, size);
-	block->data[size - 1] = '\0';
+	if (copy_size > 0) {
+		if (copy_size > size) {
+			copy_size = size;
+		}
+		memcpy(block->data, data, copy_size);
+		block->data[copy_size] = '\0';
+	}
 	block_stack.next++;
 	return block->data;
 }
 
 const char* push_string(const char* string) {
-	return push_memory_block(string, (int)strlen(string));
+	const int size = (int)strlen(string);
+	return push_memory_block(string, size, size);
+}
+
+const char* push_string_f(const char* format, ...) {
+	va_list args;
+	va_start(args, format);
+	const int size = vsnprintf(NULL, 0, format, args);
+	va_end(args);
+	char* buffer = push_memory_block("", size + 1, 0);
+	va_start(args, format);
+	vsnprintf(buffer, size + 1, format, args);
+	va_end(args);
+	return buffer;
 }
 
 void pop_string() {
@@ -104,4 +130,38 @@ char* copy_string(const char* string) {
 		strcpy(copy, string);
 	}
 	return copy;
+}
+
+const char* current_temporary_string() {
+	return temporary_string.value;
+}
+
+const char* replace_temporary_string(const char* format, ...) {
+	if (!temporary_string.value) {
+		temporary_string.value = (char*)malloc(32);
+		if (temporary_string.value) {
+			temporary_string.size = 32;
+		} else {
+			return "";
+		}
+	}
+	va_list args;
+	va_start(args, format);
+	int size = vsnprintf(temporary_string.value, temporary_string.size, format, args);
+	va_end(args);
+	if (size >= (int)temporary_string.size) {
+		char* new_value = (char*)realloc(temporary_string.value, size * 2);
+		if (new_value) {
+			temporary_string.value = new_value;
+			temporary_string.size = size * 2;
+			va_start(args, format);
+			vsnprintf(temporary_string.value, temporary_string.size, format, args);
+			va_end(args);
+		} else {
+			free(temporary_string.value);
+			temporary_string.value = NULL;
+			temporary_string.size = 0;
+		}
+	}
+	return temporary_string.value ? temporary_string.value : "";
 }

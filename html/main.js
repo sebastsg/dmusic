@@ -438,6 +438,13 @@ function onAttachForm(target) {
     });
 }
 
+function onFilterRemoteEntries(value) {
+    let entries = document.getElementById('remote_entries').children;
+    for (let entry of entries) {
+        entry.style.display = entry.innerText.toLowerCase().includes(value.toLowerCase()) ? 'table-row' : 'none';
+    }
+}
+
 document.addEventListener('submit', event => {
     event.preventDefault();
     let target = event.target;
@@ -491,18 +498,22 @@ document.addEventListener('input', event => {
     let target = event.target;
     if (target.tagName === 'INPUT') {
         if (target.getAttribute('type') === 'search') {
-            let query = encodeURIComponent(target.value);
-            if (target.dataset.render.length === 0) {
-                let destination = target.nextElementSibling;
-                ajaxGet('/render/search/' + target.dataset.type + '/' + query, response => {
-                    destination.innerHTML = response;
-                    destination.style.display = 'block';
-                });
+            if (target.dataset.filter === 'remote-entries') {
+                onFilterRemoteEntries(target.value);
             } else {
-                let destination = document.querySelector(target.dataset.results);
-                ajaxGet('/render/expanded-search/' + target.dataset.type + '/' + query, response => {
-                    destination.innerHTML = response
-                });
+                let query = encodeURIComponent(target.value);
+                if (target.dataset.render.length === 0) {
+                    let destination = target.nextElementSibling;
+                    ajaxGet('/render/search/' + target.dataset.type + '/' + query, response => {
+                        destination.innerHTML = response;
+                        destination.style.display = 'block';
+                    });
+                } else {
+                    let destination = document.querySelector(target.dataset.results);
+                    ajaxGet('/render/expanded-search/' + target.dataset.type + '/' + query, response => {
+                        destination.innerHTML = response
+                    });
+                }
             }
         }
     }

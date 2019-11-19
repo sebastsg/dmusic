@@ -67,3 +67,4 @@
 #endif
 
 char* system_output(const char* command, size_t* size);
+void system_execute(const char* command);

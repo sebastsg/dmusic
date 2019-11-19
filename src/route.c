@@ -118,7 +118,6 @@ void free_route(struct route_result* result) {
 	if (result->freeable) {
 		free(result->body);
 		result->freeable = false;
-		print_info("Freed route render buffer");
 	}
 	result->body = NULL;
 	result->size = 0;

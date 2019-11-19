@@ -30,6 +30,7 @@ void route_form_add_session_track(struct route_parameters* parameters) {
 				from_num = to_num;
 			}
 		}
+		free(tracks);
 	} else {
 		struct track_data* tracks = NULL;
 		int count = 0;

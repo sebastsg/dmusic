@@ -103,6 +103,6 @@ void route_form_import(struct http_data* data) {
 	}
 	pop_string();
 	if (!strncmp(format, "flac", 4)) {
-		transcode_album_release(album_release_id, "mp3-320");
+		transcode_album_release_async(album_release_id, "mp3-320");
 	}
 }

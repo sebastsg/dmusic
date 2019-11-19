@@ -4,6 +4,8 @@
 #include "database.h"
 #include "stack.h"
 #include "system.h"
+#include "generic.h"
+#include "threads.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,27 +15,32 @@
 #include <unistd.h>
 
 static void transcode_album_release_disc(int album_release_id, int disc_num, const char* format) {
-	const char* root_path = server_disc_path(album_release_id, disc_num);
-	char dest_path[1024];
-	sprintf(dest_path, "%s/%s", root_path, format);
+	const char* root_path = push_string(server_disc_path(album_release_id, disc_num));
+	const char* dest_path = push_string_f("%s/%s", root_path, format);
 	if (mkdir(dest_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
 		if (errno != EEXIST) {
 			print_errno_f("Failed to create directory: " A_CYAN "\"%s\"" A_RESET ".", dest_path);
+			pop_string();
+			pop_string();
 			return;
 		}
 	}
 	const char* allowed_formats[] = { "flac-cd-16", "flac-web-16", "flac-16", "flac-cd-24", "flac-web-24", "flac-24" };
 	const size_t num_formats = sizeof(allowed_formats) / sizeof(char*);
-	char src_path[1024];
+	const char* src_path = NULL;
 	DIR* dir = NULL;
 	for (size_t i = 0; i < num_formats; i++) {
-		snprintf(src_path, sizeof(src_path), "%s/%s", root_path, allowed_formats[i]);
+		src_path = push_string_f("%s/%s", root_path, allowed_formats[i]);
 		if (dir = opendir(src_path)) {
 			break;
 		}
+		pop_string();
 	}
 	if (!dir) {
 		print_error_f("Failed to read directory: " A_CYAN "%s", src_path);
+		pop_string();
+		pop_string();
+		pop_string();
 		return;
 	}
 	struct dirent* entry = NULL;
@@ -45,24 +52,26 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 		if (!extension || strcmp(extension, ".flac")) {
 			continue;
 		}
-		char in[2048];
-		sprintf(in, "%s/%s", src_path, entry->d_name);
-		char out[2048];
-		sprintf(out, "%s/%s", dest_path, entry->d_name);
+		const char* in = push_string_f("%s/%s", src_path, entry->d_name);
+		const char* out = push_string_f("%s/%s", dest_path, entry->d_name);
 		extension = strrchr(out, '.');
 		if (extension) {
-			*(extension + 1) = '\0';
+			*extension = '\0';
 		}
-		strcat(out, "mp3");
+		const char* ext = "mp3";
 		// -q 0   = "best" quality, slower transcoding
 		// -b 320 = cbr 320kbps
 		// note: check out -x for when static audio is produced
-		char command[4800];
-		sprintf(command, "lame --silent -q 0 -b 320 \"%s\" \"%s\"", in, out);
-		print_info_f("%s", command);
-		system(command);
+		const char* command = push_string_f("lame --silent -q 0 -b 320 \"%s\" \"%s.%s\"", in, out, ext);
+		system_execute(command);
+		pop_string();
+		pop_string();
+		pop_string();
 	}
 	closedir(dir);
+	pop_string();
+	pop_string();
+	pop_string();
 }
 
 void transcode_album_release(int album_release_id, const char* format) {
@@ -97,4 +106,24 @@ void transcode_album_release(int album_release_id, const char* format) {
 	sprintf(id_str, "%i", album_release_id);
 	const char* params[] = { id_str, format };
 	insert_row("album_release_format", false, 2, params);
+}
+
+struct transcode_args {
+	int album_release_id;
+	char format[32];
+};
+
+void transcode_album_release_thread(void* data) {
+	struct transcode_args* transcode = (struct transcode_args*)data;
+	transcode_album_release(transcode->album_release_id, transcode->format);
+	free(transcode);
+}
+
+void transcode_album_release_async(int album_release_id, const char* format) {
+	struct transcode_args* transcode = (struct transcode_args*)malloc(sizeof(struct transcode_args));
+	if (transcode) {
+		transcode->album_release_id = album_release_id;
+		snprintf(transcode->format, 32, "%s", format);
+		open_thread(transcode_album_release_thread, transcode);
+	}
 }
