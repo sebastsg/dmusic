@@ -221,6 +221,5 @@ void delete_upload(const char* prefix) {
 	const char* path = server_uploaded_file_path(directory);
 	char command[1024];
 	snprintf(command, sizeof(command), "rm -R \"%s\"", path);
-	print_info_f("Executing command: %s", command);
-	system(command);
+	system_execute(command);
 }

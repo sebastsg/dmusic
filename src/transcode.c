@@ -1,17 +1,17 @@
 #include "transcode.h"
 #include "config.h"
-#include "files.h"
 #include "database.h"
+#include "files.h"
+#include "generic.h"
 #include "stack.h"
 #include "system.h"
-#include "generic.h"
 #include "threads.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
-#include <sys/stat.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 static void transcode_album_release_disc(int album_release_id, int disc_num, const char* format) {
@@ -83,6 +83,10 @@ void transcode_album_release(int album_release_id, const char* format) {
 		print_error("Can only transcode to 320 for now.");
 		return;
 	}
+	char id_str[32];
+	sprintf(id_str, "%i", album_release_id);
+	const char* params[] = { id_str, format };
+	insert_row("album_release_format", false, 2, params);
 	const char* path = push_string(server_album_path(album_release_id));
 	DIR* dir = opendir(path);
 	if (!dir) {
@@ -102,10 +106,6 @@ void transcode_album_release(int album_release_id, const char* format) {
 	}
 	pop_string();
 	closedir(dir);
-	char id_str[32];
-	sprintf(id_str, "%i", album_release_id);
-	const char* params[] = { id_str, format };
-	insert_row("album_release_format", false, 2, params);
 }
 
 struct transcode_args {

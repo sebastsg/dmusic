@@ -40,8 +40,7 @@ void route_form_upload(struct http_data* data) {
 		write_file(zip_path, album->value, album->size);
 		char unzip_cmd[4096];
 		sprintf(unzip_cmd, "unzip \"%s\" -d \"%s\"", zip_path, unzip_dir);
-		puts(unzip_cmd);
-		system(unzip_cmd);
+		system_execute(unzip_cmd);
 		print_info_f("Running command: %s", unzip_cmd);
 		pop_string();
 	}

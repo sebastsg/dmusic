@@ -26,9 +26,8 @@ void route_form_download_remote(struct http_data* data) {
 	if (!result) {
 		return;
 	}
-	puts(result);
+	print_info_f(A_GREEN "%s", result);
 	free(result);
 	sprintf(command, "mv \"%s/%s\" \"%s/%lld%i %s\"", uploads_dir, dir, uploads_dir, (long long)time(NULL), 1000 + rand() % 9000, dir);
-	puts(command);
-	system(command);
+	system_execute(command);
 }

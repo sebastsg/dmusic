@@ -1,10 +1,11 @@
 #include "stack.h"
+#include "generic.h"
 #include "system.h"
 
-#include <stdbool.h>
-#include <string.h>
-#include <stdlib.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 struct memory_block {
 	char* data;
@@ -29,25 +30,12 @@ static bool is_memory_block_list_full(const struct memory_block_list* stack) {
 	return stack->next >= stack->allocated;
 }
 
-static void resize_string_stack(struct memory_block_list* stack, int margin) {
-	if (stack->blocks) {
-		if (stack->allocated - stack->next > margin) {
-			return;
-		}
-		const int new_allocated = stack->allocated + margin;
-		struct memory_block* blocks = (struct memory_block*)realloc(stack->blocks, sizeof(struct memory_block) * new_allocated);
-		print_info_f("Resized stack to %i blocks", new_allocated);
-		if (blocks) {
-			stack->blocks = blocks;
-			memset(stack->blocks + stack->allocated, 0, sizeof(struct memory_block) * margin);
-			stack->allocated = new_allocated;
-		}
-	} else {
-		stack->blocks = (struct memory_block*)calloc(margin * 2, sizeof(struct memory_block));
-		print_info_f("Allocated stack to %i blocks", margin * 2);
-		if (stack->blocks) {
-			stack->allocated = margin * 2;
-		}
+static void resize_buffer_stack(struct memory_block_list* stack, int margin) {
+	const int allocated = stack->allocated;
+	if (resize_array((void**)&stack->blocks, sizeof(struct memory_block), &stack->allocated, stack->next + 1) == RESIZE_DONE) {
+		const int margin = stack->allocated - allocated;
+		memset(stack->blocks + allocated, 0, sizeof(struct memory_block) * margin);
+		print_info_f("Resized to %i blocks. (Next is %i)", stack->allocated, stack->next);
 	}
 }
 
@@ -67,30 +55,14 @@ void free_stack() {
 }
 
 char* push_memory_block(const char* data, int size, int copy_size) {
-	resize_string_stack(&block_stack, 1);
+	resize_buffer_stack(&block_stack, 1);
 	if (is_memory_block_list_full(&block_stack)) {
-		return "";
+		return NULL;
 	}
 	size++;
 	struct memory_block* block = &block_stack.blocks[block_stack.next];
-	if (block->data) {
-		if (size > block_stack.blocks[block_stack.next].size) {
-			char* new_data = (char*)realloc(block->data, size);
-			print_info_f("Resized block %i to %i bytes.", block_stack.next, size);
-			if (new_data) {
-				block->data = new_data;
-				block->size = size;
-			} else {
-				return "";
-			}
-		}
-	} else {
-		block->data = (char*)malloc(size);
-		print_info_f("Allocated block %i to %i bytes.", block_stack.next, size);
-		if (!block->data) {
-			return "";
-		}
-		block_stack.blocks[block_stack.next].size = size;
+	if (resize_array((void**)&block->data, 1, &block->size, size) == RESIZE_FAILED) {
+		return NULL;
 	}
 	if (copy_size > 0) {
 		if (copy_size > size) {
@@ -105,7 +77,8 @@ char* push_memory_block(const char* data, int size, int copy_size) {
 
 const char* push_string(const char* string) {
 	const int size = (int)strlen(string);
-	return push_memory_block(string, size, size);
+	char* data = push_memory_block(string, size, size);
+	return data ? data : "";
 }
 
 const char* push_string_f(const char* format, ...) {
@@ -114,6 +87,9 @@ const char* push_string_f(const char* format, ...) {
 	const int size = vsnprintf(NULL, 0, format, args);
 	va_end(args);
 	char* buffer = push_memory_block("", size + 1, 0);
+	if (!buffer) {
+		return "";
+	}
 	va_start(args, format);
 	vsnprintf(buffer, size + 1, format, args);
 	va_end(args);
@@ -121,7 +97,11 @@ const char* push_string_f(const char* format, ...) {
 }
 
 void pop_string() {
-	block_stack.next--;
+	if (block_stack.next > 0) {
+		block_stack.next--;
+	} else {
+		print_error("Cannot pop string. Stack is already empty.");
+	}
 }
 
 char* copy_string(const char* string) {

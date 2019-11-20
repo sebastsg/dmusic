@@ -522,7 +522,7 @@ document.addEventListener('input', event => {
 document.addEventListener('blur', event => {
     let target = event.target;
     if (target.tagName === 'INPUT') {
-        if (target.getAttribute('type') === 'search') {
+        if (target.getAttribute('type') === 'search' && target.dataset.filter === undefined) {
             setTimeout(() => target.nextElementSibling.style.display = 'none', 130);
             target.classList.remove('is-active');
         }

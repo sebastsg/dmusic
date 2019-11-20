@@ -1,17 +1,17 @@
-#include "route.h"
-#include "http.h"
-#include "network.h"
-#include "transcode.h"
-#include "session.h"
 #include "database.h"
 #include "format.h"
-#include "session_track.h"
-#include "upload.h"
 #include "group.h"
+#include "http.h"
+#include "network.h"
+#include "route.h"
+#include "session.h"
+#include "session_track.h"
 #include "stack.h"
+#include "transcode.h"
+#include "upload.h"
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 void route_form_toggle_edit_mode(struct cached_session* session) {
 	toggle_preference(session, PREFERENCE_EDIT_MODE, EDIT_MODE_ON, EDIT_MODE_OFF);

@@ -1,14 +1,14 @@
 #include "album.h"
-#include "render.h"
 #include "cache.h"
-#include "track.h"
+#include "config.h"
 #include "database.h"
 #include "format.h"
-#include "config.h"
+#include "render.h"
 #include "stack.h"
+#include "track.h"
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 void render_album(struct render_buffer* buffer, struct album_data* album, struct track_data* tracks, int num_tracks) {
 	struct render_buffer discs_buffer;

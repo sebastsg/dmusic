@@ -5,8 +5,8 @@
 #include "stack.h"
 #include "system.h"
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static _Thread_local PGconn* session = NULL;
@@ -18,7 +18,7 @@ void connect_database() {
 	}
 	char options[512];
 	snprintf(options, sizeof(options), "host=%s port=%s dbname=%s user=%s password=%s", get_property("db.host"),
-		get_property("db.port"), get_property("db.name"), get_property("db.user"), get_property("db.pass"));
+			 get_property("db.port"), get_property("db.name"), get_property("db.user"), get_property("db.pass"));
 	session = PQconnectdb(options);
 	if (PQstatus(session) != CONNECTION_OK) {
 		print_error_f("%s", PQerrorMessage(session));
