@@ -1,20 +1,20 @@
 #if !defined(_XOPEN_SOURCE) || _XOPEN_SOURCE < 500
-# define _XOPEN_SOURCE 500
+#define _XOPEN_SOURCE 500
 #endif
 
 #include "import.h"
-#include "system.h"
-#include "config.h"
-#include "stack.h"
-#include "render.h"
-#include "cache.h"
-#include "format.h"
 #include "analyze.h"
+#include "cache.h"
+#include "config.h"
+#include "format.h"
 #include "generic.h"
+#include "render.h"
+#include "stack.h"
+#include "system.h"
 
-#include <ftw.h>
 #include <dirent.h>
 #include <errno.h>
+#include <ftw.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -114,7 +114,7 @@ static int nftw_guess_track(const char* path, const struct stat* stat_buffer, in
 		print_error_f("The filenames make it seem like there are %i discs. This is unlikely, and currently not allowed.", disc_num);
 		return 0;
 	}
-	while (disc_num > * num_discs || *num_discs == 0) {
+	while (disc_num > *num_discs || *num_discs == 0) {
 		(*discs)[*num_discs].num = *num_discs + 1;
 		(*discs)[*num_discs].num_tracks = 0;
 		(*num_discs)++;
@@ -309,9 +309,9 @@ void render_import_attachments(struct render_buffer* buffer, struct import_attac
 void render_import_attachment(struct render_buffer* buffer, const char* directory, const char* filename) {
 	struct import_attachment_data attachment;
 	memset(&attachment, 0, sizeof(attachment));
-	char path[1060];
-	sprintf(path, "%s/%s", directory, filename);
+	char* path = push_string_f("%s/%s", directory, filename);
 	load_import_attachment(&attachment, path);
+	pop_string();
 	assign_buffer(buffer, "{{ attachments }}");
 	render_import_attachments(buffer, &attachment, 1);
 	free(attachment.targets.options);

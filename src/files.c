@@ -1,11 +1,12 @@
 #include "files.h"
+#include "stack.h"
 #include "system.h"
 
+#include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <string.h>
-#include <errno.h>
 
 FILE* open_file(const char* path, const char* mode) {
 	if (!path) {
@@ -79,7 +80,7 @@ bool directory_exists(const char* path) {
 bool create_directory(const char* path) {
 	bool success = mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != -1;
 	if (!success) {
-		print_errno("Failed to create directory.");
+		print_errno_f("Failed to create directory: " A_CYAN "%s", path);
 	}
 	return success;
 }
@@ -87,23 +88,19 @@ bool create_directory(const char* path) {
 bool is_dirent_directory(const char* root_path, struct dirent* entry) {
 	if (entry->d_type == DT_DIR) {
 		return true;
+	} else if (entry->d_type == DT_UNKNOWN) {
+		return directory_exists(replace_temporary_string("%s/%s", root_path, entry->d_name));
+	} else {
+		return false;
 	}
-	if (entry->d_type == DT_UNKNOWN) {
-		char path[1024];
-		sprintf(path, "%s/%s", root_path, entry->d_name);
-		return directory_exists(path);
-	}
-	return false;
 }
 
 bool is_dirent_file(const char* root_path, struct dirent* entry) {
 	if (entry->d_type == DT_REG) {
 		return true;
+	} else if (entry->d_type == DT_UNKNOWN) {
+		return file_exists(replace_temporary_string("%s/%s", root_path, entry->d_name));
+	} else {
+		return false;
 	}
-	if (entry->d_type == DT_UNKNOWN) {
-		char path[1024];
-		sprintf(path, "%s/%s", root_path, entry->d_name);
-		return file_exists(path);
-	}
-	return false;
 }

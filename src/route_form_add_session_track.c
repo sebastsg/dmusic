@@ -1,9 +1,10 @@
-#include "route.h"
-#include "system.h"
 #include "database.h"
-#include "session.h"
 #include "http.h"
+#include "route.h"
+#include "session.h"
 #include "session_track.h"
+#include "stack.h"
+#include "system.h"
 #include "track.h"
 
 #include <stdlib.h>
@@ -47,10 +48,9 @@ void route_form_add_session_track(struct route_parameters* parameters) {
 		print_error("Failed to add session track.");
 		return;
 	}
-	char resource[128];
-	sprintf(resource, "session_tracks/%i/%i", from_num, to_num);
-	parameters->resource = resource;
+	parameters->resource = push_string_f("session_tracks/%i/%i", from_num, to_num);
 	route_render(parameters);
+	pop_string();
 }
 
 void route_form_delete_session_track(struct route_parameters* parameters) {

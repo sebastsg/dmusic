@@ -1,18 +1,19 @@
 #include "upload.h"
-#include "system.h"
-#include "render.h"
 #include "cache.h"
-#include "files.h"
 #include "config.h"
-#include "format.h"
 #include "database.h"
-#include "import.h"
-#include "http.h"
+#include "files.h"
+#include "format.h"
 #include "generic.h"
+#include "http.h"
+#include "import.h"
+#include "render.h"
+#include "stack.h"
+#include "system.h"
 
-#include <string.h>
-#include <stdlib.h>
 #include <dirent.h>
+#include <stdlib.h>
+#include <string.h>
 
 static int sort_uploaded_albums(const void* a, const void* b) {
 	long long prefix_a = 0;
@@ -218,8 +219,7 @@ void delete_upload(const char* prefix) {
 		print_error_f("Did not find upload path based on prefix " A_CYAN "%s", prefix);
 		return;
 	}
-	const char* path = server_uploaded_file_path(directory);
-	char command[1024];
-	snprintf(command, sizeof(command), "rm -R \"%s\"", path);
-	system_execute(command);
+	const char* path = push_string(server_uploaded_file_path(directory));
+	system_execute(replace_temporary_string("rm -R \"%s\"", path));
+	pop_string();
 }

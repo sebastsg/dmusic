@@ -1,10 +1,11 @@
 #include "format.h"
 #include "config.h"
 #include "files.h"
+#include "stack.h"
 
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "system.h"
 
@@ -37,8 +38,10 @@ char* trim_ends(char* str, const char* symbols) {
 	size_t size = strlen(str);
 	char* begin = str;
 	char* end = str + size - 1;
-	while (*begin && strchr(symbols, *(begin++)));
-	while (*end && strchr(symbols, *(end--)));
+	while (*begin && strchr(symbols, *(begin++)))
+		;
+	while (*end && strchr(symbols, *(end--)))
+		;
 	replace_substring(str, end + 2, str + size, size + 1, "");
 	replace_substring(str, str, begin - 1, size + 1, "");
 	return str;
@@ -50,7 +53,8 @@ const char* split_string(char* dest, size_t size, const char* src, char symbol) 
 		return NULL;
 	}
 	const char* i = src;
-	while (*i && *(i++) != symbol);
+	while (*i && *(i++) != symbol)
+		;
 	size_t offset = i - src;
 	if (*i) {
 		offset--;
@@ -119,11 +123,9 @@ bool is_extension_audio(const char* extension) {
 }
 
 const char* find_file_extension(const char* path) {
-	char buffer[256];
 	const int extensions = NUM_ARRAY_ELEMENTS(image_extensions, char*);
 	for (int i = 0; i < extensions; i++) {
-		snprintf(buffer, sizeof(buffer), "%s%s", path, image_extensions[i]);
-		if (file_exists(buffer)) {
+		if (file_exists(replace_temporary_string("%s%s", path, image_extensions[i]))) {
 			return image_extensions[i];
 		}
 	}

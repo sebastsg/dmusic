@@ -16,10 +16,10 @@
 
 static void transcode_album_release_disc(int album_release_id, int disc_num, const char* format) {
 	const char* root_path = push_string(server_disc_path(album_release_id, disc_num));
-	const char* dest_path = push_string_f("%s/%s", root_path, format);
-	if (mkdir(dest_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+	const char* destination_path = push_string_f("%s/%s", root_path, format);
+	if (mkdir(destination_path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
 		if (errno != EEXIST) {
-			print_errno_f("Failed to create directory: " A_CYAN "\"%s\"" A_RESET ".", dest_path);
+			print_errno_f("Failed to create directory: " A_CYAN "\"%s\"" A_RESET ".", destination_path);
 			pop_string();
 			pop_string();
 			return;
@@ -27,33 +27,34 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 	}
 	const char* allowed_formats[] = { "flac-cd-16", "flac-web-16", "flac-16", "flac-cd-24", "flac-web-24", "flac-24" };
 	const size_t num_formats = sizeof(allowed_formats) / sizeof(char*);
-	const char* src_path = NULL;
+	const char* source_path = NULL;
 	DIR* dir = NULL;
 	for (size_t i = 0; i < num_formats; i++) {
-		src_path = push_string_f("%s/%s", root_path, allowed_formats[i]);
-		if (dir = opendir(src_path)) {
+		source_path = push_string_f("%s/%s", root_path, allowed_formats[i]);
+		if (dir = opendir(source_path)) {
 			break;
 		}
 		pop_string();
 	}
 	if (!dir) {
-		print_error_f("Failed to read directory: " A_CYAN "%s", src_path);
+		print_error_f("Failed to read directory: " A_CYAN "%s", source_path);
 		pop_string();
 		pop_string();
 		pop_string();
 		return;
 	}
 	struct dirent* entry = NULL;
+	int total_tracks = 0;
 	while (entry = readdir(dir)) {
-		if (!is_dirent_file(src_path, entry)) {
+		if (!is_dirent_file(source_path, entry)) {
 			continue;
 		}
 		char* extension = strrchr(entry->d_name, '.');
 		if (!extension || strcmp(extension, ".flac")) {
 			continue;
 		}
-		const char* in = push_string_f("%s/%s", src_path, entry->d_name);
-		const char* out = push_string_f("%s/%s", dest_path, entry->d_name);
+		char* in = copy_string_f("%s/%s", source_path, entry->d_name);
+		char* out = copy_string_f("%s/%s", destination_path, entry->d_name);
 		extension = strrchr(out, '.');
 		if (extension) {
 			*extension = '\0';
@@ -62,10 +63,13 @@ static void transcode_album_release_disc(int album_release_id, int disc_num, con
 		// -q 0   = "best" quality, slower transcoding
 		// -b 320 = cbr 320kbps
 		// note: check out -x for when static audio is produced
-		const char* command = push_string_f("lame --silent -q 0 -b 320 \"%s\" \"%s.%s\"", in, out, ext);
-		system_execute(command);
-		pop_string();
-		pop_string();
+		push_string_f("lame --silent -q 0 -b 320 \"%s\" \"%s.%s\"", in, out, ext);
+		free(in);
+		free(out);
+		total_tracks++;
+	}
+	for (int i = 0; i < total_tracks; i++) {
+		system_execute(top_string());
 		pop_string();
 	}
 	closedir(dir);

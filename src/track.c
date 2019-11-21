@@ -1,12 +1,13 @@
 #include "track.h"
-#include "database.h"
 #include "cache.h"
-#include "render.h"
-#include "system.h"
 #include "config.h"
+#include "database.h"
+#include "render.h"
+#include "stack.h"
+#include "system.h"
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 void render_track(struct render_buffer* buffer, struct track_data* track) {
 	append_buffer(buffer, get_cached_file("html/track.html", NULL));
@@ -69,11 +70,8 @@ void update_track_duration(int album_release_id, int disc_num, int track_num) {
 		return;
 	}
 	const char* path = server_track_path(format, album_release_id, disc_num, track_num);
-	char soxi_command[1024];
-	sprintf(soxi_command, "soxi -D \"%s\"", path);
-	char* soxi_out = system_output(soxi_command, NULL);
+	char* soxi_out = system_output(replace_temporary_string("soxi -D \"%s\"", path), NULL);
 	if (!soxi_out) {
-		print_error_f("Failed to run command: %s", soxi_command);
 		return;
 	}
 	char seconds[32];

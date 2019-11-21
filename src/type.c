@@ -1,15 +1,16 @@
 #include "type.h"
-#include "database.h"
 #include "cache.h"
+#include "database.h"
 #include "render.h"
+#include "stack.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 void load_options(struct select_options* options, const char* type) {
-	char query[128];
-	snprintf(query, sizeof(query), "select * from %s order by \"name\"", type);
+	const char* query = push_string_f("select * from %s order by \"name\"", type);
 	PGresult* result = execute_sql(query, NULL, 0);
+	pop_string();
 	options->count = PQntuples(result);
 	options->options = (struct select_option*)malloc(options->count * sizeof(struct select_option));
 	if (options->options) {

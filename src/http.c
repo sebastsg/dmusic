@@ -1,6 +1,7 @@
 #include "http.h"
-#include "network.h"
 #include "format.h"
+#include "network.h"
+#include "stack.h"
 #include "system.h"
 
 #include <stdlib.h>
@@ -339,7 +340,5 @@ char* download_http_file(const char* path, size_t* size) {
 		print_error_f("Can't download %s. Contains invalid character.", path);
 		return NULL;
 	}
-	char command[4096];
-	snprintf(command, sizeof(command), "curl --cookie cookies --silent \"%s\"", path);
-	return system_output(command, size);
+	return system_output(replace_temporary_string("curl --cookie cookies --silent \"%s\"", path), size);
 }

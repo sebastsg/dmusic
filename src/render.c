@@ -1,24 +1,24 @@
 #include "render.h"
-#include "type.h"
-#include "format.h"
-#include "config.h"
-#include "files.h"
-#include "database.h"
+#include "album.h"
 #include "cache.h"
-#include "session.h"
-#include "system.h"
-#include "session_track.h"
+#include "config.h"
+#include "database.h"
+#include "files.h"
+#include "format.h"
 #include "group.h"
 #include "import.h"
-#include "user.h"
-#include "upload.h"
+#include "session.h"
+#include "session_track.h"
+#include "system.h"
 #include "thumbnail.h"
-#include "album.h"
 #include "track.h"
+#include "type.h"
+#include "upload.h"
+#include "user.h"
 
-#include <string.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 void resize_render_buffer(struct render_buffer* buffer, int required_size) {
 	if (buffer->size >= required_size) {
@@ -65,12 +65,12 @@ void append_buffer(struct render_buffer* buffer, const char* str) {
 }
 
 void set_parameter(struct render_buffer* buffer, const char* key, const char* value) {
-	static char key_buffer[128];
+	static _Thread_local char key_buffer[128];
 	if (strlen(key) >= sizeof(key_buffer)) {
 		print_error_f("Parameter key \"%s\" is too long.", key);
 		return;
 	}
-	int key_size = sprintf(key_buffer, "{{ %s }}", key);
+	int key_size = snprintf(key_buffer, 128, "{{ %s }}", key);
 	char* found = strstr(buffer->data + buffer->offset, key_buffer);
 	if (found) {
 		int found_offset = (found - buffer->data);
@@ -213,7 +213,7 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		set_parameter_int(&buffer, "num", num);
 		set_parameter(&buffer, "name", "");
 		set_parameter(&buffer, "tracks", "");
-	}  else {
+	} else {
 		print_error_f("Cannot render unknown page: %s", page);
 	}
 	return buffer.data;

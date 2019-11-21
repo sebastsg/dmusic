@@ -1,16 +1,17 @@
 #include "install.h"
-#include "database.h"
 #include "config.h"
+#include "database.h"
 #include "files.h"
+#include "stack.h"
 #include "system.h"
 
-#include <stdbool.h>
 #include <dirent.h>
+#include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <errno.h>
-#include <stdlib.h>
 
 void create_directories() {
 	const char* directories[] = {
@@ -33,8 +34,7 @@ void install_database() {
 }
 
 void run_sql_in_directory(const char* directory) {
-	char path[512];
-	sprintf(path, "%s/db/%s", get_property("path.root"), directory);
+	const char* path = push_string_f("%s/db/%s", get_property("path.root"), directory);
 	DIR* dir = opendir(path);
 	if (!dir) {
 		print_error_f("Failed to read directory: %s", path);
@@ -43,14 +43,14 @@ void run_sql_in_directory(const char* directory) {
 	struct dirent* entry = NULL;
 	while (entry = readdir(dir)) {
 		if (is_dirent_file(path, entry) && strstr(entry->d_name, ".sql")) {
-			strcpy(path, directory);
-			strcat(path, "/");
-			strcat(path, entry->d_name);
-			print_info_f("Executing sql file: %s", path);
-			execute_sql_file(path, false);
+			const char* sql_file = push_string_f("%s/%s", directory, entry->d_name);
+			print_info_f("Executing sql file: %s", sql_file);
+			execute_sql_file(sql_file, false);
+			pop_string();
 		}
 	}
 	closedir(dir);
+	pop_string();
 }
 
 static int csv_num_fields(const char* csv) {

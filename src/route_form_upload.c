@@ -1,9 +1,9 @@
-#include "route.h"
-#include "http.h"
 #include "config.h"
 #include "files.h"
-#include "system.h"
+#include "http.h"
+#include "route.h"
 #include "stack.h"
+#include "system.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -26,22 +26,17 @@ void route_form_upload(struct http_data* data) {
 			continue;
 		}
 		const char* zip_path = push_string(server_uploaded_file_path(album->filename));
-		char unzip_filename[1024];
-		snprintf(unzip_filename, sizeof(unzip_filename), "%lld%i %s", (long long)time(NULL), 1000 + rand() % 9000, album->filename);
-		const char* unzip_dir = server_uploaded_file_path(unzip_filename);
-		char* unzip_dir_dot = strrchr(unzip_dir, '.');
-		*unzip_dir_dot = '\0';
-		print_info_f("Creating directory: %s", unzip_dir);
-		if (!create_directory(unzip_dir)) {
-			print_error_f("Failed to create directory: %s", unzip_dir);
-			continue;
-		}
-		print_info_f("Writing file: %s", zip_path);
-		write_file(zip_path, album->value, album->size);
-		char unzip_cmd[4096];
-		sprintf(unzip_cmd, "unzip \"%s\" -d \"%s\"", zip_path, unzip_dir);
-		system_execute(unzip_cmd);
-		print_info_f("Running command: %s", unzip_cmd);
+		char* unzip_filename = push_string_f("%lld%i %s", (long long)time(NULL), 1000 + rand() % 9000, album->filename);
+		const char* unzip_directory = server_uploaded_file_path(unzip_filename);
 		pop_string();
+		char* unzip_dir_dot = strrchr(unzip_directory, '.');
+		*unzip_dir_dot = '\0';
+		print_info_f("Creating directory: %s", unzip_directory);
+		if (create_directory(unzip_directory)) {
+			print_info_f("Writing file: %s", zip_path);
+			write_file(zip_path, album->value, album->size);
+			system_execute(replace_temporary_string("unzip \"%s\" -d \"%s\"", zip_path, unzip_directory));
+			pop_string();
+		}
 	}
 }

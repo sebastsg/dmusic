@@ -16,9 +16,12 @@ void connect_database() {
 		print_error("Already connected to database.");
 		return;
 	}
-	char options[512];
-	snprintf(options, sizeof(options), "host=%s port=%s dbname=%s user=%s password=%s", get_property("db.host"),
-			 get_property("db.port"), get_property("db.name"), get_property("db.user"), get_property("db.pass"));
+	const char* host = get_property("db.host");
+	const char* port = get_property("db.port");
+	const char* name = get_property("db.name");
+	const char* user = get_property("db.user");
+	const char* pass = get_property("db.pass");
+	const char* options = replace_temporary_string("host=%s port=%s dbname=%s user=%s password=%s", host, port, name, user, pass);
 	session = PQconnectdb(options);
 	if (PQstatus(session) != CONNECTION_OK) {
 		print_error_f("%s", PQerrorMessage(session));
@@ -47,13 +50,14 @@ PGresult* execute_sql(const char* query, const char** params, int count) {
 }
 
 PGresult* call_procedure(const char* procedure, const char** params, int count) {
-	char query[256];
-	int length = sprintf(query, "%s( ", procedure); // the space is important, see below
+	char* query = push_string_f("%s( ", procedure); // the space is important, see below
 	for (int i = 1; i <= count; i++) {
-		length += sprintf(query + length, "$%i,", i);
+		query = append_top_string_f("$%i,", i);
 	}
-	query[length - 1] = ')';
-	return execute_sql(query, params, count);
+	query[size_of_top_string() - 1] = ')';
+	PGresult* result = execute_sql(query, params, count);
+	pop_string();
+	return result;
 }
 
 void execute_sql_file(const char* name, bool split) {
@@ -80,19 +84,16 @@ void execute_sql_file(const char* name, bool split) {
 }
 
 int insert_row(const char* table, bool has_serial_id, int argc, const char** argv) {
-	char query[2048];
-	sprintf(query, "insert into \"%s\" values ( ", table);
+	char* query = push_string_f("insert into \"%s\" values ( ", table);
 	if (has_serial_id) {
-		strcat(query, "default,");
+		query = append_top_string("default,");
 	}
 	for (int i = 1; i <= argc; i++) {
-		char param[16];
-		sprintf(param, "$%i,", i);
-		strcat(query, param);
+		query = append_top_string_f("$%i,", i);
 	}
-	query[strlen(query) - 1] = ')';
+	query[size_of_top_string() - 1] = ')';
 	if (has_serial_id) {
-		strcat(query, " returning id");
+		query = append_top_string(" returning id");
 	}
 	PGresult* result = execute_sql(query, argv, argc);
 	int id = 0;
@@ -100,6 +101,7 @@ int insert_row(const char* table, bool has_serial_id, int argc, const char** arg
 		id = atoi(PQgetvalue(result, 0, 0));
 	}
 	PQclear(result);
+	pop_string();
 	return id;
 }
 

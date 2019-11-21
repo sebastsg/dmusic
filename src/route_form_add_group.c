@@ -1,15 +1,16 @@
-#include "route.h"
-#include "database.h"
-#include "system.h"
-#include "http.h"
 #include "config.h"
+#include "database.h"
 #include "files.h"
 #include "format.h"
 #include "group.h"
+#include "http.h"
+#include "route.h"
+#include "stack.h"
+#include "system.h"
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 void create_group_members(int group_id, struct http_data* data) {
 	int num_people = http_data_parameter_array_size(data, "person-id");
@@ -25,11 +26,10 @@ void write_group_attachment_file_url(int group_id, int num, struct http_data* da
 	if (!url) {
 		return;
 	}
-	char dest_path[512];
-	sprintf(dest_path, "%s/%i", server_group_path(group_id), num);
+	const char* dest_path = push_string_f("%s/%i", server_group_path(group_id), num);
 	const char* image_extension = strrchr(url, '.');
 	if (image_extension && is_extension_image(image_extension)) {
-		strcat(dest_path, image_extension);
+		dest_path = append_top_string(image_extension);
 	} else {
 		print_error_f("Group image %i did not get a file extension.", num);
 	}
@@ -37,6 +37,7 @@ void write_group_attachment_file_url(int group_id, int num, struct http_data* da
 	char* image_file = download_http_file(url, &image_size);
 	write_file(dest_path, image_file, image_size);
 	free(image_file);
+	pop_string();
 }
 
 void write_group_attachment_file_uploaded(int group_id, int num, struct http_data* data) {
@@ -44,13 +45,13 @@ void write_group_attachment_file_uploaded(int group_id, int num, struct http_dat
 	if (!image_file) {
 		return;
 	}
-	char dest_path[512];
-	sprintf(dest_path, "%s/%i", server_group_path(group_id), num);
+	const char* dest_path = push_string_f("%s/%i", server_group_path(group_id), num);
 	const char* image_extension = strrchr(image_file->filename, '.');
 	if (image_extension) {
-		strcat(dest_path, image_extension);
+		dest_path = append_top_string(image_extension);
 	}
 	write_file(dest_path, image_file->value, image_file->size);
+	pop_string();
 }
 
 void create_group_attachment(struct http_data* data, int group_id, int num, const char* source, bool is_background, const char* image_description) {
