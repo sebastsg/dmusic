@@ -498,6 +498,6 @@ table.attachments tr td:first-child {
     margin-left: 16px;
 }
 
-.toggle-favourite {
+.group-header button, .group-header a {
     float: right;
 }

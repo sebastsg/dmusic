@@ -1,93 +1,93 @@
 <h1>Add group</h1>
-<form class="add-group-form" action="/form/addgroup">
-    <table>
-        <tr>
-            <td>Name</td>
-            <td>
-                <input type="text" name="name" class="long" autocomplete="off">
-            </td>
-        </tr>
-        <tr>
-            <td>Tags</td>
-            <td>
-                <input type="text" name="tags" class="long" autocomplete="off">
-            </td>
-        </tr>
-        <tr>
-            <td>Country</td>
-            <td>
-                {{ country_search }}
-            </td>
-        </tr>
-        <tr>
-            <td>Website</td>
-            <td>
-                <input type="url" name="website" class="long" autocomplete="off">
-            </td>
-        </tr>
-        <tr>
-            <td>Description</td>
-            <td>
-                <textarea cols="80" rows="4" name="description"></textarea>
-            </td>
-        </tr>
-    </table>
-    <hr>
-    <table class="group-people">
-        <tr>
-            <th>Person</th>
-            <th>Role</th>
-            <th></th>
-        </tr>
-        <tr>
-            <td>
-                {{ person_search }}
-            </td>
-            <td>
-                <select name="role">
-                    {{ roles }}
-                </select>
-            </td>
-            <td>
-                <button type="button" class="delete-row">&#10006;</button>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="3">
-                <button type="button" class="append-row">&#10010;</button>
-            </td>
-        </tr>
-    </table>
-    <hr>
-    <table id="group_attachments">
-        <tr>
-            <th>Background</th>
-            <th>File</th>
-            <th></th>
-            <th>Description</th>
-        </tr>
-    </table>
-    <table id="attach_group_image_wrapper">
-        <tr>
-            <th class="short-column">
-                <input type="radio" name="background" checked>
-            </th>
-            <th>
-                <select class="file-upload-method" data-input="attach_file">
-                    <option value="url" selected>url</option>
-                    <option value="file">browse file</option>
-                </select>
-            </th>
-            <th>
-                <input type="url" id="attach_file" name="file" class="long" autocomplete="off">
-            </th>
-            <th>
-                <textarea cols="40" rows="4" name="imagedescription"></textarea>
-            </th>
-            <th>
-                <button class="attach-group-image">Attach</button>
-            </th>
-        </tr>
-    </table>
-    <button type="submit">&#10004; Submit</button>
+<form class="add-group-form">
+	<table>
+		<tr>
+			<td>Name</td>
+			<td>
+				<input type="text" name="name" class="long" autocomplete="off">
+			</td>
+		</tr>
+		<tr>
+			<td>Tags</td>
+			<td>
+				<input type="text" name="tags" class="long" autocomplete="off">
+			</td>
+		</tr>
+		<tr>
+			<td>Country</td>
+			<td>
+				{{ country_search }}
+			</td>
+		</tr>
+		<tr>
+			<td>Website</td>
+			<td>
+				<input type="url" name="website" class="long" autocomplete="off">
+			</td>
+		</tr>
+		<tr>
+			<td>Description</td>
+			<td>
+				<textarea cols="80" rows="4" name="description"></textarea>
+			</td>
+		</tr>
+	</table>
+	<hr>
+	<table class="group-people">
+		<tr>
+			<th>Person</th>
+			<th>Role</th>
+			<th></th>
+		</tr>
+		<tr>
+			<td>
+				{{ person_search }}
+			</td>
+			<td>
+				<select name="role">
+					{{ roles }}
+				</select>
+			</td>
+			<td>
+				<button type="button" class="delete-row">&#10006;</button>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="3">
+				<button type="button" class="append-row">&#10010;</button>
+			</td>
+		</tr>
+	</table>
+	<hr>
+	<table id="group_attachments">
+		<tr>
+			<th>Background</th>
+			<th>File</th>
+			<th></th>
+			<th>Description</th>
+		</tr>
+	</table>
+	<table id="attach_group_image_wrapper">
+		<tr>
+			<th class="short-column">
+				<input type="radio" name="background" checked>
+			</th>
+			<th>
+				<select class="file-upload-method" data-input="attach_file">
+					<option value="url" selected>url</option>
+					<option value="file">browse file</option>
+				</select>
+			</th>
+			<th>
+				<input type="url" id="attach_file" name="file" class="long" autocomplete="off">
+			</th>
+			<th>
+				<textarea cols="40" rows="4" name="imagedescription"></textarea>
+			</th>
+			<th>
+				<button class="attach-group-image">Attach</button>
+			</th>
+		</tr>
+	</table>
+	<button type="submit">&#10004; Submit</button>
 </form>

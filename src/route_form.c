@@ -28,6 +28,16 @@ void route_form_logout(struct cached_session* session) {
 	delete_session(session);
 }
 
+void route_form_edit_group(struct http_data* data) {
+	const int id = atoi(http_data_string(data, "id"));
+	if (id > 0) {
+		edit_group_detail(id, GROUP_DETAIL_NAME, http_data_string(data, "name"));
+		edit_group_detail(id, GROUP_DETAIL_COUNTRY, http_data_string(data, "country"));
+		edit_group_detail(id, GROUP_DETAIL_WEBSITE, http_data_string(data, "website"));
+		edit_group_detail(id, GROUP_DETAIL_DESCRIPTION, http_data_string(data, "description"));
+	}
+}
+
 void toggle_favourite_group(struct route_parameters* parameters, int group_id) {
 	if (is_group_favourited(parameters->session->name, group_id)) {
 		remove_group_favourite(parameters->session->name, group_id);
@@ -42,6 +52,10 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 	if (!strcmp(form, "add-group")) {
 		if (has_privilege(parameters->session, PRIVILEGE_ADD_GROUP)) {
 			route_form_add_group(&parameters->data);
+		}
+	} else if (!strcmp(form, "edit-group")) {
+		if (has_privilege(parameters->session, PRIVILEGE_ADD_GROUP)) {
+			route_form_edit_group(&parameters->data);
 		}
 	} else if (!strcmp(form, "upload")) {
 		if (has_privilege(parameters->session, PRIVILEGE_UPLOAD_ALBUM)) {

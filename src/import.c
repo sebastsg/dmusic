@@ -22,14 +22,17 @@ static void* nftw_user_data_1 = NULL;
 static void* nftw_user_data_2 = NULL;
 static void* nftw_user_data_3 = NULL;
 
+static void free_import_attachment(struct import_attachment_data* attachment) {
+	free(attachment->targets.options);
+	free(attachment->name);
+	free(attachment->link);
+	free(attachment->preview);
+	free(attachment->path);
+}
+
 static void free_import_attachments(struct import_attachment_data** attachments, int count) {
 	for (int i = 0; i < count; i++) {
-		struct import_attachment_data* attachment = &(*attachments)[i];
-		free(attachment->targets.options);
-		free(attachment->name);
-		free(attachment->link);
-		free(attachment->preview);
-		free(attachment->path);
+		free_import_attachment(&(*attachments)[i]);
 	}
 	free(*attachments);
 	*attachments = NULL;
@@ -315,6 +318,7 @@ void render_import_attachment(struct render_buffer* buffer, const char* director
 	assign_buffer(buffer, "{{ attachments }}");
 	render_import_attachments(buffer, &attachment, 1);
 	free(attachment.targets.options);
+	free_import_attachment(&attachment);
 }
 
 void render_import_disc(struct render_buffer* buffer, const char* key, struct import_disc_data* disc) {

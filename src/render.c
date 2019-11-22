@@ -130,8 +130,9 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		}
 		const bool is_editing = get_preference(session, PREFERENCE_EDIT_MODE) == EDIT_MODE_ON;
 		const bool edit_group_tags = is_editing && has_privilege(session, PRIVILEGE_EDIT_GROUP_TAGS);
+		const bool edit_details = is_editing && has_privilege(session, PRIVILEGE_ADD_GROUP);
 		const bool favourited = is_group_favourited(session->name, id); // todo: cache favourites in session?
-		render_group(&buffer, id, edit_group_tags, favourited);
+		render_group(&buffer, id, edit_group_tags, edit_details, favourited);
 	} else if (!strcmp(page, "album")) {
 		const int album_release_id = get_int_argument(&resource);
 		if (album_release_id == 0) {
@@ -194,16 +195,23 @@ char* render_resource_with_session(const char* page, const char* resource, const
 			resource = split_string(filename, sizeof(filename), resource, '/');
 			render_import_attachment(&buffer, directory, filename);
 		}
-	} else if (!strcmp(page, "session_tracks")) {
+	} else if (!strcmp(page, "session-tracks")) {
 		const int from_num = get_int_argument(&resource);
 		const int to_num = get_int_argument(&resource);
 		render_session_tracks_database(&buffer, session, from_num, to_num);
 	} else if (!strcmp(page, "playlists")) {
 		append_buffer(&buffer, get_cached_file("html/playlists.html", NULL));
 		set_parameter(&buffer, "playlists", "No playlists.");
-	} else if (!strcmp(page, "add_group")) {
+	} else if (!strcmp(page, "add-group")) {
 		if (has_privilege(session, PRIVILEGE_ADD_GROUP)) {
 			render_add_group(&buffer);
+		}
+	} else if (!strcmp(page, "edit-group")) {
+		if (has_privilege(session, PRIVILEGE_ADD_GROUP)) { // todo: edit group privilege?
+			const int id = get_int_argument(&resource);
+			if (id > 0) {
+				render_edit_group(&buffer, id);
+			}
 		}
 	} else if (!strcmp(page, "profile")) {
 		render_profile(&buffer);

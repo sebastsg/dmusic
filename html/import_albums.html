@@ -1,35 +1,35 @@
 <div>
-    <h1>Upload zipped albums</h1>
-    <form class="upload-form" action="/form/upload" method="post" enctype="multipart/form-data">
-        <label>Zipped albums:
-            <input name="albums" type="file" accept=".zip" multiple>
-        </label>
-        <button>Upload albums</button>
-        <br> Progress:
-        <p id="prog">...</p>
-    </form>
+	<h1>Upload zipped albums</h1>
+	<form class="upload-form" action="/form/upload" method="post" enctype="multipart/form-data">
+		<label>Zipped albums:
+			<input name="albums" type="file" accept=".zip" multiple>
+		</label>
+		<button>Upload albums</button>
+		<br> Progress:
+		<p id="prog">...</p>
+	</form>
 </div>
 <hr>
 <div>
-    <a href="/add_group">Add new group</a>
-    <hr>
-    <a href="/add_person">Add new person</a>
+	<a href="/add-group">Add new group</a>
+	<hr>
+	<a href="/add-person">Add new person</a>
 </div>
 <hr>
 <div>
-    <h1>Ready to be imported</h1>
-    <table class="uploads">
-        <tbody>
-            {{ uploads }}
-        </tbody>
-    </table>
+	<h1>Ready to be imported</h1>
+	<table class="uploads">
+		<tbody>
+			{{ uploads }}
+		</tbody>
+	</table>
 </div>
 <div>
-    <h1>Remote albums</h1>
-    <button class="load-remote-entries">&#8635; Load</button>
-    <input type="search" data-filter="remote-entries">
-    <table>
-        <tbody id="remote_entries">
-        </tbody>
-    </table>
+	<h1>Remote albums</h1>
+	<button class="load-remote-entries">&#8635; Load</button>
+	<input type="search" data-filter="remote-entries">
+	<table>
+		<tbody id="remote_entries">
+		</tbody>
+	</table>
 </div>

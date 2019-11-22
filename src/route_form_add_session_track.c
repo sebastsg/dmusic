@@ -48,7 +48,7 @@ void route_form_add_session_track(struct route_parameters* parameters) {
 		print_error("Failed to add session track.");
 		return;
 	}
-	parameters->resource = push_string_f("session_tracks/%i/%i", from_num, to_num);
+	parameters->resource = push_string_f("session-tracks/%i/%i", from_num, to_num);
 	route_render(parameters);
 	pop_string();
 }

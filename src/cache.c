@@ -1,10 +1,10 @@
 #include "cache.h"
-#include "database.h"
 #include "config.h"
+#include "database.h"
 #include "files.h"
+#include "generic.h"
 #include "system.h"
 #include "type.h"
-#include "generic.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -35,6 +35,47 @@ struct options_cache {
 static struct file_cache files;
 static struct options_cache options;
 
+struct country_cache {
+	char* codes; // 4 bytes per code: no\0\0dk\0\0us\0\0
+	char* names; // 96 bytes per name
+	int count;
+	int size_of_codes;
+	int size_of_names;
+};
+
+static struct country_cache countries;
+
+static void load_countries() {
+	PGresult* result = execute_sql("select \"code\", \"name\" from \"country\"", NULL, 0);
+	countries.count = PQntuples(result);
+	countries.codes = (char*)calloc(countries.count, 4);
+	countries.names = (char*)calloc(countries.count, 96);
+	if (countries.codes && countries.names) {
+		for (int i = 0; i < countries.count; i++) {
+			strcpy(countries.codes + i * 4, PQgetvalue(result, i, 0));
+			strcpy(countries.names + i * 96, PQgetvalue(result, i, 1));
+		}
+		countries.size_of_codes = countries.count * 4;
+		countries.size_of_names = countries.count * 96;
+	}
+	PQclear(result);
+}
+
+static void free_countries() {
+	free(countries.codes);
+	free(countries.names);
+	memset(&countries, 0, sizeof(struct country_cache));
+}
+
+const char* get_country_name(const char* code) {
+	for (int i = 0; i < countries.size_of_codes; i += 4) {
+		if (countries.codes[i] == code[0] && countries.codes[i + 1] == code[1]) {
+			return countries.names + i * 24;
+		}
+	}
+	return code;
+}
+
 char* cache_file(struct file_cache* cache, const char* name, size_t* size) {
 	enum resize_status status = resize_array((void**)&cache->files, sizeof(struct cached_file), &cache->allocated, cache->count + 1);
 	if (status == RESIZE_FAILED) {
@@ -63,6 +104,7 @@ char* cache_file(struct file_cache* cache, const char* name, size_t* size) {
 void initialize_caches() {
 	memset(&files, 0, sizeof(files));
 	memset(&options, 0, sizeof(options));
+	load_countries();
 }
 
 void free_caches() {
@@ -76,6 +118,7 @@ void free_caches() {
 	}
 	free(options.types);
 	memset(&options, 0, sizeof(options));
+	free_countries();
 }
 
 char* get_cached_file(const char* name, size_t* size) {

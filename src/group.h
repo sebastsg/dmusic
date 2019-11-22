@@ -13,6 +13,7 @@ struct tag_data {
 
 struct group_data {
 	char name[128];
+	char country[4];
 	int num_tags;
 	int num_albums;
 	int num_tracks;
@@ -26,12 +27,23 @@ struct add_group_data {
 	struct search_data person;
 };
 
+enum group_detail {
+	GROUP_DETAIL_NAME,
+	GROUP_DETAIL_COUNTRY,
+	GROUP_DETAIL_WEBSITE,
+	GROUP_DETAIL_DESCRIPTION
+};
+
+void edit_group_detail(int id, enum group_detail detail, const char* value);
+
+void render_edit_group(struct render_buffer* buffer, int id);
 void render_add_group(struct render_buffer* buffer);
-void render_group(struct render_buffer* buffer, int id, bool edit_tags, bool favourited);
+void render_group(struct render_buffer* buffer, int id, bool edit_tags, bool edit_details, bool favourited);
 void render_group_tags(struct render_buffer* buffer, int id);
 void render_edit_group_tags(struct render_buffer* buffer, int id);
 void load_add_group(struct add_group_data* add);
-void load_group_name(char* dest, int id);
+void load_group_name(char* name, int size, int id);
+void load_all_group_details(char* country, char* name, int name_size, char** website, char** description, int id);
 void load_group_tags(struct tag_data** tags, int* count, int id);
 void load_group_tracks(struct track_data** tracks, int* count, int group_id);
 void load_group_albums(struct album_data** albums, int* count, int group_id);

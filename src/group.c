@@ -1,17 +1,68 @@
 #include "group.h"
-#include "render.h"
-#include "cache.h"
-#include "database.h"
 #include "album.h"
+#include "cache.h"
+#include "config.h"
+#include "database.h"
+#include "files.h"
+#include "format.h"
+#include "render.h"
+#include "stack.h"
+#include "system.h"
 #include "track.h"
 #include "type.h"
-#include "config.h"
-#include "format.h"
-#include "files.h"
-#include "stack.h"
 
 #include <stdlib.h>
 #include <string.h>
+
+void edit_group_detail(int id, enum group_detail detail, const char* value) {
+	if (detail < GROUP_DETAIL_NAME || detail > GROUP_DETAIL_DESCRIPTION) {
+		print_error("Invalid group detail");
+		return;
+	}
+	const char* fields[] = { "name", "country_code", "website", "description" };
+	const char* query = push_string_f("update \"group\" set \"%s\" = $1 where \"id\" = $2", fields[detail]);
+	char id_str[32];
+	snprintf(id_str, 32, "%i", id);
+	const char* params[] = { value, id_str };
+	PGresult* result = execute_sql(query, params, 2);
+	PQclear(result);
+	pop_string();
+}
+
+void free_group(struct group_data* group) {
+	free(group->tags);
+	for (int i = 0; i < group->num_albums; i++) {
+		free(group->albums[i].image);
+	}
+	free(group->albums);
+	free(group->tracks);
+}
+
+void render_edit_group(struct render_buffer* buffer, int id) {
+	struct group_data group;
+	load_group(&group, id);
+	if (strlen(group.name) > 0) {
+		char* website = NULL;
+		char* description = NULL;
+		load_all_group_details(group.country, NULL, 0, &website, &description, id);
+		assign_buffer(buffer, get_cached_file("html/edit_group.html", NULL));
+		set_parameter(buffer, "name", group.name); // header
+		set_parameter_int(buffer, "group-id", id);
+		set_parameter(buffer, "name", group.name); // input
+		struct search_data country;
+		memset(&country, 0, sizeof(country));
+		strcpy(country.name, "country");
+		strcpy(country.type, "country");
+		strcpy(country.value, group.country);
+		strcpy(country.text, get_country_name(group.country));
+		render_search(buffer, "country_search", &country);
+		set_parameter(buffer, "website", website ? website : "");
+		set_parameter(buffer, "description", description ? description : "");
+		free(website);
+		free(description);
+	}
+	free_group(&group);
+}
 
 void render_add_group(struct render_buffer* buffer) {
 	struct add_group_data add_group;
@@ -43,7 +94,7 @@ void render_group_tags(struct render_buffer* buffer, int id) {
 	free(tags);
 }
 
-void render_group(struct render_buffer* buffer, int id, bool edit_tags, bool favourited) {
+void render_group(struct render_buffer* buffer, int id, bool edit_tags, bool edit_details, bool favourited) {
 	struct group_data group;
 	load_group(&group, id);
 	if (strlen(group.name) > 0) {
@@ -51,6 +102,12 @@ void render_group(struct render_buffer* buffer, int id, bool edit_tags, bool fav
 		set_parameter(buffer, "name", group.name);
 		set_parameter_int(buffer, "group-id", id);
 		set_parameter(buffer, "favourited", favourited ? "&#9733;" : "&#9734;");
+		if (edit_details) {
+			set_parameter(buffer, "edit", get_cached_file("html/edit_group_link.html", NULL));
+			set_parameter_int(buffer, "group-id", id);
+		} else {
+			set_parameter(buffer, "edit", "");
+		}
 		render_tags(buffer, "tags", group.tags, group.num_tags);
 		if (edit_tags) {
 			const char* button = get_cached_file("html/edit_group_tags_button.html", NULL);
@@ -69,12 +126,7 @@ void render_group(struct render_buffer* buffer, int id, bool edit_tags, bool fav
 		set_parameter(buffer, "albums", album_list_buffer.data);
 		free(album_list_buffer.data);
 	}
-	free(group.tags);
-	for (int i = 0; i < group.num_albums; i++) {
-		free(group.albums[i].image);
-	}
-	free(group.albums);
-	free(group.tracks);
+	free_group(&group);
 }
 
 void render_edit_group_tags(struct render_buffer* buffer, int id) {
@@ -115,15 +167,38 @@ void load_add_group(struct add_group_data* add) {
 	strcpy(add->person.text, "");
 }
 
-void load_group_name(char* dest, int id) {
+void load_group_name(char* name, int size, int id) {
 	char id_str[32];
 	sprintf(id_str, "%i", id);
 	const char* params[] = { id_str };
-	PGresult* result = execute_sql("select name from \"group\" where \"id\" = $1", params, 1);
+	PGresult* result = execute_sql("select \"name\" from \"group\" where \"id\" = $1", params, 1);
 	if (PQntuples(result) > 0) {
-		strcpy(dest, PQgetvalue(result, 0, 0));
+		snprintf(name, size, "%s", PQgetvalue(result, 0, 0));
 	} else {
-		dest[0] = '\0';
+		*name = '\0';
+	}
+	PQclear(result);
+}
+
+void load_all_group_details(char* country, char* name, int name_size, char** website, char** description, int id) {
+	char id_str[32];
+	sprintf(id_str, "%i", id);
+	const char* params[] = { id_str };
+	PGresult* result = execute_sql("select \"country_code\", \"name\", \"website\", \"description\" from \"group\" where \"id\" = $1", params, 1);
+	if (PQntuples(result) > 0) {
+		snprintf(country, 4, "%s", PQgetvalue(result, 0, 0));
+		if (name) {
+			snprintf(name, name_size, "%s", PQgetvalue(result, 0, 1));
+		}
+		*website = copy_string(PQgetvalue(result, 0, 2));
+		*description = copy_string(PQgetvalue(result, 0, 3));
+	} else {
+		*country = '\0';
+		if (name) {
+			*name = '\0';
+		}
+		*website = NULL;
+		*description = NULL;
 	}
 	PQclear(result);
 }
@@ -188,7 +263,7 @@ void load_group_albums(struct album_data** albums, int* num_albums, int group_id
 }
 
 void load_group(struct group_data* group, int id) {
-	load_group_name(group->name, id);
+	load_group_name(group->name, 128, id);
 	load_group_tags(&group->tags, &group->num_tags, id);
 	load_group_albums(&group->albums, &group->num_albums, id);
 	load_group_tracks(&group->tracks, &group->num_tracks, id);
