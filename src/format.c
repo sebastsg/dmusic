@@ -138,27 +138,27 @@ char* string_copy_substring(char* dest, const char* src, size_t count) {
 	return dest;
 }
 
-static bool read_hex_digit(char* destination, char value) {
+static bool read_hex_digit(unsigned char* destination, char value) {
 	const bool lower = (value >= 'a' && value <= 'f');
 	const bool upper = (value >= 'A' && value <= 'F');
 	const bool digit = (value >= '0' && value <= '9');
-	*destination = value - (digit ? '0' : (upper ? 'A' : 'a') - 10);
+	*destination = (unsigned char)(value - (digit ? '0' : (upper ? 'A' : 'a') - 10));
 	return lower || upper || digit;
 }
 
-static char* read_hex_byte(char* destination, char** data) {
-	char bytes[2];
-	const bool first = read_hex_digit(&bytes[0], *(*data)++);
-	const bool second = read_hex_digit(&bytes[1], *(*data)++);
+static unsigned char* read_hex_byte(unsigned char* destination, char** data) {
+	unsigned char a, b;
+	const bool first = read_hex_digit(&a, *(*data)++);
+	const bool second = read_hex_digit(&b, *(*data)++);
 	if (first && second) {
-		*destination = 16 * bytes[0] + bytes[1];
+		*destination = 16 * a + b;
 		return destination + 1;
 	} else {
 		return destination;
 	}
 }
 
-static void ucs2_decode(int value, char** buffer) {
+static void ucs2_decode(unsigned int value, char** buffer) {
 	if (value < 0x80) {
 		*(*buffer)++ = value;
 	} else if (value < 0x800) {
@@ -176,18 +176,24 @@ static void ucs2_decode(int value, char** buffer) {
 	}
 }
 
-static short read_hex_short(char** destination, char** data) {
-	char a, b, c, d;
+static unsigned short read_hex_short(char** data) {
+	unsigned char a, b, c, d;
 	const bool first = read_hex_digit(&a, *(*data)++);
 	const bool second = read_hex_digit(&b, *(*data)++);
 	const bool third = read_hex_digit(&c, *(*data)++);
 	const bool fourth = read_hex_digit(&d, *(*data)++);
 	if (first && second && third && fourth) {
-		char* digit = *destination;
-		*digit = (a << 4) | b;
-		digit++;
-		*digit = (c << 4) | d;
-		return *digit;
+		a <<= 4;
+		c <<= 4;
+		a &= 0b11110000;
+		b &= 0b00001111;
+		c &= 0b11110000;
+		d &= 0b00001111;
+		unsigned short value = 0;
+		value = a | b;
+		value <<= 8;
+		value |= c | d;
+		return value;
 	}
 	return 0;
 }
@@ -202,7 +208,7 @@ char* json_decode_string(char* string) {
 				break;
 			}
 			string += 2;
-			short value = read_hex_short(&dest, &string);
+			unsigned short value = read_hex_short(&string);
 			ucs2_decode(value, &dest);
 		} else {
 			*(dest++) = *(string++);
@@ -215,10 +221,10 @@ char* json_decode_string(char* string) {
 char* url_decode(char* url) {
 	char* begin = url;
 	char* end = url + strlen(url);
-	char* dest = url;
+	unsigned char* dest = (unsigned char*)url;
 	while (end > url) {
 		if (*url != '%') {
-			*(dest++) = *(url++);
+			*(dest++) = (unsigned char)(*(url++));
 			continue;
 		}
 		if (url + 3 > end) {

@@ -1,18 +1,19 @@
 #include "config.h"
-#include "format.h"
 #include "files.h"
+#include "format.h"
 #include "stack.h"
 #include "system.h"
 
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_PROPERTIES 32
 
 struct config_property {
 	char key[32];
-	char value[128];
+	char* value;
+	int allocated;
 };
 
 static struct config_property config[MAX_PROPERTIES];
@@ -29,15 +30,19 @@ static struct config_property* find_property(const char* key) {
 static void add_property(const char* key, const char* value) {
 	for (int i = 0; i < MAX_PROPERTIES; i++) {
 		if (!config[i].key[0]) {
-			snprintf(config[i].key, sizeof(config[i].key), "%s",  key);
-			snprintf(config[i].value, sizeof(config[i].value), "%s", value);
+			snprintf(config[i].key, sizeof(config[i].key), "%s", key);
+			config[i].allocated = strlen(value) + 1;
+			config[i].value = (char*)calloc(config[i].allocated, 1);
+			if (config[i].value) {
+				snprintf(config[i].value, config[i].allocated, "%s", value);
+			}
 			break;
 		}
 	}
 }
 
 static void resolve_config_value(char* value, size_t size) {
-	char key[256];
+	char key[512];
 	char* i = strstr(value, "$(");
 	while (i) {
 		char* j = strchr(i, ')');
@@ -47,7 +52,7 @@ static void resolve_config_value(char* value, size_t size) {
 		}
 		int key_size = j - i - 2;
 		key[key_size] = '\0';
-		if (key_size < 256) {
+		if (key_size < 512) {
 			memcpy(key, i + 2, key_size);
 		}
 		struct config_property* property = find_property(key);
@@ -76,7 +81,7 @@ void load_config() {
 		exit(1);
 		return;
 	}
-	char line[256];
+	char line[512];
 	const char* it = source;
 	while (it = split_string(line, sizeof(line), it, '\n')) {
 		trim_ends(line, " \n\t");
@@ -99,6 +104,13 @@ void load_config() {
 		add_property(key, value);
 	}
 	free(source);
+}
+
+void free_config() {
+	for (int i = 0; i < MAX_PROPERTIES; i++) {
+		free(config[i].value);
+	}
+	memset(&config, 0, sizeof(config));
 }
 
 const char* server_root_path(const char* path) {

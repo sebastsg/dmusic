@@ -1,6 +1,7 @@
 #pragma once
 
 void load_config();
+void free_config();
 const char* get_property(const char* key);
 
 const char* server_root_path(const char* path);

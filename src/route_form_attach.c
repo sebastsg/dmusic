@@ -1,14 +1,14 @@
-#include "route.h"
-#include "http.h"
-#include "files.h"
-#include "system.h"
-#include "config.h"
-#include "format.h"
-#include "render.h"
 #include "analyze.h"
+#include "config.h"
+#include "files.h"
+#include "format.h"
+#include "http.h"
+#include "render.h"
+#include "route.h"
+#include "system.h"
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 void add_file_extension_if_absent(char* data, size_t data_size, char* path, size_t path_size) {
 	if (!strchr(path, '.')) {
@@ -36,7 +36,7 @@ void route_form_attach(struct route_parameters* parameters) {
 		}
 		replace_victims_with(file_name, "!@%^*~|\"&=?/\\#", '_');
 		size_t file_size = 0;
-		char* file_data = download_http_file(url, &file_size);
+		char* file_data = download_http_file(url, &file_size, "GET", NULL, NULL);
 		add_file_extension_if_absent(file_data, file_size, file_name, sizeof(file_name));
 		if (write_file(server_uploaded_directory_file_path(folder, file_name), file_data, file_size)) {
 			char resource[1024];

@@ -34,7 +34,7 @@ void write_group_attachment_file_url(int group_id, int num, struct http_data* da
 		print_error_f("Group image %i did not get a file extension.", num);
 	}
 	size_t image_size = 0;
-	char* image_file = download_http_file(url, &image_size);
+	char* image_file = download_http_file(url, &image_size, "GET", NULL, NULL);
 	write_file(dest_path, image_file, image_size);
 	free(image_file);
 	pop_string();

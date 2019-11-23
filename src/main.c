@@ -1,20 +1,20 @@
+#include "cache.h"
 #include "config.h"
+#include "database.h"
+#include "files.h"
 #include "format.h"
 #include "install.h"
-#include "database.h"
 #include "network.h"
-#include "cache.h"
-#include "transcode.h"
-#include "threads.h"
-#include "files.h"
 #include "stack.h"
 #include "system.h"
+#include "threads.h"
 #include "track.h"
+#include "transcode.h"
 
-#include <string.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
+#include <string.h>
 
 static void free_resources() {
 	free_network();
@@ -23,6 +23,7 @@ static void free_resources() {
 	disconnect_database();
 	free_threads();
 	free_stack();
+	free_config();
 }
 
 static void signal_interrupt_handler(int signal_num) {

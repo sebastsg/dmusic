@@ -335,10 +335,18 @@ const char* http_file_content_type(const char* path) {
 	return "text/plain";
 }
 
-char* download_http_file(const char* path, size_t* size) {
+char* download_http_file(const char* path, size_t* size, const char* method, const char* data, const char* type) {
 	if (strchr(path, '"')) {
 		print_error_f("Can't download %s. Contains invalid character.", path);
 		return NULL;
 	}
-	return system_output(replace_temporary_string("curl --cookie cookies --silent \"%s\"", path), size);
+	const char* base = "curl --cookie cookies --silent";
+	if (data && *data) {
+		if (!type || !*type) {
+			type = "application/x-www-form-urlencoded";
+		}
+		return system_output(replace_temporary_string("%s -d '%s' -H %s --request %s \"%s\"", base, data, type, method, path), size);
+	} else {
+		return system_output(replace_temporary_string("%s --request %s \"%s\"", base, method, path), size);
+	}
 }

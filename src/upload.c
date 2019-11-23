@@ -60,65 +60,100 @@ void load_upload(struct upload_data* upload) {
 }
 
 struct remote_entry_state {
-	int status;
-	int completion;
+	int downloaded;
+	int total;
 	char* name;
 };
 
-static struct remote_entry_state* parse_rutorrent_history_json(char* json, int* count) {
+static char* end_of_json_string(char* json) {
+	if (json && *json == '"') {
+		while (json = strchr(json + 1, '"')) {
+			if (*(json - 1) != '\\') {
+				return json;
+			}
+		}
+	}
+	return NULL;
+}
+
+static char* read_rutorrent_json_entry(char* json, struct remote_entry_state* entry) {
+	// todo: actual json parsing. not important for now, since it might not be needed more than this.
+	// key: hash
+	//  0: is open,       1: is checking hash,      2: is hash checked,  3: state,         4: name
+	//  5: size,          6: completed chunks,      7: total chunks,     8: downloaded,    9: uploaded
+	// 10: ratio,        11: uplod limit,          12: download limit,  13: chunk size,   14: label
+	// 15: peers actual, 16: peers not connected,  17: peers connected, 18: seeds actual, 19: remaining
+	// 20: priority,     21: state changed (time), 22: skip total,      23: hashing (?),  24: hashed chunks
+	// 25: path,         26: created (time),       27: tracker focus,   28: is active,    29: message
+	// 30: comment,      31: free disk space,      32: is private,      33: multifile,    34: ?
+	// 35: ?             36: ?                     37: ?                38: ?             39: ?, 40: ? (time), 41: ? (time)
+	json += 44; //skip hash and ":[
+	char* name = json + 16;
+	if (*name != '"') {
+		return NULL;
+	}
+	char* name_end = end_of_json_string(name);
+	if (!name_end) {
+		return NULL;
+	}
+	name++;
+	char* completed = strchr(name_end + 3, '"');
+	if (!completed) {
+		return NULL;
+	}
+	completed += 3;
+	char* completed_end = strchr(completed, '"');
+	if (!completed_end) {
+		return NULL;
+	}
+	char* total = completed_end + 3;
+	char* total_end = strchr(total, '"');
+	if (!total_end) {
+		return NULL;
+	}
+	*name_end = '\0';
+	*completed_end = '\0';
+	*total_end = '\0';
+	entry->downloaded = atoi(completed);
+	entry->total = atoi(total);
+	entry->name = (char*)malloc(strlen(name) + 1);
+	if (entry->name) {
+		strcpy(entry->name, name);
+		json_decode_string(entry->name);
+	}
+	char* end = total_end;
+	for (int i = 0; i < 34 && end; i++) {
+		end = end_of_json_string(end + 2);
+	}
+	return end ? end + 3 : NULL;
+}
+
+static struct remote_entry_state* parse_rutorrent_json(char* json, int* count) {
 	struct remote_entry_state* entries = NULL;
 	int allocated = 0;
 	resize_array((void**)&entries, sizeof(struct remote_entry_state), &allocated, 50);
-	if (!entries) {
-		return NULL;
-	}
-	// todo: actual json parsing. not important for now, since it might not be needed more than this.
-	const char* tag_action = "{\"action\":";
-	const char* tag_name = "\"name\":\"";
-	const char* tag_size = "\"size\":";
-	const char* tag_downloaded = "\"downloaded\":";
-	char* it = json;
-	while (it = strstr(it, tag_action)) {
-		char* action = it + strlen(tag_action);
-		char* name = strstr(it, tag_name);
-		char* size = strstr(it, tag_size);
-		char* downloaded = strstr(it, tag_downloaded);
-		if (!name || !size || !downloaded) {
-			break;
+	if (entries) {
+		char* it = json + 6;
+		while (it && *it == '"') {
+			resize_array((void**)&entries, sizeof(struct remote_entry_state), &allocated, *count + 1);
+			it = read_rutorrent_json_entry(it, &entries[*count]);
+			if (it) {
+				(*count)++;
+			}
 		}
-		name += strlen(tag_name);
-		size += strlen(tag_size);
-		downloaded += strlen(tag_downloaded);
-		char* name_end = strstr(name, "\",\"");
-		char* size_end = strchr(size, ',');
-		char* downloaded_end = strchr(downloaded, ',');
-		if (name_end > size || size_end > downloaded || !downloaded_end) {
-			break;
-		}
-		*name_end = '\0';
-		*size_end = '\0';
-		*downloaded_end = '\0';
-		resize_array((void**)&entries, sizeof(struct remote_entry_state), &allocated, *count + 1);
-		struct remote_entry_state* entry = &entries[*count];
-		entry->status = atoi(action);
-		entry->completion = atoll(downloaded) * 100 / atoll(size);
-		const size_t name_size = strlen(name) + 1;
-		entry->name = (char*)malloc(name_size);
-		if (entry->name) {
-			strcpy(entry->name, name);
-			json_decode_string(entry->name);
-		}
-		(*count)++;
-		it = downloaded_end + 1;
 	}
 	return entries;
 }
 
 struct remote_entry_state* load_ftp_status(int* count) {
-	char* status = download_http_file(get_property("ftp.status"), NULL);
+	const char* method = get_property("ftp.status.method");
+	const char* url = get_property("ftp.status.url");
+	const char* data = get_property("ftp.status.data");
+	const char* type = get_property("ftp.status.type");
+	char* status = download_http_file(url, NULL, method, data, type);
 	if (status) {
 		// todo: different parsers
-		struct remote_entry_state* entries = parse_rutorrent_history_json(status, count);
+		struct remote_entry_state* entries = parse_rutorrent_json(status, count);
 		free(status);
 		return entries;
 	} else {
@@ -186,11 +221,12 @@ void render_sftp_ls(struct render_buffer* buffer) {
 				append_buffer(&entry_buffer, get_cached_file("html/download_remote_entry.html", NULL));
 				set_parameter(&entry_buffer, "name", line);
 				if (entry) {
-					if (entry->completion >= 100) {
+					if (entry->downloaded >= entry->total) {
 						set_parameter(&entry_buffer, "status", "&#10004;");
 					} else {
 						char completion[32];
-						snprintf(completion, sizeof(completion), "&#8595; %i%%", entry->completion);
+						const int percent = (int)((long long)entry->downloaded * 100ll / (long long)entry->total);
+						snprintf(completion, sizeof(completion), "&#8595; %i%%", percent);
 						set_parameter(&entry_buffer, "status", completion);
 					}
 				} else {
