@@ -221,6 +221,13 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		set_parameter_int(&buffer, "num", num);
 		set_parameter(&buffer, "name", "");
 		set_parameter(&buffer, "tracks", "");
+	} else if (!strcmp(page, "edit-group-alias")) {
+		const int group_id = get_int_argument(&resource);
+		char alias[256];
+		resource = split_string(alias, sizeof(alias), resource, '/');
+		assign_buffer(&buffer, get_cached_file("html/edit_group_alias.html", NULL));
+		set_parameter(&buffer, "alias", alias);
+		set_parameter_int(&buffer, "group-id", group_id);
 	} else {
 		print_error_f("Cannot render unknown page: %s", page);
 	}

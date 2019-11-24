@@ -74,7 +74,6 @@ create table "group_relation" (
 
 create table "group_alias" (
     "group_id" int          not null,
-    "priority" int          not null,
     "name"     varchar(160) not null,
     
     constraint  fk_group_alias_group

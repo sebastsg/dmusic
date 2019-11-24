@@ -56,3 +56,6 @@ bool is_group_favourited(const char* user_name, int group_id);
 int get_next_group_favourite_num(const char* user_name);
 void add_group_favourite(const char* user_name, int group_id);
 void remove_group_favourite(const char* user_name, int group_id);
+void add_group_alias(int group_id, const char* alias);
+void delete_group_alias(int group_id, const char* alias);
+void delete_all_group_aliases(int group_id);

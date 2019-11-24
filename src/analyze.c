@@ -1,17 +1,17 @@
 #include "analyze.h"
-#include "regex.h"
-#include "format.h"
 #include "database.h"
+#include "files.h"
+#include "format.h"
+#include "regex.h"
 #include "search.h"
 #include "type.h"
-#include "files.h"
 
 #include "system.h"
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 struct group_guess_search {
 	struct search_result search;
@@ -23,8 +23,7 @@ static bool is_jpg_header(const unsigned char* data) {
 }
 
 static bool is_png_header(const unsigned char* data) {
-	return data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47
-		&& data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A;
+	return data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 && data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A;
 }
 
 static bool is_gif_header(const char* data) {
@@ -269,7 +268,7 @@ int guess_track_num(const char* name, bool less_than_100) {
 			num -= 100;
 		}
 	}
-	return num;
+	return num >= 1 ? num : 1;
 }
 
 char* guess_track_name(char* buffer, const char* name) {
@@ -297,7 +296,7 @@ int guess_disc_num(const char* track_name) {
 	}
 	char track_num_string[32];
 	sprintf(track_num_string, "%i", track_num);
-	if (strlen(track_num_string) > 2) {
+	if (strlen(track_num_string) == 3) {
 		track_num_string[1] = '\0';
 		int num = atoi(track_num_string);
 		if (num > 0) {

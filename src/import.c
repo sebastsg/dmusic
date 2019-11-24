@@ -317,7 +317,6 @@ void render_import_attachment(struct render_buffer* buffer, const char* director
 	pop_string();
 	assign_buffer(buffer, "{{ attachments }}");
 	render_import_attachments(buffer, &attachment, 1);
-	free(attachment.targets.options);
 	free_import_attachment(&attachment);
 }
 

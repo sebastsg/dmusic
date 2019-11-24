@@ -29,13 +29,26 @@ void route_form_logout(struct cached_session* session) {
 }
 
 void route_form_edit_group(struct http_data* data) {
-	const int id = atoi(http_data_string(data, "id"));
+	const char* id_str = http_data_string(data, "id");
+	const int id = atoi(id_str);
 	if (id > 0) {
 		edit_group_detail(id, GROUP_DETAIL_NAME, http_data_string(data, "name"));
 		edit_group_detail(id, GROUP_DETAIL_COUNTRY, http_data_string(data, "country"));
 		edit_group_detail(id, GROUP_DETAIL_WEBSITE, http_data_string(data, "website"));
 		edit_group_detail(id, GROUP_DETAIL_DESCRIPTION, http_data_string(data, "description"));
+		// todo: improve this method of updating aliases. it could result in data loss.
+		delete_all_group_aliases(id);
+		const int alias_count = http_data_parameter_array_size(data, "alias");
+		for (int i = 0; i < alias_count; i++) {
+			add_group_alias(id, http_data_string_at(data, "alias", i));
+		}
 	}
+}
+
+void route_form_delete_group_alias(struct http_data* data) {
+	const char* group_id = http_data_string(data, "group");
+	const char* alias = http_data_string(data, "alias");
+	delete_group_alias(atoi(group_id), alias);
 }
 
 void toggle_favourite_group(struct route_parameters* parameters, int group_id) {
@@ -114,6 +127,8 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 		if (group_id != 0) {
 			toggle_favourite_group(parameters, group_id);
 		}
+	} else if (!strcmp(form, "delete-group-alias")) {
+		route_form_delete_group_alias(&parameters->data);
 	}
 }
 

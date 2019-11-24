@@ -133,6 +133,9 @@ function onEditGroupForm(target) {
 	let data = new FormData();
 	data.append('id', target.dataset.group);
 	appendFormData(data, ['name', 'country', 'website', 'description']);
+	for (const alias of target.querySelector('.group-aliases').tBodies[0].rows) {
+		data.append('alias', alias.children[0].children[0].value);
+	}
 	ajaxPost('/form/edit-group', data, () => location.href = location.href.replace('edit-group', 'group'));
 }
 
@@ -354,6 +357,24 @@ function onLoadRemoteEntries(target) {
 	});
 }
 
+function onAddGroupAlias(target) {
+	const id = target.parentNode.dataset.group;
+	let tableBody = target.previousElementSibling.tBodies[0];
+	for (let row of tableBody.rows) {
+		let alias = row.children[0].children[0];
+		alias.setAttribute('value', alias.value);
+	}
+	ajaxGet('/render/edit-group-alias/' + id, response => tableBody.innerHTML += response);
+}
+
+function onDeleteGroupAlias(target) {
+	let row = target.parentNode.parentNode;
+	ajaxPost('/form/delete-group-alias', {
+		group: target.dataset.group,
+		alias: row.children[0].children[0].value
+	}, () => row.remove());
+}
+
 function onClickButton(event) {
 	let target = event.target;
 	if (target.classList.contains('submit-import')) {
@@ -391,6 +412,10 @@ function onClickButton(event) {
 		onToggleFavourite(target);
 	} else if (target.classList.contains('load-remote-entries')) {
 		onLoadRemoteEntries(target);
+	} else if (target.classList.contains('add-group-alias')) {
+		onAddGroupAlias(target);
+	} else if (target.classList.contains('delete-group-alias')) {
+		onDeleteGroupAlias(target);
 	}
 }
 

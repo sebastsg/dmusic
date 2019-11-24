@@ -38,6 +38,24 @@ void free_group(struct group_data* group) {
 	free(group->tracks);
 }
 
+void render_edit_group_aliases(struct render_buffer* buffer, int id) {
+	char id_str[32];
+	snprintf(id_str, 32, "%i", id);
+	const char* params[] = { id_str };
+	PGresult* result = execute_sql("select \"name\" from \"group_alias\" where \"group_id\" = $1", params, 1);
+	const int count = PQntuples(result);
+	struct render_buffer alias_buffer;
+	init_render_buffer(&alias_buffer, 256);
+	for (int i = 0; i < count; i++) {
+		append_buffer(&alias_buffer, get_cached_file("html/edit_group_alias.html", NULL));
+		set_parameter(&alias_buffer, "alias", PQgetvalue(result, i, 0));
+		set_parameter_int(&alias_buffer, "group-id", id);
+	}
+	PQclear(result);
+	set_parameter(buffer, "aliases", alias_buffer.data);
+	free(alias_buffer.data);
+}
+
 void render_edit_group(struct render_buffer* buffer, int id) {
 	struct group_data group;
 	load_group(&group, id);
@@ -58,6 +76,7 @@ void render_edit_group(struct render_buffer* buffer, int id) {
 		render_search(buffer, "country_search", &country);
 		set_parameter(buffer, "website", website ? website : "");
 		set_parameter(buffer, "description", description ? description : "");
+		render_edit_group_aliases(buffer, id);
 		free(website);
 		free(description);
 	}
@@ -354,5 +373,30 @@ void remove_group_favourite(const char* user_name, int group_id) {
 	snprintf(group_id_str, sizeof(group_id_str), "%i", group_id);
 	const char* params[] = { user_name, group_id_str };
 	PGresult* result = execute_sql("delete from \"favourite_group\" where \"user_name\" = $1 and \"group_id\" = $2", params, 2);
+	PQclear(result);
+}
+
+void add_group_alias(int group_id, const char* alias) {
+	if (strlen(alias) > 0) {
+		char group_id_str[32];
+		snprintf(group_id_str, 32, "%i", group_id);
+		const char* params[] = { group_id_str, alias };
+		insert_row("group_alias", false, 2, params);
+	}
+}
+
+void delete_group_alias(int group_id, const char* alias) {
+	char group_id_str[32];
+	snprintf(group_id_str, 32, "%i", group_id);
+	const char* params[] = { group_id_str, alias };
+	PGresult* result = execute_sql("delete from \"group_alias\" where \"group_id\" = $1 and \"name\" = $2", params, 2);
+	PQclear(result);
+}
+
+void delete_all_group_aliases(int group_id) {
+	char group_id_str[32];
+	snprintf(group_id_str, 32, "%i", group_id);
+	const char* params[] = { group_id_str };
+	PGresult* result = execute_sql("delete from \"group_alias\" where \"group_id\" = $1", params, 1);
 	PQclear(result);
 }
