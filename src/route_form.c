@@ -93,14 +93,16 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 	} else if (!strcmp(form, "clear-session-playlist")) {
 		delete_session_tracks(parameters->session->name);
 	} else if (!strcmp(form, "transcode")) {
-		char album_release_id[32];
-		char format[32];
-		parameters->resource = split_string(album_release_id, 32, parameters->resource, '/');
-		parameters->resource = split_string(format, 32, parameters->resource, '/');
-		if (strlen(format) == 0) {
-			strcpy(format, "mp3-320");
+		if (has_privilege(parameters->session, PRIVILEGE_IMPORT_ALBUM)) {
+			char album_release_id[32];
+			char format[32];
+			parameters->resource = split_string(album_release_id, 32, parameters->resource, '/');
+			parameters->resource = split_string(format, 32, parameters->resource, '/');
+			if (strlen(format) == 0) {
+				strcpy(format, "mp3-320");
+			}
+			transcode_album_release(atoi(album_release_id), format);
 		}
-		transcode_album_release(atoi(album_release_id), format);
 	} else if (!strcmp(form, "add-group-tag")) {
 		if (has_privilege(parameters->session, PRIVILEGE_EDIT_GROUP_TAGS)) {
 			route_form_add_group_tag(parameters->result, &parameters->data);
@@ -114,21 +116,27 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 	} else if (!strcmp(form, "logout")) {
 		route_form_logout(parameters->session);
 	} else if (!strcmp(form, "hide-remote-entry")) {
-		const char* name = http_data_string(&parameters->data, "name");
-		if (strlen(name) > 0) {
-			const char* params[] = { name };
-			insert_row("hidden_remote_entry", false, 1, params);
+		if (has_privilege(parameters->session, PRIVILEGE_IMPORT_ALBUM)) {
+			const char* name = http_data_string(&parameters->data, "name");
+			if (strlen(name) > 0) {
+				const char* params[] = { name };
+				insert_row("hidden_remote_entry", false, 1, params);
+			}
 		}
 	} else if (!strcmp(form, "delete-upload")) {
-		const char* prefix = http_data_string(&parameters->data, "prefix");
-		delete_upload(prefix);
+		if (has_privilege(parameters->session, PRIVILEGE_IMPORT_ALBUM)) {
+			const char* prefix = http_data_string(&parameters->data, "prefix");
+			delete_upload(prefix);
+		}
 	} else if (!strcmp(form, "toggle-favourite-group")) {
 		const int group_id = atoi(http_data_string(&parameters->data, "group"));
 		if (group_id != 0) {
 			toggle_favourite_group(parameters, group_id);
 		}
 	} else if (!strcmp(form, "delete-group-alias")) {
-		route_form_delete_group_alias(&parameters->data);
+		if (has_privilege(parameters->session, PRIVILEGE_EDIT_GROUP_DETAILS)) {
+			route_form_delete_group_alias(&parameters->data);
+		}
 	}
 }
 
