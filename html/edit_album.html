@@ -1,0 +1,86 @@
+<h1>Editing album: {{ name }}</h1>
+<hr>
+<h2>Details</h2>
+<table data-album-release-id="{{ id }}">
+	<tbody>
+		<tr>
+			<td>Name</td>
+			<td>
+				<input type="text" name="name" value="{{ name }}" autocomplete="off">
+			</td>
+			<td>
+				<button class="edit-album-field" data-field="name" disabled>&#10004;</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Released</td>
+			<td>
+				<input type="date" name="released" value="{{ released }}" autocomplete="off">
+			</td>
+			<td>
+				<button class="edit-album-field" data-field="released" disabled>&#10004;</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Catalog</td>
+			<td>
+				<input type="text" value="{{ catalog }}" name="catalog" autocomplete="off">
+			</td>
+			<td>
+				<button class="edit-album-field" data-field="catalog" disabled>&#10004;</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Groups</td>
+			<td>
+				{{ group_search }}
+			</td>
+			<td>
+				<button class="edit-album-field" data-field="groups" disabled>&#10004;</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Format</td>
+			<td>
+				<select name="format">
+					{{ formats }}
+				</select>
+			</td>
+			<td>
+				<button class="edit-album-field" data-field="format" disabled>&#10004;</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Type</td>
+			<td>
+				<select name="type">
+					{{ types }}
+				</select>
+			</td>
+			<td>
+				<button class="edit-album-field" data-field="type" disabled>&#10004;</button>
+			</td>
+		</tr>
+		<tr>
+			<td>Release type</td>
+			<td>
+				<select name="release_type">
+					{{ release_types }}
+				</select>
+			</td>
+			<td>
+				<button class="edit-album-field" data-field="release-type" disabled>&#10004;</button>
+			</td>
+		</tr>
+	</tbody>
+</table>
+<hr>
+<h2>Discs</h2>
+{{ discs }}
+<hr>
+<h2>Attachments</h2>
+<table>
+	<tbody>
+
+	</tbody>
+</table>

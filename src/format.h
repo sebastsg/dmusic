@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <time.h>
 
 #define NUM_ARRAY_ELEMENTS(ARRAY, TYPE) (int)(sizeof(ARRAY) / sizeof(TYPE))
@@ -65,3 +65,5 @@ char* url_decode(char* url);
 char* json_decode_string(char* string);
 
 void string_replace(char* buffer, size_t size, const char* search, const char* replacement);
+
+void lowercase_string(const char* string, char* buffer, size_t size);

@@ -128,12 +128,12 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		if (id == 0) {
 			return buffer.data;
 		}
-		const bool is_editing = get_preference(session, PREFERENCE_EDIT_MODE) == EDIT_MODE_ON;
-		const bool edit_group_tags = is_editing && has_privilege(session, PRIVILEGE_EDIT_GROUP_TAGS);
-		const bool edit_details = is_editing && has_privilege(session, PRIVILEGE_ADD_GROUP);
+		const bool can_edit = get_preference(session, PREFERENCE_EDIT_MODE) == EDIT_MODE_ON;
+		const bool edit_group_tags = can_edit && has_privilege(session, PRIVILEGE_EDIT_GROUP_TAGS);
+		const bool edit_details = can_edit && has_privilege(session, PRIVILEGE_ADD_GROUP);
 		const bool favourited = is_group_favourited(session->name, id); // todo: cache favourites in session?
 		render_group(&buffer, id, edit_group_tags, edit_details, favourited);
-	} else if (!strcmp(page, "album")) {
+	} else if (!strcmp(page, "album") || !strcmp(page, "edit-album")) {
 		const int album_release_id = get_int_argument(&resource);
 		if (album_release_id == 0) {
 			return buffer.data;
@@ -143,7 +143,13 @@ char* render_resource_with_session(const char* page, const char* resource, const
 		int num_tracks = 0;
 		load_album_release(&album, album_release_id);
 		load_album_tracks(&tracks, &num_tracks, album_release_id);
-		render_album(&buffer, &album, tracks, num_tracks);
+		const bool can_edit = get_preference(session, PREFERENCE_EDIT_MODE) == EDIT_MODE_ON;
+		const bool edit_mode = can_edit && has_privilege(session, PRIVILEGE_EDIT_ALBUM_DETAILS);
+		if (!strcmp(page, "album")) {
+			render_album(&buffer, &album, tracks, num_tracks, edit_mode);
+		} else if (can_edit) {
+			render_edit_album(&buffer, &album, tracks, num_tracks);
+		}
 		free(tracks);
 		free(album.image);
 	} else if (!strcmp(page, "group-tags")) {

@@ -137,6 +137,8 @@ void route_form_with_session(const char* form, struct route_parameters* paramete
 		if (has_privilege(parameters->session, PRIVILEGE_EDIT_GROUP_DETAILS)) {
 			route_form_delete_group_alias(&parameters->data);
 		}
+	} else if (!strcmp(form, "update-stats")) {
+		load_stats_async();
 	}
 }
 

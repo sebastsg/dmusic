@@ -140,7 +140,7 @@ void render_group(struct render_buffer* buffer, int id, bool edit_tags, bool edi
 		const struct select_options* album_types = get_cached_options("album_type");
 		for (int i = 0; i < album_types->count; i++) {
 			struct select_option* option = &album_types->options[i];
-			render_albums(&album_list_buffer, option->code, option->name, group.albums, group.num_albums, group.tracks, group.num_tracks);
+			render_albums(&album_list_buffer, option->code, option->name, group.albums, group.num_albums, group.tracks, group.num_tracks, edit_details);
 		}
 		set_parameter(buffer, "albums", album_list_buffer.data);
 		free(album_list_buffer.data);
@@ -274,8 +274,9 @@ void load_group_albums(struct album_data** albums, int* num_albums, int group_id
 			const char* released_at = PQgetvalue(result, i, 7);
 			const char* name = PQgetvalue(result, i, 1);
 			const char* type = PQgetvalue(result, i, 2);
+			const char* catalog = PQgetvalue(result, i, 6);
 			const int cover = PQgetisnull(result, i, 3) ? 0 : atoi(PQgetvalue(result, i, 3));
-			initialize_album(&(*albums)[i], album_id, album_release_id, released_at, name, type, cover);
+			initialize_album(&(*albums)[i], album_id, album_release_id, released_at, name, type, cover, catalog);
 		}
 	}
 	PQclear(result);

@@ -12,7 +12,7 @@ struct http_headers {
 	char method[16];
 	char connection[16];
 	char status[32];
-	char resource[128];
+	char resource[512];
 	char content_type[256];
 	char range[128];
 	char session_cookie[64];

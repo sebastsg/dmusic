@@ -152,21 +152,15 @@ function onClickA(event) {
 		const disc = parts[3];
 		const track = parts[4];
 		addToPlaylist(album, disc, track);
-		return;
-	}
-	if (target.classList.contains('queue-album')) {
+	} else if (target.classList.contains('queue-album')) {
 		event.preventDefault();
 		let parts = target.getAttribute('href').split('/');
 		const album = parts[2];
 		addToPlaylist(album, 0, 0);
-		return;
-	}
-	if (target.classList.contains('clear-session-playlist')) {
+	} else if (target.classList.contains('clear-session-playlist')) {
 		event.preventDefault();
 		ajaxPost('/form/clear-session-playlist', null, () => document.querySelector('#playlist ul').innerHTML = '');
-		return;
-	}
-	if (!target.classList.contains('external-link')) {
+	} else if (!target.classList.contains('external-link')) {
 		event.preventDefault();
 		onInternalLinkClick(target);
 	}
@@ -188,6 +182,7 @@ function onImportForm(target) {
 			data.append('attachment-path', attachment.querySelector('input[name=path]').value);
 		}
 	}
+	let isCoverAttachmentPresent = false;
 	for (let disc of document.querySelectorAll('.import-disc')) {
 		let tracks = 0;
 		let headers = 3;
@@ -211,9 +206,14 @@ function onImportForm(target) {
 		data.append('disc-num', disc.querySelector('input[name=num]').value);
 		data.append('disc-name', disc.querySelector('input[name=name]').value);
 		data.append('disc-tracks', tracks);
+		isCoverAttachmentPresent = true;
 	}
-	ajaxPost('/form/import', data, response => document.querySelector('main section').innerHTML = response);
-	target.setAttribute('disabled', '');
+	if (isCoverAttachmentPresent || target.dataset.ignoreErrors === 'yes') {
+		ajaxPost('/form/import', data, response => document.querySelector('main section').innerHTML = response);
+		target.setAttribute('disabled', '');
+	} else {
+		target.nextElementSibling.style.display = 'block';
+	}
 }
 
 function onAttachGroupImage() {
@@ -416,6 +416,11 @@ function onClickButton(event) {
 		onAddGroupAlias(target);
 	} else if (target.classList.contains('delete-group-alias')) {
 		onDeleteGroupAlias(target);
+	} else if (target.classList.contains('ignore-errors')) {
+		for (let element of document.getElementsByClassName(target.dataset.targetClass)) {
+			element.dataset.ignoreErrors = 'yes';
+		}
+		target.remove();
 	}
 }
 

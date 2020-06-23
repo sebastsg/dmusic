@@ -3,6 +3,7 @@
 #include "files.h"
 #include "stack.h"
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -114,12 +115,34 @@ void replace_victims_with(char* str, const char* victims, char with) {
 	}
 }
 
+void lowercase_string(const char* string, char* buffer, size_t size) {
+	snprintf(buffer, size, "%s", string);
+	while (*buffer) {
+		if (isalpha(*buffer)) {
+			*buffer = tolower(*buffer);
+		}
+		buffer++;
+	}
+}
+
 bool is_extension_image(const char* extension) {
-	return extension && any_string_contains(extension, image_extensions, NUM_ARRAY_ELEMENTS(image_extensions, char*));
+	if (extension) {
+		char lowercase[256];
+		lowercase_string(extension, lowercase, sizeof(lowercase));
+		return any_string_contains(lowercase, image_extensions, NUM_ARRAY_ELEMENTS(image_extensions, char*));
+	} else {
+		return false;
+	}
 }
 
 bool is_extension_audio(const char* extension) {
-	return extension && any_string_contains(extension, audio_extensions, NUM_ARRAY_ELEMENTS(audio_extensions, char*));
+	if (extension) {
+		char lowercase[256];
+		lowercase_string(extension, lowercase, sizeof(lowercase));
+		return any_string_contains(lowercase, audio_extensions, NUM_ARRAY_ELEMENTS(audio_extensions, char*));
+	} else {
+		return false;
+	}
 }
 
 const char* find_file_extension(const char* path) {

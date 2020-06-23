@@ -2,92 +2,96 @@
 <hr>
 <h2>Details</h2>
 <table class="import-album-details">
-    <tr>
-        <td>Name</td>
-        <td>
-            <input type="text" value="{{ name }}" name="name" autocomplete="off">
-        </td>
-    </tr>
-    <tr>
-        <td>Released</td>
-        <td>
-            <input type="date" value="{{ released_at }}" name="released_at" autocomplete="off">
-        </td>
-    </tr>
-    <tr>
-        <td>Catalog</td>
-        <td>
-            <input type="text" value="" name="catalog" autocomplete="off">
-        </td>
-    </tr>
-    <tr>
-        <td>Group</td>
-        <td>
-            {{ group_search }}
-        </td>
-    </tr>
-    <tr>
-        <td>Format</td>
-        <td>
-            <select name="format">
-                {{ formats }}
-            </select>
-        </td>
-    </tr>
-    <tr>
-        <td>Type</td>
-        <td>
-            <select name="type">
-                {{ types }}
-            </select>
-        </td>
-    </tr>
-    <tr>
-        <td>Release type</td>
-        <td>
-            <select name="release_type">
-                {{ release_types }}
-            </select>
-        </td>
-    </tr>
+	<tr>
+		<td>Name</td>
+		<td>
+			<input type="text" value="{{ name }}" name="name" autocomplete="off">
+		</td>
+	</tr>
+	<tr>
+		<td>Released</td>
+		<td>
+			<input type="date" value="{{ released_at }}" name="released_at" autocomplete="off">
+		</td>
+	</tr>
+	<tr>
+		<td>Catalog</td>
+		<td>
+			<input type="text" value="" name="catalog" autocomplete="off">
+		</td>
+	</tr>
+	<tr>
+		<td>Groups</td>
+		<td>
+			{{ group_search }}
+		</td>
+	</tr>
+	<tr>
+		<td>Format</td>
+		<td>
+			<select name="format">
+				{{ formats }}
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td>Type</td>
+		<td>
+			<select name="type">
+				{{ types }}
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<td>Release type</td>
+		<td>
+			<select name="release_type">
+				{{ release_types }}
+			</select>
+		</td>
+	</tr>
 </table>
 <hr>
 <h2>Attachments</h2>
 <table class="attachments">
-    <tr>
-        <th>Keep</th>
-        <th>Target</th>
-        <th>Filename</th>
-        <th>Preview</th>
-    </tr>
-    {{ attachments }}
+	<tr>
+		<th>Keep</th>
+		<th>Target</th>
+		<th>Filename</th>
+		<th>Preview</th>
+	</tr>
+	{{ attachments }}
 </table>
 <form class="attach-form" action="/form/attach" method="post" enctype="multipart/form-data">
-    <input type="hidden" name="folder" value="{{ folder }}">
-    <table>
-        <tr>
-            <th>
-                <select class="file-upload-method" data-input="attach_file" name="method">
-                    <option value="url" selected>url</option>
-                    <option value="file">browse file</option>
-                </select>
-            </th>
-            <th>
-                <input type="url" id="attach_file" name="file" class="long" autocomplete="off">
-            </th>
-            <th>
-                <button>&#10010; Attach</button>
-            </th>
-        </tr>
-    </table>
+	<input type="hidden" name="folder" value="{{ folder }}">
+	<table>
+		<tr>
+			<th>
+				<select class="file-upload-method" data-input="attach_file" name="method">
+					<option value="url" selected>url</option>
+					<option value="file">browse file</option>
+				</select>
+			</th>
+			<th>
+				<input type="url" id="attach_file" name="file" class="long" autocomplete="off">
+			</th>
+			<th>
+				<button>&#10010; Attach</button>
+			</th>
+		</tr>
+	</table>
 </form>
 <hr>
 <h2>Discs</h2>
 <div id="import_discs">
-    {{ discs }}
+	{{ discs }}
 </div>
 <button class="add-import-disc">&#10010; Add disc</button>
 <hr>
 <div class="submit-import-wrapper">
-    <button class="submit-import">&#10004; Import</button>
+	<button class="submit-import">&#10004; Import</button>
+	<p class="error-message" style="display:none;">
+		&#9888; Cover attachment is not present.
+		<button class="ignore-errors" data-target-class="submit-import">&#10024; Ignore</button>
+	</p>
 </div>

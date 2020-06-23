@@ -13,10 +13,12 @@ struct album_data {
 	char* image;
 	char album_type_code[64];
 	int num_discs;
+	char catalog[32];
 };
 
-void render_albums(struct render_buffer* buffer, const char* type, const char* name, struct album_data* albums, int num_albums, struct track_data* tracks, int num_tracks);
-void render_album(struct render_buffer* buffer, struct album_data* album, struct track_data* tracks, int num_tracks);
+void render_edit_album(struct render_buffer* buffer, struct album_data* album, struct track_data* tracks, int num_tracks);
+void render_albums(struct render_buffer* buffer, const char* type, const char* name, struct album_data* albums, int num_albums, struct track_data* tracks, int num_tracks, bool edit_mode);
+void render_album(struct render_buffer* buffer, struct album_data* album, struct track_data* tracks, int num_tracks, bool edit_mode);
 bool render_disc(struct render_buffer* buffer, int album_release_id, int disc_num, struct track_data* tracks, int num_tracks);
-void initialize_album(struct album_data* album, int album_id, int album_release_id, const char* released_at, const char* name, const char* type, int cover);
+void initialize_album(struct album_data* album, int album_id, int album_release_id, const char* released_at, const char* name, const char* type, int cover, const char* catalog);
 void load_album_release(struct album_data* album, int album_release_id);

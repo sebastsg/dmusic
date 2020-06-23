@@ -10,7 +10,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-void render_album(struct render_buffer* buffer, struct album_data* album, struct track_data* tracks, int num_tracks) {
+void render_edit_disc(struct render_buffer* buffer, int album_release_id, int disc_num, struct track_data* tracks, int num_tracks) {
+	//
+}
+
+void render_edit_album(struct render_buffer* buffer, struct album_data* album, struct track_data* tracks, int num_tracks) {
+	append_buffer(buffer, get_cached_file("html/album.html", NULL));
+	set_parameter(buffer, "name", album->name);
+	set_parameter_int(buffer, "id", album->id);
+	set_parameter(buffer, "released", album->released_at);
+	set_parameter(buffer, "catalog", album->catalog);
+	// groups:
+}
+
+void render_album(struct render_buffer* buffer, struct album_data* album, struct track_data* tracks, int num_tracks, bool edit_mode) {
 	struct render_buffer discs_buffer;
 	init_render_buffer(&discs_buffer, 2048);
 	int i = 1;
@@ -24,18 +37,24 @@ void render_album(struct render_buffer* buffer, struct album_data* album, struct
 	set_parameter_int(buffer, "id_play", album->id);
 	set_parameter_int(buffer, "id_queue", album->id);
 	set_parameter_int(buffer, "id_download", album->id);
+	if (edit_mode) {
+		set_parameter(buffer, "edit", get_cached_file("html/edit_album_link.html", NULL));
+		set_parameter_int(buffer, "album-release-id", album->id);
+	} else {
+		set_parameter(buffer, "edit", "");
+	}
 	set_parameter(buffer, "released", album->released_at);
 	set_parameter(buffer, "discs", discs_buffer.data);
 	free(discs_buffer.data);
 }
 
-void render_albums(struct render_buffer* buffer, const char* type, const char* name, struct album_data* albums, int num_albums, struct track_data* tracks, int num_tracks) {
+void render_albums(struct render_buffer* buffer, const char* type, const char* name, struct album_data* albums, int num_albums, struct track_data* tracks, int num_tracks, bool edit_mode) {
 	struct render_buffer item_buffer;
 	init_render_buffer(&item_buffer, 2048);
 	int count = 0;
 	for (int i = 0; i < num_albums; i++) {
 		if (!strcmp(type, albums[i].album_type_code)) {
-			render_album(&item_buffer, &albums[i], tracks, num_tracks);
+			render_album(&item_buffer, &albums[i], tracks, num_tracks, edit_mode);
 			count++;
 		}
 	}
@@ -75,7 +94,7 @@ bool render_disc(struct render_buffer* buffer, int album_release_id, int disc_nu
 	return tracks_added > 0;
 }
 
-void initialize_album(struct album_data* album, int album_id, int album_release_id, const char* released_at, const char* name, const char* type, int cover) {
+void initialize_album(struct album_data* album, int album_id, int album_release_id, const char* released_at, const char* name, const char* type, int cover, const char* catalog) {
 	album->id = album_id;
 	album->album_release_id = album_release_id;
 	format_time(album->released_at, 16, "%Y", (time_t)atoi(released_at));
@@ -86,6 +105,7 @@ void initialize_album(struct album_data* album, int album_id, int album_release_
 	} else {
 		album->image = copy_string("/img/missing.png");
 	}
+	snprintf(album->catalog, sizeof(album->catalog), "%s", catalog);
 }
 
 void load_album_release(struct album_data* album, int album_release_id) {
@@ -100,8 +120,9 @@ void load_album_release(struct album_data* album, int album_release_id) {
 		const char* released_at = PQgetvalue(result, 0, 7);
 		const char* name = PQgetvalue(result, 0, 1);
 		const char* type = PQgetvalue(result, 0, 2);
+		const char* catalog = PQgetvalue(result, 0, 6);
 		const int cover = PQgetisnull(result, 0, 3) ? 0 : atoi(PQgetvalue(result, 0, 3));
-		initialize_album(album, album_id, album_release_id, released_at, name, type, cover);
+		initialize_album(album, album_id, album_release_id, released_at, name, type, cover, catalog);
 	}
 	PQclear(result);
 }

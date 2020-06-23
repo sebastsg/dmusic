@@ -358,6 +358,10 @@ main section {
     background: #191c1c;
 }
 
+.uploads tr td:last-child button {
+	float: right;
+}
+
 table {
     border-collapse: collapse;
     width: 100%;
@@ -508,4 +512,10 @@ table.attachments tr td:first-child {
 
 .group-aliases tr td:nth-child(2) {
 	width: 128px;
+}
+
+.error-message {
+	color: #f15366;
+	margin-top: 12px;
+	font-weight: bold;
 }

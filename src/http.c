@@ -14,49 +14,74 @@ static void http_read_content_length(struct http_headers* dest, const char* src)
 		const char* end = strstr(begin, "\r\n");
 		if (end) {
 			char buffer[32];
-			string_copy_substring(buffer, begin, end - begin);
+			const size_t size = end - begin;
+			if (size + 1 >= sizeof(buffer)) {
+				print_error_f("Illegal HTTP request: %s", src);
+				return;
+			}
+			string_copy_substring(buffer, begin, size);
 			sscanf(buffer, "%zu", &dest->content_length);
 		}
 	}
 }
 
-static void http_read_method(char* dest, const char* src) {
+static void http_read_method(char* dest, size_t max_size, const char* src) {
 	const char* end = strchr(src, ' ');
 	if (end) {
-		string_copy_substring(dest, src, end - src);
+		const size_t size = end - src;
+		if (max_size > size) {
+			string_copy_substring(dest, src, size);
+		} else {
+			print_error_f("Illegal HTTP request: %s", src);
+		}
 	}
 }
 
-static void http_read_resource(char* dest, const char* src) {
+static void http_read_resource(char* dest, size_t max_size, const char* src) {
 	const char* begin = strchr(src, ' ');
 	if (begin) {
 		begin += 2;
 		const char* end = strchr(begin, ' ');
 		if (end) {
-			string_copy_substring(dest, begin, end - begin);
-			url_decode(dest);
+			const size_t size = end - begin;
+			if (max_size > size) {
+				string_copy_substring(dest, begin, size);
+				url_decode(dest);
+			} else {
+				print_error_f("Illegal HTTP request: %s", src);
+			}
 		}
 	}
 }
 
-static void http_read_content_type(char* dest, const char* src) {
+static void http_read_content_type(char* dest, size_t max_size, const char* src) {
 	const char* begin = strstr(src, "Content-Type: ");
 	if (begin) {
 		begin += strlen("Content-Type: ");
 		const char* end = strstr(begin, "\r\n");
 		if (end) {
-			string_copy_substring(dest, begin, end - begin);
+			const size_t size = end - begin;
+			if (max_size > size) {
+				string_copy_substring(dest, begin, size);
+			} else {
+				print_error_f("Illegal HTTP request: %s", src);
+			}
 		}
 	}
 }
 
-static void http_read_range(char* dest, const char* src) {
+static void http_read_range(char* dest, size_t max_size, const char* src) {
 	const char* begin = strstr(src, "Range: ");
 	if (begin) {
 		begin += strlen("Range: ");
 		const char* end = strstr(begin, "\r\n");
 		if (end) {
-			string_copy_substring(dest, begin, end - begin);
+			const size_t size = end - begin;
+			if (max_size > size) {
+				string_copy_substring(dest, begin, size);
+			} else {
+				print_error_f("Illegal HTTP request: %s", src);
+			}
 		}
 	}
 }
@@ -223,11 +248,11 @@ bool http_read_headers(struct client_state* client) {
 	end += 4;
 	struct http_headers* headers = &client->headers;
 	memset(headers, 0, sizeof(struct http_headers));
-	http_read_method(headers->method, client->buffer);
-	http_read_resource(headers->resource, client->buffer);
-	http_read_content_type(headers->content_type, client->buffer);
+	http_read_method(headers->method, 16, client->buffer);
+	http_read_resource(headers->resource, 512, client->buffer);
+	http_read_content_type(headers->content_type, 256, client->buffer);
 	http_read_content_length(headers, client->buffer);
-	http_read_range(headers->range, client->buffer);
+	http_read_range(headers->range, 128, client->buffer);
 	http_read_session_cookie(headers->session_cookie, sizeof(headers->session_cookie) - 1, client->buffer);
 	if (strstr(client->buffer, "Connection: keep-alive")) {
 		strcpy(headers->connection, "keep-alive");

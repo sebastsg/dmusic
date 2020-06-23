@@ -10,6 +10,7 @@
 #include "render.h"
 #include "stack.h"
 #include "system.h"
+#include "threads.h"
 
 #include <dirent.h>
 #include <stdlib.h>
@@ -161,10 +162,43 @@ struct remote_entry_state* load_ftp_status(int* count) {
 	}
 }
 
+static size_t get_file_stat(const char* format, const char* path, const char* extension) {
+	char* out = system_output(replace_temporary_string(format, path, extension), NULL);
+	const size_t size = out ? atoll(out) : 0;
+	free(out);
+	return size;
+}
+
+static struct file_stats stats;
+
+void get_stats_thread(void* data) {
+	const char* groups = get_property("path.groups");
+	const char* albums = get_property("path.albums");
+	const char* uploads = get_property("path.uploads");
+	const char* format = "find %s -type f -name \"*.%s\" -printf \"%%s\\n\" | gawk -M '{t+=$1}END{print t}'";
+	stats.group_jpg = get_file_stat(format, groups, "jpg") / 1024 / 1024;
+	stats.group_png = get_file_stat(format, groups, "png") / 1024 / 1024;
+	stats.album_jpg = get_file_stat(format, albums, "jpg") / 1024 / 1024;
+	stats.album_png = get_file_stat(format, albums, "png") / 1024 / 1024;
+	stats.album_flac = get_file_stat(format, albums, "flac") / 1024 / 1024;
+	stats.album_mp3 = get_file_stat(format, albums, "mp3") / 1024 / 1024;
+	stats.uploads_total = get_file_stat(format, uploads, "jpg");
+	stats.uploads_total += get_file_stat(format, uploads, "png");
+	stats.uploads_total += get_file_stat(format, uploads, "flac");
+	stats.uploads_total += get_file_stat(format, uploads, "mp3");
+	stats.uploads_total /= 1024;
+	stats.uploads_total /= 1024;
+}
+
+void load_stats_async() {
+	open_thread(get_stats_thread, NULL);
+}
+
 void render_upload(struct render_buffer* buffer) {
 	struct upload_data upload;
 	load_upload(&upload);
 	assign_buffer(buffer, get_cached_file("html/import_albums.html", NULL));
+	append_buffer(buffer, "<br>Groups: {{ g }}<br>Album images: {{ au }}<br>Album FLAC: {{ af }}<br>Album MP3: {{ am }}<br>Uploads: {{ u }}");
 	struct render_buffer uploads_buffer;
 	init_render_buffer(&uploads_buffer, 2048);
 	for (int i = 0; i < upload.num_uploads; i++) {
@@ -176,6 +210,11 @@ void render_upload(struct render_buffer* buffer) {
 	set_parameter(buffer, "uploads", uploads_buffer.data);
 	free(uploads_buffer.data);
 	free(upload.uploads);
+	set_parameter_int(buffer, "g", stats.group_jpg + stats.group_png);
+	set_parameter_int(buffer, "au", stats.album_jpg + stats.album_png);
+	set_parameter_int(buffer, "af", stats.album_flac);
+	set_parameter_int(buffer, "am", stats.album_mp3);
+	set_parameter_int(buffer, "u", stats.uploads_total);
 }
 
 void render_remote_entries(struct render_buffer* buffer) {
