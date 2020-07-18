@@ -1,11 +1,12 @@
 #include "http.h"
+
+#include <stdlib.h>
+#include <string.h>
+
 #include "format.h"
 #include "network.h"
 #include "stack.h"
 #include "system.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 static void http_read_content_length(struct http_headers* dest, const char* src) {
 	const char* begin = strstr(src, "Content-Length: ");
@@ -58,6 +59,22 @@ static void http_read_content_type(char* dest, size_t max_size, const char* src)
 	const char* begin = strstr(src, "Content-Type: ");
 	if (begin) {
 		begin += strlen("Content-Type: ");
+		const char* end = strstr(begin, "\r\n");
+		if (end) {
+			const size_t size = end - begin;
+			if (max_size > size) {
+				string_copy_substring(dest, begin, size);
+			} else {
+				print_error_f("Illegal HTTP request: %s", src);
+			}
+		}
+	}
+}
+
+static void http_read_host(char* dest, size_t max_size, const char* src) {
+	const char* begin = strstr(src, "Host: ");
+	if (begin) {
+		begin += strlen("Host: ");
 		const char* end = strstr(begin, "\r\n");
 		if (end) {
 			const size_t size = end - begin;
@@ -250,6 +267,7 @@ bool http_read_headers(struct client_state* client) {
 	memset(headers, 0, sizeof(struct http_headers));
 	http_read_method(headers->method, 16, client->buffer);
 	http_read_resource(headers->resource, 512, client->buffer);
+	http_read_host(headers->host, 64, client->buffer);
 	http_read_content_type(headers->content_type, 256, client->buffer);
 	http_read_content_length(headers, client->buffer);
 	http_read_range(headers->range, 128, client->buffer);

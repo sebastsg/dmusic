@@ -10,6 +10,7 @@ struct client_state;
 struct http_headers {
 	size_t content_length;
 	char method[16];
+	char host[64];
 	char connection[16];
 	char status[32];
 	char resource[512];

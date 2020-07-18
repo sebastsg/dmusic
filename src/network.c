@@ -1,4 +1,15 @@
 #include "network.h"
+
+#include <fcntl.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include "cache.h"
 #include "config.h"
 #include "files.h"
@@ -6,17 +17,7 @@
 #include "route.h"
 #include "system.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <netinet/ip.h>
-#include <netinet/tcp.h>
-#include <unistd.h>
-
-#define DMUSIC_MAX_CLIENTS     1024
+#define DMUSIC_MAX_CLIENTS 1024
 #define DMUSIC_MAX_BUFFER_SIZE 32768
 
 struct network_state {
@@ -227,7 +228,13 @@ void read_client_request(struct client_state* client) {
 		client->is_processing = http_read_body(client);
 	} else if (http_read_headers(client)) {
 		print_info_f("Socket %i: " A_CYAN "%s", client->socket, client->headers.resource);
-		client->is_processing = (client->headers.content_length == 0);
+		if (strcmp(client->headers.host, get_property("server.host")) != 0) {
+			print_error_f("Ignoring request for host \"%s\"", client->headers.host);
+			client->last_request = 0;
+			client->is_processing = false;
+		} else {
+			client->is_processing = (client->headers.content_length == 0);
+		}
 	} else {
 		client->is_processing = false;
 	}
