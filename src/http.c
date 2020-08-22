@@ -309,6 +309,10 @@ void http_write_headers(struct client_state* client, const struct http_headers* 
 		strcat(str, headers->session_cookie);
 		strcat(str, "; Path=/; Max-Age=2419200; HttpOnly");
 	}
+	if (headers->content_range[0] != '\0') {
+		strcat(str, "\r\nContent-Range: ");
+		strcat(str, headers->content_range);
+	}
 	char length_str[32];
 	sprintf(length_str, "\r\nContent-Length: %zu", headers->content_length);
 	strcat(str, length_str);

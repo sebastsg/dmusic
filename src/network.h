@@ -1,9 +1,9 @@
 #pragma once
 
+#include <time.h>
+
 #include "http.h"
 #include "route.h"
-
-#include <time.h>
 
 struct client_state {
 	int socket;

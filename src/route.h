@@ -1,9 +1,9 @@
 #pragma once
 
-#include "http.h"
-
 #include <stdbool.h>
 #include <stddef.h>
+
+#include "http.h"
 
 struct client_state;
 struct http_data;

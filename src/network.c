@@ -207,10 +207,13 @@ void init_client_response(struct client_state* client) {
 	struct http_headers response_headers;
 	memset(&response_headers, 0, sizeof(struct http_headers));
 	strcpy(response_headers.connection, client->headers.connection);
+	strcpy(client->headers.status, "200");
 	process_route(&client->route, client->headers.resource, client->buffer, client->size);
 	response_headers.content_length = client->route.size;
 	strcpy(response_headers.content_type, client->route.type);
 	strcpy(response_headers.session_cookie, client->headers.session_cookie);
+	strcpy(response_headers.status, client->headers.status);
+	strcpy(response_headers.content_range, client->headers.content_range);
 	http_write_headers(client, &response_headers);
 	client->write_index = 0;
 	client->write_begin = 0;

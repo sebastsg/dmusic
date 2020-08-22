@@ -15,6 +15,7 @@ struct http_headers {
 	char status[32];
 	char resource[512];
 	char content_type[256];
+	char content_range[64];
 	char range[128];
 	char session_cookie[64];
 };

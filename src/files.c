@@ -1,12 +1,17 @@
 #include "files.h"
-#include "stack.h"
-#include "system.h"
 
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include "stack.h"
+#include "system.h"
+
+static size_t min(size_t a, size_t b) {
+	return a > b ? b : a;
+}
 
 FILE* open_file(const char* path, const char* mode) {
 	if (!path) {
@@ -46,6 +51,43 @@ char* read_file(const char* path, size_t* size) {
 		*size = file_size;
 	}
 	buffer[file_size] = '\0';
+	return buffer;
+}
+
+char* read_file_section(const char* path, size_t* full_size, size_t* part_size, size_t begin, size_t end) {
+	FILE* file = open_file(path, "rb");
+	if (!file) {
+		return NULL;
+	}
+	fseek(file, 0, SEEK_END);
+	size_t file_size = ftell(file);
+	if (file_size == 0) {
+		return NULL;
+	}
+	if (begin >= file_size) {
+		print_error_f("Can't start reading at %zu when filesize of %s is %zu.", begin, path, file_size);
+		return NULL;
+	}
+	const size_t buffer_size = min(file_size - begin, end - begin);
+	char* buffer = (char*)malloc(buffer_size + 1);
+	if (!buffer) {
+		return NULL;
+	}
+	fseek(file, begin, SEEK_SET);
+	if (fread(buffer, 1, buffer_size, file) != buffer_size) {
+		free(buffer);
+		fclose(file);
+		print_errno_f("I/O error while reading file %s.", path);
+		return NULL;
+	}
+	fclose(file);
+	if (full_size) {
+		*full_size = file_size;
+	}
+	if (part_size) {
+		*part_size = buffer_size;
+	}
+	buffer[buffer_size] = '\0';
 	return buffer;
 }
 
