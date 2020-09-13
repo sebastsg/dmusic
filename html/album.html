@@ -1,15 +1,23 @@
 <div class="album">
 	<img src="{{ image }}">
-	<div>
+	<div class="album-header">
 		<a href="/album/{{ id_name }}" class="album-name">{{ name }}</a>
-		<span>&gt;</span>
+		<span class="arrow">&gt;</span>
 		<a href="/album/{{ id_play }}/play" class="play-album">Play Album</a>
-		<span>&gt;</span>
+		<span class="arrow">&gt;</span>
 		<a href="/album/{{ id_queue }}/queue" class="queue-album">Add to Playlist</a>
-		<span>&gt;</span>
-		<a href="/album/{{ id_download }}/download" class="download-album">Download</a>
+		<span class="desktop-client">
+			<span class="arrow">&gt;</span>
+			<a href="/album/{{ id_download }}/download" class="download-album">Download</a>
+		</span>
+		<span class="extended-client">
+			<span class="arrow">&gt;</span>
+			<button class="cache-album">Cache</button>
+		</span>
 		{{ edit }}
 		<p>{{ released }}</p>
+	</div>
+	<div class="album-discs">
 		{{ discs }}
 	</div>
 </div>

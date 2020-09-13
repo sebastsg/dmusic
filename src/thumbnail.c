@@ -1,15 +1,16 @@
 #include "thumbnail.h"
-#include "database.h"
-#include "config.h"
-#include "stack.h"
-#include "render.h"
-#include "cache.h"
-#include "search.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-typedef const char*(*get_thumbnail_link_path)(int, int);
+#include "cache.h"
+#include "config.h"
+#include "database.h"
+#include "render.h"
+#include "search.h"
+#include "stack.h"
+
+typedef const char* (*get_thumbnail_link_path)(int, int, bool);
 
 static void load_thumbnails_from_rows(struct thumbnail** thumbs, int* num_thumbs, PGresult* result, get_thumbnail_link_path link_path) {
 	*num_thumbs = PQntuples(result);
@@ -19,7 +20,7 @@ static void load_thumbnails_from_rows(struct thumbnail** thumbs, int* num_thumbs
 			struct thumbnail* thumb = &(*thumbs)[i];
 			thumb->id = atoi(PQgetvalue(result, i, 0));
 			strcpy(thumb->name, PQgetvalue(result, i, 1));
-			thumb->image = copy_string(link_path(thumb->id, 1));
+			thumb->image = copy_string(link_path(thumb->id, 1, true));
 		}
 	}
 }
@@ -58,7 +59,7 @@ void load_group_thumbs_from_search(struct thumbnail** thumbs, const struct searc
 			struct thumbnail* thumb = &(*thumbs)[i];
 			thumb->id = atoi(results[i].value);
 			strcpy(thumb->name, results[i].text);
-			thumb->image = copy_string(client_group_image_path(thumb->id, 1));
+			thumb->image = copy_string(client_group_image_path(thumb->id, 1, true));
 		}
 	}
 }

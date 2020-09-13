@@ -2,36 +2,39 @@
 <html>
 
 <head>
-    <title>dmusic</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width">
-    <link rel="shortcut icon" href="/icon.png">
-    <link rel="stylesheet" type="text/css" href="/style.css">
-    <script src="/main.js" type="application/javascript"></script>
+	<title>dmusic</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<meta name="viewport" content="width=device-width">
+	<link rel="shortcut icon" href="/icon.png">
+	<link rel="stylesheet" type="text/css" href="/style.css">
+	<script src="/main.js" type="application/javascript"></script>
 </head>
 
 <body>
-    <header>
-        <div>
-            <audio id="audio" src="" preload="auto" controls tabindex="300"></audio>
-        </div>
-        <nav>
-            <a href="/playlists">playlists</a><span>/</span><a href="/explore">explore</a><span>/</span><a
-                href="/recent">recent</a><span>/</span><a href="/favourites">favourites</a><span>/</span><a
-                href="/upload">upload</a>
-            <a href="/profile">{{ user }}</a>
-        </nav>
-    </header>
-    <aside id="playlist">
-        <ul>
-            {{ tracks }}
-        </ul>
-    </aside>
-    <main>
-        <section>
-            {{ content }}
-        </section>
-    </main>
+	<header>
+		<div>
+			<audio id="audio" src="" preload="auto" controls tabindex="300"></audio>
+		</div>
+		<nav>
+			<a href="/playlists">playlists</a><span>/</span><a href="/explore">explore</a><span>/</span><a
+				href="/recent">recent</a><span>/</span><a href="/favourites">favourites</a><span>/</span><a
+				href="/upload">upload</a>
+			<a href="/profile">{{ user }}</a>
+		</nav>
+		<div id="mobile_options">
+			<button class="toggle-playlist-visibility">Session</button>
+		</div>
+	</header>
+	<aside id="playlist">
+		<ul>
+			{{ tracks }}
+		</ul>
+	</aside>
+	<main>
+		<section>
+			{{ content }}
+		</section>
+	</main>
 </body>
 
 </html>

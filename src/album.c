@@ -1,4 +1,8 @@
 #include "album.h"
+
+#include <stdlib.h>
+#include <string.h>
+
 #include "cache.h"
 #include "config.h"
 #include "database.h"
@@ -6,9 +10,6 @@
 #include "render.h"
 #include "stack.h"
 #include "track.h"
-
-#include <stdlib.h>
-#include <string.h>
 
 void render_edit_disc(struct render_buffer* buffer, int album_release_id, int disc_num, struct track_data* tracks, int num_tracks) {
 	//
@@ -101,7 +102,7 @@ void initialize_album(struct album_data* album, int album_id, int album_release_
 	snprintf(album->name, 128, "%s", name);
 	snprintf(album->album_type_code, 64, "%s", type);
 	if (cover != 0) {
-		album->image = copy_string(client_album_image_path(album->album_release_id, cover));
+		album->image = copy_string(client_album_image_path(album->album_release_id, cover, true));
 	} else {
 		album->image = copy_string("/img/missing.png");
 	}

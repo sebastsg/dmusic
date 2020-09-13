@@ -1,5 +1,41 @@
 window.addEventListener('popstate', () => location.reload());
 
+class ExtendedClient {
+
+	static isCached(url) {
+		if (window.android !== undefined) {
+			return window.android.isCached(url);
+		} else {
+			return false;
+		}
+	}
+
+	static highlightCachedTracks() {
+		if (window.android === undefined) {
+			return;
+		}
+		let playlist = document.getElementById('playlist');
+		for (let item of playlist.children[0].children) {
+			const url = getTrackUrl(item.dataset.album, item.dataset.disc, item.dataset.track);
+			if (ExtendedClient.isCached(url)) {
+				item.classList.add('cached');
+			}
+		}
+		for (let track of document.getElementsByClassName('queue-track')) {
+			if (ExtendedClient.isCached(track.getAttribute('href'))) {
+				track.classList.add('cached');
+			}
+		}
+	}
+
+	static cache(url) {
+		if (window.android !== undefined) {
+			window.android.cacheFile(url);
+		}
+	}
+
+}
+
 function setAppropriateBackground() {
 	const path = location.pathname;
 	const index = path.lastIndexOf('group/');
@@ -9,6 +45,7 @@ function setAppropriateBackground() {
 	}
 	let main = document.getElementsByTagName('main')[0];
 	main.style.backgroundImage = "url('" + url + "')";
+	ExtendedClient.highlightCachedTracks();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -95,9 +132,13 @@ function onInternalLinkClick(target) {
 	history.pushState({}, '', target.getAttribute('href'));
 }
 
+function getTrackUrl(album, disc, track) {
+	return '/track/' + album + '/' + disc + '/' + track;
+}
+
 function playTrack(album, disc, track) {
 	let audio = document.getElementById('audio');
-	audio.setAttribute('src', '/track/' + album + '/' + disc + '/' + track);
+	audio.setAttribute('src', getTrackUrl(album, disc, track));
 	audio.play();
 }
 
@@ -421,6 +462,23 @@ function onClickButton(event) {
 			element.dataset.ignoreErrors = 'yes';
 		}
 		target.remove();
+	} else if (target.classList.contains('toggle-playlist-visibility')) {
+		let playlist = document.getElementById('playlist');
+		if (playlist.classList.contains('hidden')) {
+			playlist.classList.remove('hidden');
+		} else {
+			playlist.classList.add('hidden');
+		}
+	} else if (target.classList.contains('cache-album')) {
+		let discs = target.parentNode.parentNode.nextElementSibling;
+		for (let disc = 0; disc < discs.children.length; disc++) {
+			for (const track of discs.children[disc].children) {
+				ExtendedClient.cache(track.children[0].getAttribute('href'));
+			}
+		}
+		for (let ms = 500; ms < 10000; ms += 500) {
+			setTimeout(ExtendedClient.highlightCachedTracks, ms);
+		}
 	}
 }
 

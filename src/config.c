@@ -1,12 +1,13 @@
 #include "config.h"
-#include "files.h"
-#include "format.h"
-#include "stack.h"
-#include "system.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "files.h"
+#include "format.h"
+#include "stack.h"
+#include "system.h"
 
 #define MAX_PROPERTIES 32
 
@@ -149,24 +150,28 @@ const char* server_disc_format_path(int album_release_id, int disc_num, const ch
 	return replace_temporary_string("%s/%i/%i/%s", get_property("path.albums"), album_release_id, disc_num, format);
 }
 
-const char* client_group_image_path(int group_id, int num) {
-	return replace_temporary_string("/img/group/%i/%i", group_id, num);
+const char* client_group_image_path(int group_id, int num, bool thumbnail) {
+	const char* option = thumbnail ? "/thumbnail" : "";
+	return replace_temporary_string("/img/group/%i/%i%s", group_id, num, option);
 }
 
-const char* server_group_image_path(int group_id, int num) {
+const char* server_group_image_path(int group_id, int num, bool thumbnail) {
+	const char* option = thumbnail ? "thumb." : "";
 	const char* base = push_string(replace_temporary_string("%s/%i/%i.", get_property("path.groups"), group_id, num));
-	const char* path = replace_temporary_string("%s%s", base, find_file_extension(base));
+	const char* path = replace_temporary_string("%s%s%s", base, option, find_file_extension(base));
 	pop_string();
 	return path;
 }
 
-const char* client_album_image_path(int album_release_id, int num) {
-	return replace_temporary_string("/img/album/%i/%i", album_release_id, num);
+const char* client_album_image_path(int album_release_id, int num, bool thumbnail) {
+	const char* option = thumbnail ? "/thumbnail" : "";
+	return replace_temporary_string("/img/album/%i/%i%s", album_release_id, num, option);
 }
 
-const char* server_album_image_path(int album_release_id, int num) {
+const char* server_album_image_path(int album_release_id, int num, bool thumbnail) {
+	const char* option = thumbnail ? "thumb." : "";
 	const char* base = push_string(replace_temporary_string("%s/%i/%i.", get_property("path.albums"), album_release_id, num));
-	const char* path = replace_temporary_string("%s%s", base, find_file_extension(base));
+	const char* path = replace_temporary_string("%s%s%s", base, option, find_file_extension(base));
 	pop_string();
 	return path;
 }
